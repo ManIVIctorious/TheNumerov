@@ -7,6 +7,8 @@
 #include "spline_interpolate.h"
 #include "mkl_solvers_ee.h"
 
+
+
 char          UPLO = 'F';
 
 // used constants
@@ -92,8 +94,9 @@ int main(int argc, char* argv[])
   char line[2048];
   char tmp_char[128];
   
+  int pipeflag = 0;
+  int dipole_flag = 0;
   char *input_file_name  = NULL;
-  char *dipole_file_name = NULL;
   char *output_file_name = "/dev/stdout";
 
   FILE * file_ptr;
@@ -112,16 +115,17 @@ int main(int argc, char* argv[])
           {"e_min",      required_argument, 0, 'l'},
           {"e_max",      required_argument, 0, 'u'},
           {"spline",     required_argument, 0, 's'},
+          {"pipe",             no_argument, 0, 'P'},
           {"zero",             no_argument, 0, 'z'},
           {"analye",           no_argument, 0, 'a'},
-          {"dipole",     required_argument, 0, 'd'},
+          {"dipole",           no_argument, 0, 'd'},
           {"in-file",    required_argument, 0, 'i'},
           {"out-file",   required_argument, 0, 'o'},
 	  { 0, 0, 0, 0 }
         };
       /* getopt_long stores the option index here. */
 
-      i = getopt_long (argc, argv, "hm:k:v:n:l:u:s:zad:i:o:", long_options, &option_index);
+      i = getopt_long (argc, argv, "hm:k:v:n:l:u:s:zadi:o:", long_options, &option_index);
 
       /* Detect the end of the options. */
       if (i == -1)
@@ -167,6 +171,10 @@ int main(int argc, char* argv[])
 	  e_max = atof(optarg);
 	  break;
 
+    case 'P':
+        pipeflag = 1;
+        break;
+
 	case 's':
 	  n_spline = atoi(optarg);
 	  break;
@@ -180,7 +188,7 @@ int main(int argc, char* argv[])
 	  break;
 
 	case 'd':
-	  dipole_file_name = optarg;
+	  dipole_flag = 1;
 	  break;
 
 	case 'i':
@@ -226,96 +234,34 @@ int main(int argc, char* argv[])
 
     exit(-1);
   }
+  
 
-  // get memory and read input data 
-  q1  = (double *) malloc( sizeof(double) );
-  q2  = (double *) malloc( sizeof(double) );
-  v  = (double *) malloc( sizeof(double) );
-
-  if ( (file_ptr = fopen(input_file_name,"r")) == NULL)
-  {  
-    printf("\n\n (-) Error opening input-file: '%s'", input_file_name);
-    printf(  "\n     Exiting ... \n\n");
-
-    exit(0);
-  } 
-
-  while ( (fgets(line, 2048, file_ptr) ) != NULL )
-  {
-    line_number ++;
-
-    // remove leading white space
-    // remove leading blanks and tabs  
-    i=0;
-    do 
-    {
-      c=line[i];
-      if ((c == ' ') || (c == '\t'))  
-	for (j = i; j < strlen(line) ; j++)        
-	  line[j] = line[j+1];
-      else 
-	i++;        
+//------------------------------------------------------------------------------------------------------------------
+// Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input 
+//------------------------------------------------------------------------------------------------------------------
+    q1 = malloc(sizeof(double));
+    q2 = malloc(sizeof(double));
+    v  = malloc(sizeof(double));
+    if(dipole_flag == 1){
+        dip_x = malloc(sizeof(double));
+        dip_y = malloc(sizeof(double));
+        dip_z = malloc(sizeof(double));
+        n_pot = InputFunctionDipole(input_file_name, &q1, &q2, &v, &dip_x, &dip_y, &dip_z, &nq1, &nq2, &v_min, pipeflag);
     }
-    while (c == ' '); 
-
-    // if line is  blank read next line 
-    if (line[0] == '\n') continue;
-
-    // if line is a comment read next line 
-    if (line[0] == '#') continue;
-
-    // check for n-entry 
-    control=sscanf(line,"%s", tmp_char);
-    i=0;
-    while (tmp_char[i])
-    {
-      tmp_char[i] = tolower(tmp_char[i]);
-      ++i;
-    }
-    tmp_char[i]='\0';
-
-    // assign stepcounter
-    if (strcmp(tmp_char,"n") == 0) 
-    {
-      control=sscanf(line,"%s   %d   %d", tmp_char, &nq1, &nq2);
-      n_points = nq1*nq2;
-      continue;
-    }
-    
-
-    q1  = (double *) realloc(q1, (n_pot + 1) * sizeof(double) );
-    q2  = (double *) realloc(q2, (n_pot + 1) * sizeof(double) );
-    v  = (double *) realloc(v, (n_pot + 1) * sizeof(double) );
-     
-    control=sscanf(line,"%lf %lf %lf", &q1[n_pot], &q2[n_pot], &v[n_pot]);
-
-    if (control != 3)
-    {
-      printf("\n\n (-) Error reading data from input-file: '%s' in line %d.", input_file_name, line_number);
-      printf(  "\n     Aborting - please check your input ... \n\n\n");
-
-      exit(0);
+    else{
+        n_pot = InputFunction(input_file_name, &q1, &q2, &v, &nq1, &nq2, &v_min, pipeflag);
     }
 
-    if (v[n_pot] < v_min)
-    {
-      v_min = v[n_pot];
-    }
+    n_points = nq1*nq2;
 
-    n_pot ++;
-  }
-
-  fclose(file_ptr);
 
   // number of points vs stencil
-  if (n_pot < n_stencil )
-  {
-      printf("\n\n (-) Error reading data from input-file: '%s'", input_file_name);
-      printf(  "\n     Insufficient number of data points %d for stencial size %d.", n_pot, n_stencil);
-      printf(  "\n     Aborting - please check your input ... \n\n\n");
-
-      exit(0);
-  }
+    if (n_pot < n_stencil){
+        fprintf(stderr, "\n (-) Error reading data from input-file: '%s'", input_file_name);
+        fprintf(stderr, "\n     Insufficient number of data points %d for stencil size %d.", n_pot, n_stencil);
+        fprintf(stderr, "\n     Aborting - please check your input...\n\n");
+        exit(1);
+    }
 
   // check equispacing
   // get spacing intervall dx and check uniform spacing
@@ -341,79 +287,6 @@ int main(int argc, char* argv[])
       v[i] = v[i] - v_min;
     }
   }
-
-  // read dipole
-  if (dipole_file_name != NULL)
-  {
-
-    if ( (file_ptr = fopen(dipole_file_name,"r")) == NULL)
-    {  
-      printf("\n\n (-) Error opening dipole-file: '%s'", dipole_file_name);
-      printf(  "\n     Exiting ... \n\n");
-
-      exit(0);
-    } 
-
-    dip_x  = (double *) malloc( sizeof(double) );
-    dip_y  = (double *) malloc( sizeof(double) );
-    dip_z  = (double *) malloc( sizeof(double) );
-    double dummy_2;
-    line_number = 0;
-
-    while ( (fgets(line, 2048, file_ptr) ) != NULL )
-    {
-      line_number ++;
-
-      // remove leading white space
-      // remove leading blanks and tabs  
-      i = 0;
-      do 
-      {
-	c=line[i];
-	if ((c == ' ') || (c == '\t'))  
-	  for (j = i; j < strlen(line) ; j++)        
-	    line[j] = line[j+1];
-	else 
-	  i++;        
-      }
-      while (c == ' '); 
-
-      // if line is  blank read next line 
-      if (line[0] == '\n') continue;
-
-      // if line is a comment read next line 
-      if (line[0] == '#') continue;
-
-      dip_x  = (double *) realloc(dip_x, (n_dip + 1) * sizeof(double) );
-      dip_y  = (double *) realloc(dip_y, (n_dip + 1) * sizeof(double) );    
-      dip_z  = (double *) realloc(dip_z, (n_dip + 1) * sizeof(double) );
- 
-      control=sscanf(line,"%lf %lf %lf  %lf  %lf", &dummy, &dummy_2 , &dip_x[n_dip], &dip_y[n_dip], &dip_z[n_dip]);
-// wurde angepasst.
-      if (control != 5)
-      {
-	printf("\n\n (-) Error reading data from dipole-file: '%s' in line %d.", dipole_file_name, line_number);
-	printf(  "\n     Aborting - please check your input ... \n\n\n");
-
-	exit(0);
-      }
-
-      n_dip ++;
-    }
-  
-    if (n_dip != n_pot)
-    {
-      printf("\n\n (-) Error reading data from dipole-file: '%s'.", dipole_file_name, line_number);
-      printf(  "\n     Mismatch of data-points (%d) with number of potential points (%d).", n_pot, n_dip);
-      printf(  "\n     Aborting - please check your input ... \n\n\n");
-
-      exit(0);
-    }
-  } // if (dipole_file_name != NULL)
-
-
-
-
 
 
 //hier muss das splinen eingebaut werden.
@@ -878,7 +751,7 @@ for (i = 0; i < n_out; i++)// for all psi
 //'###########################################################################################################################################################
 //'###########################################################################################################################################################
 // NOCH ZU ERLEDIGEN
-  if (dipole_file_name != NULL)
+  if (dipole_flag == 1)
   {
 
     n_ts_dip = n_out * (n_out)/2;
