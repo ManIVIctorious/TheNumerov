@@ -1,0 +1,1 @@
+icc numerov2d.c stencils.c cubic_spline.c -o numerov2d -I/usr/local/intel/composer_xe_2015.3.187/mkl/include/ -L/usr/local/intel/composer_xe_2015.3.187/compiler/lib/intel64 -L/usr/local/intel/composer_xe_2015.3.187/mkl/lib/intel64 -lgsl -lgslcblas -lmkl_core -lmkl_intel_ilp64 -lmkl_intel_thread -liomp5 -lpthread -lm -ldl -m64  -w -DMKL_ILP64

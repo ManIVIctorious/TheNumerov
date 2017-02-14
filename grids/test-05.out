@@ -1,0 +1,62 @@
+astencil
+         0         0         0         0         0         0         0         0         0         0         0         0         0
+         0         0         0         0         0         0         0         0         0         0         0         0         0
+         0         0         0         0         0         0         0         0         0         0         0         0         0
+         0         0         0         0         0         0         0         0         0         0         0         0         0
+         0         0         0         0         0         0   -0.1667         0         0         0         0         0         0
+         0         0         0         0         0         0    2.6667         0         0         0         0         0         0
+         0         0         0         0   -0.1667    2.6667  -10.0000    2.6667   -0.1667         0         0         0         0
+         0         0         0         0         0         0    2.6667         0         0         0         0         0         0
+         0         0         0         0         0         0   -0.1667         0         0         0         0         0         0
+         0         0         0         0         0         0         0         0         0         0         0         0         0
+         0         0         0         0         0         0         0         0         0         0         0         0         0
+         0         0         0         0         0         0         0         0         0         0         0         0         0
+         0         0         0         0         0         0         0         0         0         0         0         0         0
+
+
+sparse locations filled calculated. berechnete ANzahl einträge 1615441
+ tatsächliche einträge 1615441
+Sparse MAATRIX created succesfully
+#    9.160474173209e+00 1.766323110897e+01 1.897859611567e+01 2.616591008208e+01 2.748135305145e+01
+# Reichen die Eigenwerte oder sollen die Eigenfunktionen auch ausgewertet werden?
+
+# 0 - Eigenfunktionen nicht auswerten
+# 1 - Eigenfunktionen auswerten
+astencil
+         0         0         0         0         0         0         0         0         0         0         0         0         0
+         0         0         0         0         0         0         0         0         0         0         0         0         0
+         0         0         0         0         0         0         0         0         0         0         0         0         0
+         0         0         0         0         0         0         0         0         0         0         0         0         0
+         0         0         0         0         0         0   -0.1667         0         0         0         0         0         0
+         0         0         0         0         0         0    2.6667         0         0         0         0         0         0
+         0         0         0         0   -0.1667    2.6667  -10.0000    2.6667   -0.1667         0         0         0         0
+         0         0         0         0         0         0    2.6667         0         0         0         0         0         0
+         0         0         0         0         0         0   -0.1667         0         0         0         0         0         0
+         0         0         0         0         0         0         0         0         0         0         0         0         0
+         0         0         0         0         0         0         0         0         0         0         0         0         0
+         0         0         0         0         0         0         0         0         0         0         0         0         0
+         0         0         0         0         0         0         0         0         0         0         0         0         0
+
+
+sparse locations filled calculated. berechnete ANzahl einträge 2343961
+ tatsächliche einträge 2343961
+Sparse MAATRIX created succesfully
+#    9.160483569244e+00 1.766326218577e+01 1.897863869067e+01 2.616600590273e+01 2.748141730746e+01
+# Reichen die Eigenwerte oder sollen die Eigenfunktionen auch ausgewertet werden?
+
+# 0 - Eigenfunktionen nicht auswerten
+# 1 - Eigenfunktionen auswerten
+astencil
+         0         0         0         0         0         0         0         0         0         0         0         0         0
+         0         0         0         0         0         0         0         0         0         0         0         0         0
+         0         0         0         0         0         0         0         0         0         0         0         0         0
+         0         0         0         0         0         0         0         0         0         0         0         0         0
+         0         0         0         0         0         0   -0.1667         0         0         0         0         0         0
+         0         0         0         0         0         0    2.6667         0         0         0         0         0         0
+         0         0         0         0   -0.1667    2.6667  -10.0000    2.6667   -0.1667         0         0         0         0
+         0         0         0         0         0         0    2.6667         0         0         0         0         0         0
+         0         0         0         0         0         0   -0.1667         0         0         0         0         0         0
+         0         0         0         0         0         0         0         0         0         0         0         0         0
+         0         0         0         0         0         0         0         0         0         0         0         0         0
+         0         0         0         0         0         0         0         0         0         0         0         0         0
+         0         0         0         0         0         0         0         0         0         0         0         0         0
