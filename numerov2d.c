@@ -7,7 +7,8 @@
 #include "spline_interpolate.h"
 #include "mkl_solvers_ee.h"
 
-
+int InputFunction(char *inputfile, double **q1, double **q2, double **V, int *nq1, int *nq2, double *v_min, int pipeflag);
+int InputFunctionDipole(char *inputfile, double **q1, double **q2, double **V, double **mux, double **muy, double **muz, int *nq1, int *nq2, double *v_min, int pipeflag);
 
 char          UPLO = 'F';
 
@@ -93,7 +94,7 @@ int main(int argc, char* argv[])
   char c;
   char line[2048];
   char tmp_char[128];
-  
+
   int pipeflag = 0;
   int dipole_flag = 0;
   char *input_file_name  = NULL;
@@ -107,7 +108,7 @@ int main(int argc, char* argv[])
     {
       static struct option long_options[] =
         {
-	  {"help",             no_argument, 0, 'h'},
+      {"help",             no_argument, 0, 'h'},
           {"mass",       required_argument, 0, 'm'},
           {"fkin",       required_argument, 0, 'k'},
           {"fpot",       required_argument, 0, 'v'},
@@ -121,7 +122,7 @@ int main(int argc, char* argv[])
           {"dipole",           no_argument, 0, 'd'},
           {"in-file",    required_argument, 0, 'i'},
           {"out-file",   required_argument, 0, 'o'},
-	  { 0, 0, 0, 0 }
+      { 0, 0, 0, 0 }
         };
       /* getopt_long stores the option index here. */
 
@@ -143,61 +144,61 @@ int main(int argc, char* argv[])
           printf ("\n");
           break;
 
-	  //case 'h':
-	  //    Help(argv[0], 0);
-	  //    exit (0);
+      //case 'h':
+      //    Help(argv[0], 0);
+      //    exit (0);
 
-	case 'm':
-	  mass = atof(optarg);
-	  break;
+    case 'm':
+      mass = atof(optarg);
+      break;
 
-	case 'k':
-	  ekin_factor = atof(optarg);
-	  break;
+    case 'k':
+      ekin_factor = atof(optarg);
+      break;
 
-	case 'v':
-	  epot_factor = atof(optarg);
-	  break;
-	  
-	case 'n':
-	  n_stencil = atoi(optarg);
-	  break;
+    case 'v':
+      epot_factor = atof(optarg);
+      break;
 
-	case 'l':
-	  e_min = atof(optarg);
-	  break;
+    case 'n':
+      n_stencil = atoi(optarg);
+      break;
 
-	case 'u':
-	  e_max = atof(optarg);
-	  break;
+    case 'l':
+      e_min = atof(optarg);
+      break;
+
+    case 'u':
+      e_max = atof(optarg);
+      break;
 
     case 'P':
         pipeflag = 1;
         break;
 
-	case 's':
-	  n_spline = atoi(optarg);
-	  break;
+    case 's':
+      n_spline = atoi(optarg);
+      break;
 
-	case 'z':
-	  set_zero = 1;
-	  break;
+    case 'z':
+      set_zero = 1;
+      break;
 
-	case 'a':
-	  analyse = 1;
-	  break;
+    case 'a':
+      analyse = 1;
+      break;
 
-	case 'd':
-	  dipole_flag = 1;
-	  break;
+    case 'd':
+      dipole_flag = 1;
+      break;
 
-	case 'i':
-	  input_file_name = optarg;
-	  break;
+    case 'i':
+      input_file_name = optarg;
+      break;
 
-	case 'o':
-	  output_file_name = optarg;
-	  break;
+    case 'o':
+      output_file_name = optarg;
+      break;
 
         default:
           printf("\n\n (-) Unkown flag %d - aborting. Please check your input.\n\n\n", option_index);
@@ -207,8 +208,8 @@ int main(int argc, char* argv[])
 
 //// END FLAGS //// END FLAGS //// END FLAGS //// END FLAGS //// END FLAGS //// END FLAGS //// END FLAGS
   // check input argument if the file is not present give a silly statement
-  if (input_file_name == NULL) 
-  { 
+  if (input_file_name == NULL)
+  {
     printf("\n\n (-) Please specify an input file ... \n\n");
     exit (1);
     // usage
@@ -216,9 +217,9 @@ int main(int argc, char* argv[])
 
   // get stencil, in two dimensions the size is n_stencil * n_stencil.
   stencil = (double *) malloc(n_stencil * n_stencil * sizeof(double) );
-  
+
   //// ################ der teil isch no zu aktualisieren.
-  
+
   control = get_stencil(stencil, n_stencil);
 
   if (control != 1)
@@ -234,10 +235,10 @@ int main(int argc, char* argv[])
 
     exit(-1);
   }
-  
+
 
 //------------------------------------------------------------------------------------------------------------------
-// Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input 
+// Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input
 //------------------------------------------------------------------------------------------------------------------
     q1 = malloc(sizeof(double));
     q2 = malloc(sizeof(double));
@@ -255,7 +256,7 @@ int main(int argc, char* argv[])
     n_points = nq1*nq2;
 
 
-  // number of points vs stencil
+// number of points vs stencil
     if (n_pot < n_stencil){
         fprintf(stderr, "\n (-) Error reading data from input-file: '%s'", input_file_name);
         fprintf(stderr, "\n     Insufficient number of data points %d for stencil size %d.", n_pot, n_stencil);
@@ -263,89 +264,74 @@ int main(int argc, char* argv[])
         exit(1);
     }
 
-  // check equispacing
-  // get spacing intervall dx and check uniform spacing
-  dq = q2[1] - q2[0];
-/*
-  for (i = 1; i < n_pot-1; i++)
-  {
-    if ( fabs(q1[i+1] - q1[i] - dq) > spacing_threshold)
-    {
-      printf("\n\n (-) Error reading data from input-file: '%s'", input_file_name);
-      printf(  "\n     Data not uniformly spaced. Exiting ... \n\n");
+// get spacing interval dx and check for uniform spacing
+    dq = q2[1] - q2[0];
 
-      exit(0);
+// testing equal spacing is more complicated in two dimensions.
+//  for (i = 1; i < n_pot-1; i++){
+//    if ( fabs(q1[i+1] - q1[i] - dq) > spacing_threshold){
+//      printf("\n\n (-) Error reading data from input-file: '%s'", input_file_name);
+//      printf(  "\n     Data not uniformly spaced. Exiting ... \n\n");
+//      exit(0);
+//    }
+//  }
+
+// set potential to zero
+    if(set_zero == 1){
+        for (i = 0; i < n_pot; ++i){
+            v[i] = v[i] - v_min;
+        }
     }
-  }
-*/ // testing equal spacing is more complicated in two dimensions.
 
-  // set potential to zero
-  if(set_zero == 1)
-  {
-    for (i = 0; i < n_pot; i++)
-    {
-      v[i] = v[i] - v_min;
+
+// hier muss das splinen eingebaut werden.
+    if (n_spline > 0){
+        n_q1_new = (nq1 - 1) * (n_spline + 1) + 1;
+        n_q2_new = (nq2 - 1) * (n_spline + 1) + 1;
+
+        n_points = n_q1_new * n_q2_new;
+
+        q1  = realloc(q1, (n_points + 1) * sizeof(double) );
+        q2  = realloc(q2, (n_points + 1) * sizeof(double) );
+        v   = realloc(v,  (n_points + 1) * sizeof(double) );
+
+        spline_interpolate(nq1, nq2, n_spline, q1, q2, v);
+
+    // Finally interpolate 2d
+//        dx = x[nq2]  - x[0];
+//        dy = y[1]   - y[0];
+        dx = dy = dq;
+        for (i=0; i < n_points; i++){
+            j=i/n_q2_new;
+            k=i%n_q2_new;
+
+            x_new = q1[0] + dx * (double) (i/n_q2_new) / (double) (n_spline + 1);
+            y_new = q2[0] + dy * (double) (i%n_q2_new) / (double) (n_spline + 1); // careful - change to dy
+
+            q1[i]=x_new;
+            q2[i]=y_new;
+
+//          printf("%4d  %3d  %4d   -  %12.8lf   %12.8lf   %12.8lf\n", i, j, k, x_new, y_new, z_new[i]);
+//          printf(" %12.8lf   %12.8lf   %12.8lf\n", x_new, y_new, v[i]);
+
+//          if ( k == n_q2_new-1)
+//              printf("\n");
+        }
+//      printf("bis doher kimpa a no\n");
+        dq= q2[1]-q2[0];
+        nq1=n_q1_new;
+        nq2=n_q2_new;
     }
-  }
 
-
-//hier muss das splinen eingebaut werden.
-
-  if (n_spline > 0)
-    {
-      n_q1_new = (nq1 - 1) * (n_spline +1) + 1;
-      n_q2_new = (nq2 - 1) * (n_spline +1) + 1;
-
-      n_points = n_q1_new * n_q2_new;
-
-      q1  = (double *) realloc(q1, (n_points + 1) * sizeof(double) );
-      q2  = (double *) realloc(q2, (n_points + 1) * sizeof(double) );
-      v  = (double *) realloc(v, (n_points + 1) * sizeof(double) );
-
-      spline_interpolate(nq1, nq2, n_spline, q1, q2, v);
-    
-
-
-     // Finally interpolate 2d
-      //dx = x[nq2]  - x[0];
-      //dy = y[1]   - y[0];
-      dx=dq;
-      dy=dq;
-
-      for (i=0; i < n_points; i++)
-      {
-	j=i/n_q2_new;
-	k=i%n_q2_new;
-
-	x_new = q1[0] + dx * (double) (i/n_q2_new) / (double) (n_spline + 1);
-	
-	y_new = q2[0] + dy * (double) (i%n_q2_new) / (double) (n_spline + 1); // careful - change to dy
-         
-       q1[i]=x_new;
-       q2[i]=y_new;
-
-
-	// printf("%4d  %3d  %4d   -  %12.8lf   %12.8lf   %12.8lf\n", i, j, k, x_new, y_new, z_new[i]);
-	//printf(" %12.8lf   %12.8lf   %12.8lf\n", x_new, y_new, v[i]);
-
-//	if ( k == n_q2_new-1)
-	  //printf("\n");
-      }
-     // printf("bis doher kimpa a no\n");
-      dq= q2[1]-q2[0];
-      nq1=n_q1_new;
-      nq2=n_q2_new;
-    } // if (n_spline > 0)
-
-  // apply kinetic energy factor and spacing to ekin_param
-  ekin_param = ekin_param * ekin_factor / dq / dq / mass; 
+// apply kinetic energy factor and spacing to ekin_param
+    ekin_param = ekin_param * ekin_factor / dq / dq / mass;
 //printf("%lf, x0 = %lf, x1 = %lf \n",ekin_param,q2[0],q2[1]);
 
 
 //////////////////////////////////////CREATING THE MATRIX USING CSR
 /// intel style CSR needs 1 as starting index. !!!!!!!!!!!!
   // request MKL types
-    char          UPLO = 'F'; 
+    char          UPLO = 'F';
     const MKL_INT N = n_points;
     MKL_INT       rows_A[n_points+1];
 
@@ -362,7 +348,7 @@ int main(int argc, char* argv[])
 */
     // calculate max_entries
     int sum_q1=nq1,sum_q2=nq2;
-    
+
     for ( i = 1; i<n_stencil/2+1; i++)
     {
      sum_q1=sum_q1 + 2*(nq1-i);
@@ -373,7 +359,7 @@ int main(int argc, char* argv[])
 //    MKL_INT       cols_A[max_entries];
 //   double        vals_A[max_entries];
 
-    MKL_INT     *cols_A = (MKL_INT *) malloc( max_entries * sizeof(MKL_INT)); 
+    MKL_INT     *cols_A = (MKL_INT *) malloc( max_entries * sizeof(MKL_INT));
     double      *vals_A = (double * ) malloc( max_entries * sizeof(double) );
 
     for (i = 0; i < nq1; i++)
@@ -383,33 +369,33 @@ int main(int argc, char* argv[])
       for (xsh = -n_stencil/2; xsh < n_stencil/2 + 1; xsh++)
       {
 
-	if ( (i+xsh > -1) && ( i+xsh < nq1))
-	{ 
+    if ( (i+xsh > -1) && ( i+xsh < nq1))
+    {
           for (ysh = -n_stencil/2; ysh < n_stencil/2 + 1; ysh++)
           {
            if ( (j+ysh > -1) && ( j+ysh < nq2))
-	    {           
-	      element = (i + xsh)*nq2 + j+ysh;
-	      
-	      cols_A[n_entries] = element+1; // wieso +1? weil intel!!
-	      
+        {
+          element = (i + xsh)*nq2 + j+ysh;
 
-              vals_A[n_entries] = ekin_param * stencil[(xsh+n_stencil/2)*n_stencil+ysh+n_stencil/2]/2; 
+          cols_A[n_entries] = element+1; // wieso +1? weil intel!!
+
+
+              vals_A[n_entries] = ekin_param * stencil[(xsh+n_stencil/2)*n_stencil+ysh+n_stencil/2]/2;
               // stencil entries have to be divised by 2 to get the right result. in three dimensions it should be /4
 
 
-              // add potential to diagonal element         
+              // add potential to diagonal element
               if (xsh == 0 && ysh ==0)
-         	  {
-	           vals_A[n_entries] = vals_A[n_entries] + v[i*nq2+j] * epot_factor; 
+              {
+               vals_A[n_entries] = vals_A[n_entries] + v[i*nq2+j] * epot_factor;
 
-        	    //  printf("potential added   %20.8lf", vals_A[n_entries]);
-	          }
+                //  printf("potential added   %20.8lf", vals_A[n_entries]);
+              }
 
            n_entries ++;
-	   }
-	  }
-	}
+       }
+      }
+    }
       }
       // after inserting all entries in a row the total number of entries is inserted in the CSR format.
       //printf("\nn %d\n", n_entries +1 );
@@ -488,7 +474,7 @@ int main(int argc, char* argv[])
 //'###########################################################################################################################################################
 //'###########################################################################################################################################################
     // get norm  <-------------- sollte nun auch 2d lafn
-    integrand = (double *) calloc(n_points, sizeof(double) ); 
+    integrand = (double *) calloc(n_points, sizeof(double) );
 
     for (i = 0; i < n_out; i++)
     {
@@ -502,17 +488,17 @@ int main(int argc, char* argv[])
 
       for (j = 0; j < n_points; j++)
       {
-	X[j+i*n_points] = X[j+i*n_points] / sqrt(integral);
+    X[j+i*n_points] = X[j+i*n_points] / sqrt(integral);
       }
   }
 
   if ( (file_ptr = fopen(output_file_name,"w")) == NULL)
-  {  
+  {
     printf("\n\n (-) Error opening output-file: '%s'", output_file_name);
     printf(  "\n     Exiting ... \n\n");
 
     exit(0);
-  } 
+  }
 //'###########################################################################################################################################################//'###########################################################################################################################################################
 //'###########################################################################################################################################################
 //'###########################################################################################################################################################
@@ -529,7 +515,7 @@ int main(int argc, char* argv[])
   fprintf(file_ptr,"\n#");
 
     fprintf(file_ptr, "\n# Frequencies:\n#");
-    
+
     fprintf(file_ptr, "\n# ");
 
     for (i = 0; i < (n_out - 1); i++)
@@ -542,8 +528,8 @@ int main(int argc, char* argv[])
 
       for (j = 0; j < i; j++)
       {
-	freq = 219474.6313705/627.509469 * epot_factor * (E[i] - E[j]);
-	fprintf(file_ptr, "  %12.5e", freq);
+    freq = 219474.6313705/627.509469 * epot_factor * (E[i] - E[j]);
+    fprintf(file_ptr, "  %12.5e", freq);
       }
   }
 //'###########################################################################################################################################################
@@ -555,29 +541,29 @@ int main(int argc, char* argv[])
     // Orthogonality output
 
     fprintf(file_ptr, "\n#");
-    
+
     fprintf(file_ptr, "\n# Orthonormality:\n#");
-    
+
     fprintf(file_ptr, "\n# ");
-    
+
     for (i=0; i < n_out; i++)
       fprintf(file_ptr,"%11d   ", i);
-    
+
     for (i = 0; i < n_out; i++)
     {
       fprintf(file_ptr, "\n#%3d",i);
-      
+
       for (j = 0; j < (i+1); j++)
       {
-	for (k = 0; k < n_points; k++)
+    for (k = 0; k < n_points; k++)
         {
-	  // generate integrand
-	  integrand[k] = X[k+i*n_points]*X[k+j*n_points];
-	}
-       
-	integral = integrate_2d(nq1, nq2, dq, integrand);
+      // generate integrand
+      integrand[k] = X[k+i*n_points]*X[k+j*n_points];
+    }
 
-	fprintf(file_ptr, "  %12.5e", integral);
+    integral = integrate_2d(nq1, nq2, dq, integrand);
+
+    fprintf(file_ptr, "  %12.5e", integral);
       }
     }
     fprintf(file_ptr, "\n#");
@@ -599,15 +585,15 @@ int main(int argc, char* argv[])
 
       for (j = 0; j < (i+1); j++)
       {
-	for (k = 0; k < n_points; k++)
+    for (k = 0; k < n_points; k++)
         {
-	  // generate integrand
-	  integrand[k] = X[k+i*n_points]*X[k+j*n_points] * v[k];
-	}
-       
-	integral = integrate_2d(nq1, nq2, dq, integrand);
+      // generate integrand
+      integrand[k] = X[k+i*n_points]*X[k+j*n_points] * v[k];
+    }
 
-	fprintf(file_ptr, "  %12.5e", integral);
+    integral = integrate_2d(nq1, nq2, dq, integrand);
+
+    fprintf(file_ptr, "  %12.5e", integral);
       }
     }
     fprintf(file_ptr, "\n#\n#");
@@ -639,12 +625,12 @@ int main(int argc, char* argv[])
               integrand[index]=0;
               for( xsh = -n_stencil/2; xsh < n_stencil/2+1; xsh++)
               {
-	         if ( (k+xsh > -1) && ( k+xsh < nq1))
-	         {
+             if ( (k+xsh > -1) && ( k+xsh < nq1))
+             {
                    for (ysh = -n_stencil/2; ysh < n_stencil/2 + 1; ysh++)
                    {
                       if ( (l+ysh > -1) && ( l+ysh < nq2))
-	              {  
+                  {
                          element = (k + xsh)*nq2 + l+ysh;
                         integrand[index] = integrand[index] + X[element+i*n_points] * stencil[(xsh+n_stencil/2)*n_stencil+ysh+n_stencil/2]/2; // durch d^2 ist dringend nötig aber schon in ekin_param enthalten.
                       }
@@ -655,44 +641,44 @@ int main(int argc, char* argv[])
            }
         }
 //--------------------------------------------------------------------------------------------------
-/*	for (k = 0; k < n_points; k++)
+/*  for (k = 0; k < n_points; k++)
         {
-	 // reset integrand because
-	 // ekin-operator has to be applyed via a loop
-	 integrand[k] = 0.0;
+     // reset integrand because
+     // ekin-operator has to be applyed via a loop
+     integrand[k] = 0.0;
 
-	 // apply stencil
+     // apply stencil
          for (l = 0; l < n_stencil + 1; l++)
-	 {
-	   element = k+l-n_stencil/2;
+     {
+       element = k+l-n_stencil/2;
 
-	   if ( (element > -1) && (element < (n_points +1) ) )
-	   {
-	     integrand[k] = integrand[k] + X[element+i*n_points] * stencil[l]; 
-	   }
-	 }
+       if ( (element > -1) && (element < (n_points +1) ) )
+       {
+         integrand[k] = integrand[k] + X[element+i*n_points] * stencil[l];
+       }
+     }
 
-	 integrand[k] = ekin_param * integrand[k] * X[k+j*n_points];
+     integrand[k] = ekin_param * integrand[k] * X[k+j*n_points];
 
-	}*/
+    }*/
 //-------------------------------------------------------------------------------------------------------
 
-	integral = integrate_2d(nq1, nq2, dq, integrand);
+    integral = integrate_2d(nq1, nq2, dq, integrand);
 
-	fprintf(file_ptr, "  %12.5e", integral);
+    fprintf(file_ptr, "  %12.5e", integral);
       }
     }
 
     fprintf(file_ptr,"\n#");
-  
+
   // calculate coupling
 //#####################################################################################
 ///*
 double *dichtematrix    = (double *) calloc (nq1*nq1, sizeof (double));
 double *dichtematrix_sq = (double *) calloc (nq1*nq1, sizeof (double));
 //printf("im start\n");
-double *dm_integrand    = (double *) calloc (nq2, sizeof (double));  
-double *dm_integrand_sq = (double *) calloc (nq1, sizeof (double));  
+double *dm_integrand    = (double *) calloc (nq2, sizeof (double));
+double *dm_integrand_sq = (double *) calloc (nq1, sizeof (double));
 int r1,r2;
      fprintf(file_ptr, "\n# COUPLING\n#");
 for (i = 0; i < n_out; i++)// for all psi
@@ -711,7 +697,7 @@ for (i = 0; i < n_out; i++)// for all psi
              dichtematrix[r1*nq1+r2]= integral;
              if(r1!=r2)
              dichtematrix[r2*nq1+r1]= integral;
-            }//endfor r2  
+            }//endfor r2
         }//endfor r1
 
       //calculate dichtematrix quadrat
@@ -728,7 +714,7 @@ for (i = 0; i < n_out; i++)// for all psi
              dichtematrix_sq[r1*nq1+r2]= integral;
              if(r1!=r2)
              dichtematrix_sq[r2*nq1+r1]= integral;
-            }//endfor r2  
+            }//endfor r2
         }//endfor r1
 
         // jetzt sollte noch die spur berechnet werden.
@@ -756,9 +742,9 @@ for (i = 0; i < n_out; i++)// for all psi
 
     n_ts_dip = n_out * (n_out)/2;
 
-    ts_dip_x = (double *) malloc( n_ts_dip * sizeof(double) ); 
-    ts_dip_y = (double *) malloc( n_ts_dip * sizeof(double) ); 
-    ts_dip_z = (double *) malloc( n_ts_dip * sizeof(double) ); 
+    ts_dip_x = (double *) malloc( n_ts_dip * sizeof(double) );
+    ts_dip_y = (double *) malloc( n_ts_dip * sizeof(double) );
+    ts_dip_z = (double *) malloc( n_ts_dip * sizeof(double) );
 
     fprintf(file_ptr, "\n#");
 
@@ -777,21 +763,21 @@ for (i = 0; i < n_out; i++)// for all psi
 
       for (j = 0; j < (i+1); j++)
       {
-	for (k = 0; k < n_points; k++)
+    for (k = 0; k < n_points; k++)
         {
-	  // generate integrand
-	  integrand[k] = X[k+i*n_points]*X[k+j*n_points] * dip_x[k];
-	}
-       
-	integral = integrate_2d(nq1, nq2, dq, integrand);
+      // generate integrand
+      integrand[k] = X[k+i*n_points]*X[k+j*n_points] * dip_x[k];
+    }
 
-	fprintf(file_ptr, "  %12.5e", integral);
+    integral = integrate_2d(nq1, nq2, dq, integrand);
 
-	if (i != j)
-	{
-	  ts_dip_x[element] = integral;
-	  element ++;
-	}
+    fprintf(file_ptr, "  %12.5e", integral);
+
+    if (i != j)
+    {
+      ts_dip_x[element] = integral;
+      element ++;
+    }
       }
     }
     fprintf(file_ptr, "\n#\n#");
@@ -811,21 +797,21 @@ for (i = 0; i < n_out; i++)// for all psi
 
       for (j = 0; j < (i+1); j++)
       {
-	for (k = 0; k < n_points; k++)
+    for (k = 0; k < n_points; k++)
         {
-	  // generate integrand
-	  integrand[k] = X[k+i*n_points]*X[k+j*n_points] * dip_y[k];
-	}
-       
-	integral = integrate_2d(nq1, nq2, dq, integrand);
+      // generate integrand
+      integrand[k] = X[k+i*n_points]*X[k+j*n_points] * dip_y[k];
+    }
 
-	fprintf(file_ptr, "  %12.5e", integral);
+    integral = integrate_2d(nq1, nq2, dq, integrand);
 
-	if (i != j)
-	{
-	  ts_dip_y[element] = integral;
-	  element ++;
-	}
+    fprintf(file_ptr, "  %12.5e", integral);
+
+    if (i != j)
+    {
+      ts_dip_y[element] = integral;
+      element ++;
+    }
       }
     }
     fprintf(file_ptr, "\n#\n#");
@@ -845,21 +831,21 @@ for (i = 0; i < n_out; i++)// for all psi
 
       for (j = 0; j < (i+1); j++)
       {
-	for (k = 0; k < n_points; k++)
+    for (k = 0; k < n_points; k++)
         {
-	  // generate integrand
-	  integrand[k] = X[k+i*n_points]*X[k+j*n_points] * dip_z[k];
-	}
-       
-	integral = integrate_2d(nq1,nq2, dq, integrand);
+      // generate integrand
+      integrand[k] = X[k+i*n_points]*X[k+j*n_points] * dip_z[k];
+    }
 
-	fprintf(file_ptr, "  %12.5e", integral);
+    integral = integrate_2d(nq1,nq2, dq, integrand);
 
-	if (i != j)
-	{
-	  ts_dip_z[element] = integral;
-	  element ++;
-	}
+    fprintf(file_ptr, "  %12.5e", integral);
+
+    if (i != j)
+    {
+      ts_dip_z[element] = integral;
+      element ++;
+    }
       }
     }
 //<------------------------------------------------
@@ -880,17 +866,17 @@ for (i = 0; i < n_out; i++)// for all psi
 
       for (j = 0; j < i; j++)
       {
-	ts_dip_square =  ts_dip_x[element] * ts_dip_x[element] + ts_dip_y[element] * ts_dip_y[element]+ ts_dip_z[element] * ts_dip_z[element];
+    ts_dip_square =  ts_dip_x[element] * ts_dip_x[element] + ts_dip_y[element] * ts_dip_y[element]+ ts_dip_z[element] * ts_dip_z[element];
 
-	freq = 219474.6313705/627.509469 * epot_factor * (E[i] - E[j]);
+    freq = 219474.6313705/627.509469 * epot_factor * (E[i] - E[j]);
 
-	fprintf(file_ptr, "  %12.5e", 4.702E-7 * ts_dip_square * freq);
-	//fprintf(file_ptr, "  %12.5e", ts_dip_z[element]);
+    fprintf(file_ptr, "  %12.5e", 4.702E-7 * ts_dip_square * freq);
+    //fprintf(file_ptr, "  %12.5e", ts_dip_z[element]);
 
-	element ++;
+    element ++;
       }
     ///////////////////
-    
+
     }
     fprintf(file_ptr, "\n#\n#");
   }
@@ -903,97 +889,67 @@ for (i = 0; i < n_out; i++)// for all psi
   for (i = 0; i < n_points; i++)
   {
     if(i%nq2==0)
-      fprintf(file_ptr, "\n");    
+      fprintf(file_ptr, "\n");
 
     fprintf(file_ptr,"%24.16lf %24.16lf    %24.16lf", q1[i], q2[i], v[i]);
-    
+
     for (j=0; j<n_out; j++)
     {
       fprintf(file_ptr, "  %24.16lf", X[i+j*n_points]);
     }
-    
+
     fprintf(file_ptr,"\n");
   }
-  
+
   fprintf(file_ptr,"\n\n");
-  
+
   fclose(file_ptr);
-  
-  
+
+
   printf("\n\n");
-  
+
   exit (0);
 }
 
 
+double integrate_2d(int nq1, int nq2, double dx, double integrand[]){
 
-
-
-double integrate_2d(int nq1, int nq2, double dx, double integrand[])
-{
-  int i, j,index;
-  int n_points = nq1 * nq2;
-
-  double integral = 0.0;
+    int i, j,index;
+    int n_points = nq1 * nq2;
+    double integral = 0.0;
 
 // inner part, without edges and "RAND"
-   for (i = 1; i < nq1-1; i++)
-   {
-     for (j = 1; j < nq2-1; j++)
-     {
-       index = i*nq2 + j;
-       integral = integral + integrand[index];
-     }
-   }
+    for(i = 1; i < (nq1-1); i++){
+        for (j = 1; j < (nq2-1); j++){
+            index = i*nq2 + j;
+            integral = integral + integrand[index];
+        }
+    }
 
 //randpunkte links rechts ohne ecken
-   for ( j = 1; j < nq1-1; j++)
-   {
-     index = j * nq2;
-     integral = integral + 1/2*(integrand[index]+integrand[index + nq2 -1]);
-   }
+    for(j = 1; j < (nq1-1); j++){
+        index = j*nq2;
+        integral = integral + 1/2*(integrand[index]+integrand[index + nq2 - 1]);
+    }
 // randpunkte oben unten
-   for ( i = 1; i < nq2-1; i++)
-   {
-     index = (nq1-1)*nq2+i;
-     integral = integral + 1/2*(integrand[i]+integrand[index]);
-   }
+    for(i = 1; i < (nq2-1); i++){
+        index = (nq1-1)*nq2 + i;
+        integral = integral + 1/2*(integrand[i]+integrand[index]);
+    }
+    integral = integral + 1/4*(integrand[0]+integrand[nq1-1]+integrand[nq1*nq2-1]+ integrand[(nq1-1)*nq2]);
 
-   
-   integral = integral + 1/4*(integrand[0]+integrand[nq1-1]+integrand[nq1*nq2-1]+ integrand[(nq1-1)*nq2]);
-
-  return integral * dx * dx; //
+    return (integral * dx * dx);
 }
 
 
-double integrate_1d(int n, double dx, double integrand[])
-{
-  int i;
+double integrate_1d(int n, double dx, double integrand[]){
 
-  double integral = 0.0;
+    int i;
+    double integral = 0.0;
 
-  integral = 0.5*(integrand[0] + integrand[n-1]);
-
-  for (i = 1; i < (n-1); i++)
-  {
-
-    integral = integral + integrand[i];
-  }
-
-  return integral * dx;
+    integral = 0.5*(integrand[0] + integrand[n-1]);
+    for(i = 1; i < (n-1); ++i){
+        integral = integral + integrand[i];
+    }
+    return (integral*dx);
 }
-//''''''''''''''''''############################################################//''''''''''''''''''############################################################//''''''''''''''''''############################################################//''''''''''''''''''############################################################
-//''''''''''''''''''############################################################//''''''''''''''''''############################################################//''''''''''''''''''############################################################
-//''''''''''''''''''############################################################//''''''''''''''''''############################################################
-//''''''''''''''''''############################################################
-//''''''''''''''''''############################################################
-//''''''''''''''''''############################################################
-//''''''''''''''''''############################################################//''''''''''''''''''############################################################
-//''''''''''''''''''############################################################//''''''''''''''''''############################################################//''''''''''''''''''############################################################
-
-
-
-
-
-
-
