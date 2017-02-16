@@ -7,15 +7,14 @@
 #include <string.h>
 #include <ctype.h>
 
-int InputFunctionDipole(char *inputfile, double **q1, double **q2, double **V, double **mux, double **muy, double **muz, int *nq1, int *nq2, double *v_min, int pipeflag){
+int InputFunctionDipole(char *inputfile, double **q1, double **q2, double **V, double **mux, double **muy, double **muz, int *nq1, int *nq2){
 
     char *comment = "#%\n";
     int i, rows, comment_flag, control;
     char *line, buffer[_MaxLineLength_];
     FILE *fd;
 
-    if(pipeflag == 1)   fd = stdin;
-    else                fd = fopen(inputfile, "r");
+    fd = fopen(inputfile, "r");
     if(fd == NULL){
         fprintf(stderr, "\n(-) ERROR opening input-file: \"%s\"", inputfile);
         fprintf(stderr, "\n    Exiting...\n\n");
@@ -72,10 +71,6 @@ int InputFunctionDipole(char *inputfile, double **q1, double **q2, double **V, d
           fprintf(stderr, "\n(-) ERROR reading data from input-file \"%s\".", inputfile);
           fprintf(stderr, "\n    Aborting - please check your input...\n\n");
           exit(1);
-        }
-
-        if((*V)[rows] < *v_min){
-            *v_min = (*V)[rows];
         }
 
         ++rows;

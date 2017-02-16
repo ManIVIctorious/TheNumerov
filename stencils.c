@@ -4,6 +4,23 @@
 
 int get_stencil(double stencil[], int n_stencil){
 
+    int i, control = -1;
+
+// check for implementation of requested stencil
+//  for now only the stecils from 3 to 13 are implemented
+    for(i = 3; i <= 13; i+=2){
+        if(n_stencil == i){
+            control = 0;
+            break;
+        }
+    }
+    if(control == -1){
+        fprintf(stderr, "\n (-) Error no data for %d-point stencil available.", n_stencil);
+        fprintf(stderr, "\n     Aborting - please check your input...\n\n");
+        exit(-1);
+    }
+
+// fill the stencil array
     switch(n_stencil){
         case 3:
             stencil[0]   =  1.0;
@@ -18,7 +35,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[7]   =  0.0;
             stencil[8]   =  1.0;
   
-            return 1;
+            return 0;
   
         case 5:
             stencil[0]   =   0.0;
@@ -51,7 +68,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[23]  =   0.0;
             stencil[24]  =   0.0;
   
-            return 1;
+            return 0;
   
         case 7:
             stencil[0]   =    0.0;
@@ -110,7 +127,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[47]  =    0.0;
             stencil[48]  =    0.0;
 
-            return 1;
+            return 0;
   
         case 9:
             stencil[0]   =   0.0;
@@ -203,7 +220,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[79]  =   0.0;
             stencil[80]  =   0.0;
    
-            return 1;
+            return 0;
   
         case 11:
             stencil[0]   =   0.0;
@@ -338,7 +355,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[119] =   0.0;
             stencil[120] =   0.0;
   
-            return 1;
+            return 0;
   
         case 13:
             stencil[0]   =    0.0;
@@ -523,10 +540,10 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[167] =    0.0;
             stencil[168] =    0.0;
 
-            return 1;
+            return 0;
   
         default:
         // assignemnt unsuccessful
-            return (-1);
+            return 1;
     }
 }

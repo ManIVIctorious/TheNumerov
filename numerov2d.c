@@ -7,8 +7,11 @@
 #include "spline_interpolate.h"
 #include "mkl_solvers_ee.h"
 
-int InputFunction(char *inputfile, double **q1, double **q2, double **V, int *nq1, int *nq2, double *v_min, int pipeflag);
-int InputFunctionDipole(char *inputfile, double **q1, double **q2, double **V, double **mux, double **muy, double **muz, int *nq1, int *nq2, double *v_min, int pipeflag);
+int get_stencil(double stencil[], int n_stencil);
+double integrate_1d(int n, double dx, double integrand[]);
+double integrate_2d(int nx, int ny, double dx, double integrand[]);
+int InputFunction(char *inputfile, double **q1, double **q2, double **V, int *nq1, int *nq2);
+int InputFunctionDipole(char *inputfile, double **q1, double **q2, double **V, double **mux, double **muy, double **muz, int *nq1, int *nq2);
 
 char          UPLO = 'F';
 
@@ -27,11 +30,7 @@ char          UPLO = 'F';
 
 int main(int argc, char* argv[])
 {
-  int get_stencil(double stencil[], int n_stencil);
   int spline1d();
-
-  double integrate_2d(int nx, int ny, double dx, double integrand[]);
-  double integrate_1d(int n, double dx, double integrand[]);
 
   int i, j, k, l, xsh, ysh;
   int nq1, nq2;
@@ -40,13 +39,10 @@ int main(int argc, char* argv[])
   int control;
   int element;
 
-  int line_number   = 0;
-
   int index;
   int option_index  = 0;
   int n_points      = 0;
   int n_pot         = 0;
-  int n_dip         = 0;
   int n_ts_dip      = 0;
   int n_stencil     = 9;
   int n_entries     = 0;
@@ -54,9 +50,6 @@ int main(int argc, char* argv[])
 
   int n_spline      = 0;
   int analyse       = 0;
-  int set_zero      = 0;
-
-  int * sign;
 
   double dq,dx,dy, x_new, y_new;
   double mass = 1.0;
@@ -71,7 +64,6 @@ int main(int argc, char* argv[])
 
   double v_min = 1.0E100;
 
-  double dummy;
   double freq;
   double integral;
   double ts_dip_square;
@@ -91,11 +83,6 @@ int main(int argc, char* argv[])
   double * stencil;
   double * integrand;
 
-  char c;
-  char line[2048];
-  char tmp_char[128];
-
-  int pipeflag = 0;
   int dipole_flag = 0;
   char *input_file_name  = NULL;
   char *output_file_name = "/dev/stdout";
@@ -117,7 +104,6 @@ int main(int argc, char* argv[])
           {"e_max",      required_argument, 0, 'u'},
           {"spline",     required_argument, 0, 's'},
           {"pipe",             no_argument, 0, 'P'},
-          {"zero",             no_argument, 0, 'z'},
           {"analye",           no_argument, 0, 'a'},
           {"dipole",           no_argument, 0, 'd'},
           {"in-file",    required_argument, 0, 'i'},
@@ -126,7 +112,7 @@ int main(int argc, char* argv[])
         };
       /* getopt_long stores the option index here. */
 
-      i = getopt_long (argc, argv, "hm:k:v:n:l:u:s:zadi:o:", long_options, &option_index);
+      i = getopt_long (argc, argv, "hm:k:v:n:l:u:s:adi:Po:", long_options, &option_index);
 
       /* Detect the end of the options. */
       if (i == -1)
@@ -144,9 +130,9 @@ int main(int argc, char* argv[])
           printf ("\n");
           break;
 
-      //case 'h':
-      //    Help(argv[0], 0);
-      //    exit (0);
+        case 'h':
+//            Help(argv[0], 0);
+            exit (0);
 
     case 'm':
       mass = atof(optarg);
@@ -173,15 +159,11 @@ int main(int argc, char* argv[])
       break;
 
     case 'P':
-        pipeflag = 1;
+        input_file_name = "/dev/stdin";
         break;
 
     case 's':
       n_spline = atoi(optarg);
-      break;
-
-    case 'z':
-      set_zero = 1;
       break;
 
     case 'a':
@@ -206,35 +188,32 @@ int main(int argc, char* argv[])
         }
     }
 
-//// END FLAGS //// END FLAGS //// END FLAGS //// END FLAGS //// END FLAGS //// END FLAGS //// END FLAGS
-  // check input argument if the file is not present give a silly statement
-  if (input_file_name == NULL)
-  {
-    printf("\n\n (-) Please specify an input file ... \n\n");
-    exit (1);
-    // usage
-  }
 
-  // get stencil, in two dimensions the size is n_stencil * n_stencil.
-  stencil = (double *) malloc(n_stencil * n_stencil * sizeof(double) );
+//------------------------------------------------------------------------------------------------------------------
+//  END FLAGS   END FLAGS   END FLAGS   END FLAGS   END FLAGS   END FLAGS   END FLAGS    END FLAGS    END FLAGS
+//------------------------------------------------------------------------------------------------------------------
+// check input argument if the file is not present give a silly statement
+    if (input_file_name == NULL){
+        fprintf(stderr, "\n (-) Please specify input file...\n\n");
+        exit (1);
+    }
 
-  //// ################ der teil isch no zu aktualisieren.
+// stencil has to have an odd number of entries
+    if (n_stencil%2 == 0){
+        fprintf(stderr, "\n (-) Stencil size is given as even (%d), but must be an odd number.", n_stencil);
+        fprintf(stderr, "\n     Aborting - please check your input...\n\n");
+        exit(1);
+    }
 
-  control = get_stencil(stencil, n_stencil);
+// get stencil, in two dimensions the size is n_stencil * n_stencil.
+    stencil = malloc(n_stencil * n_stencil * sizeof(double));
+    control = get_stencil(stencil, n_stencil);
 
-  if (control != 1)
-  {
-    printf("\n\n (-) Error initialising stencil parameters.");
-
-    if (n_stencil%2 == 0)
-     printf("\n     Stencil size is given as even (%d), but must be an odd number.", n_stencil);
-    else
-      printf("\n     No data for %d-point stencial available.", n_stencil);
-
-    printf(  "\n     Aborting - please check your input ... \n\n\n");
-
-    exit(-1);
-  }
+    if(control != 0 ){
+        fprintf(stderr, "\n (-) Error initialising stencil parameters.");
+        fprintf(stderr, "\n     Aborting - please check your input...\n\n");
+        exit(1);
+    }
 
 
 //------------------------------------------------------------------------------------------------------------------
@@ -247,22 +226,38 @@ int main(int argc, char* argv[])
         dip_x = malloc(sizeof(double));
         dip_y = malloc(sizeof(double));
         dip_z = malloc(sizeof(double));
-        n_pot = InputFunctionDipole(input_file_name, &q1, &q2, &v, &dip_x, &dip_y, &dip_z, &nq1, &nq2, &v_min, pipeflag);
+        n_pot = InputFunctionDipole(input_file_name, &q1, &q2, &v, &dip_x, &dip_y, &dip_z, &nq1, &nq2);
     }
     else{
-        n_pot = InputFunction(input_file_name, &q1, &q2, &v, &nq1, &nq2, &v_min, pipeflag);
+        n_pot = InputFunction(input_file_name, &q1, &q2, &v, &nq1, &nq2);
     }
 
-    n_points = nq1*nq2;
+// check if the "N nq1 nq2" line in input file matches the number of data points
+    if(n_pot != nq1*nq2){
+        fprintf(stderr, "\n (-) Error reading data from input-file: '%s'", input_file_name);
+        fprintf(stderr, "\n     Number of Data points (\"%d\") doesn't match \"%d*%d\"", n_pot, nq1, nq2);
+        fprintf(stderr, "\n     Aborting - please check your input...\n\n");
+        exit(1);
+    }
 
-
-// number of points vs stencil
+// there must be at least as many data points as the stencil size
     if (n_pot < n_stencil){
         fprintf(stderr, "\n (-) Error reading data from input-file: '%s'", input_file_name);
         fprintf(stderr, "\n     Insufficient number of data points %d for stencil size %d.", n_pot, n_stencil);
         fprintf(stderr, "\n     Aborting - please check your input...\n\n");
         exit(1);
     }
+
+// get potential minimum and subtract it from the potential
+    for(i = 0; i < n_pot; ++i){
+        if(v[i] < v_min)   v_min = v[i];
+    }
+    for(i = 0; i < n_pot; ++i){
+        v[i] -= v_min;
+    }
+
+
+    n_points=nq1*nq2;
 
 // get spacing interval dx and check for uniform spacing
     dq = q2[1] - q2[0];
@@ -275,14 +270,6 @@ int main(int argc, char* argv[])
 //      exit(0);
 //    }
 //  }
-
-// set potential to zero
-    if(set_zero == 1){
-        for (i = 0; i < n_pot; ++i){
-            v[i] = v[i] - v_min;
-        }
-    }
-
 
 // hier muss das splinen eingebaut werden.
     if (n_spline > 0){
@@ -435,8 +422,6 @@ int main(int argc, char* argv[])
     MKL_INT      ldx = n_points; /* Leading dimension for source arrays in GEMM */
     MKL_INT      ldy = n_points; /* Leading dimension for destination array in GEMM */
 
-    double       trace, smax, eigabs;
-
     M0    = L;
     n_out = L;
     loop  = 0;
@@ -507,7 +492,7 @@ int main(int argc, char* argv[])
 
   for (i=0; i < n_out; i++)
   {
-    fprintf(file_ptr, "  %24.16lf", i, E[i]);
+    fprintf(file_ptr, "  %24.16lf", E[i]);
   }
 
   fprintf(file_ptr, "\n# Mass         %24.16lf", mass);
@@ -915,7 +900,6 @@ for (i = 0; i < n_out; i++)// for all psi
 double integrate_2d(int nq1, int nq2, double dx, double integrand[]){
 
     int i, j,index;
-    int n_points = nq1 * nq2;
     double integral = 0.0;
 
 // inner part, without edges and "RAND"
