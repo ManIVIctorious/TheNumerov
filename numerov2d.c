@@ -13,8 +13,6 @@ double integrate_2d(int nx, int ny, double dx, double integrand[]);
 int InputFunction(char *inputfile, double **q1, double **q2, double **V, int *nq1, int *nq2);
 int InputFunctionDipole(char *inputfile, double **q1, double **q2, double **V, double **mux, double **muy, double **muz, int *nq1, int *nq2);
 
-char          UPLO = 'F';
-
 // used constants
 //
 // factor for -h_bar^2/2m for reduced mass in g
@@ -25,12 +23,7 @@ char          UPLO = 'F';
 // Conversion factors    1.0E20          Ang^2 / m^2
 //                       1.0 / 4184.0    kcal / J
 
-
-//static int verbose_flag;
-
-int main(int argc, char* argv[])
-{
-  int spline1d();
+int main(int argc, char* argv[]){
 
   int i, j, k, l, xsh, ysh;
   int nq1, nq2;
@@ -89,108 +82,102 @@ int main(int argc, char* argv[])
 
   FILE * file_ptr;
 
-  printf("\n\n");
 /// FLAGS // FLAGS /// FLAGS // FLAGS /// FLAGS // FLAGS /// FLAGS // FLAGS /// FLAGS // FLAGS
-  while (1)
-    {
-      static struct option long_options[] =
-        {
-      {"help",             no_argument, 0, 'h'},
-          {"mass",       required_argument, 0, 'm'},
-          {"fkin",       required_argument, 0, 'k'},
-          {"fpot",       required_argument, 0, 'v'},
-          {"n_stencil",  required_argument, 0, 'n'},
-          {"e_min",      required_argument, 0, 'l'},
-          {"e_max",      required_argument, 0, 'u'},
-          {"spline",     required_argument, 0, 's'},
-          {"pipe",             no_argument, 0, 'P'},
-          {"analye",           no_argument, 0, 'a'},
-          {"dipole",           no_argument, 0, 'd'},
-          {"in-file",    required_argument, 0, 'i'},
-          {"out-file",   required_argument, 0, 'o'},
-      { 0, 0, 0, 0 }
+    while(1){
+        static struct option long_options[] = {
+            {"help",             no_argument, 0, 'h'},
+            {"mass",       required_argument, 0, 'm'},
+            {"fkin",       required_argument, 0, 'k'},
+            {"fpot",       required_argument, 0, 'v'},
+            {"n_stencil",  required_argument, 0, 'n'},
+            {"e_min",      required_argument, 0, 'l'},
+            {"e_max",      required_argument, 0, 'u'},
+            {"spline",     required_argument, 0, 's'},
+            {"pipe",             no_argument, 0, 'P'},
+            {"analye",           no_argument, 0, 'a'},
+            {"dipole",           no_argument, 0, 'd'},
+            {"in-file",    required_argument, 0, 'i'},
+            {"out-file",   required_argument, 0, 'o'},
+            { 0, 0, 0, 0 }
         };
-      /* getopt_long stores the option index here. */
+    // getopt_long stores the option index here.
+        i = getopt_long(argc, argv, "hm:k:v:n:l:u:s:adi:Po:", long_options, &option_index);
 
-      i = getopt_long (argc, argv, "hm:k:v:n:l:u:s:adi:Po:", long_options, &option_index);
-
-      /* Detect the end of the options. */
-      if (i == -1)
-        break;
-
-      switch (i)
-        {
-        case 0:
-          /* If this option set a flag, do nothing else now. */
-          if (long_options[option_index].flag != 0)
+    // Detect the end of the options.
+        if(i == -1)
             break;
-          printf ("option %s", long_options[option_index].name);
-          if (optarg)
-            printf (" with arg %s", optarg);
-          printf ("\n");
-          break;
 
-        case 'h':
-//            Help(argv[0], 0);
-            exit (0);
+        switch(i){
+            case 0:
+                /* If this option set a flag, do nothing else now. */
+                if(long_options[option_index].flag != 0)    break;
 
-    case 'm':
-      mass = atof(optarg);
-      break;
+                printf("option %s", long_options[option_index].name);
+                if(optarg)  printf(" with arg %s", optarg);
 
-    case 'k':
-      ekin_factor = atof(optarg);
-      break;
+                printf("\n");
+                break;
 
-    case 'v':
-      epot_factor = atof(optarg);
-      break;
+            case 'h':
+//                Help(argv[0]);
+                exit (0);
 
-    case 'n':
-      n_stencil = atoi(optarg);
-      break;
+            case 'm':
+                mass = atof(optarg);
+                break;
 
-    case 'l':
-      e_min = atof(optarg);
-      break;
+            case 'k':
+                ekin_factor = atof(optarg);
+                break;
 
-    case 'u':
-      e_max = atof(optarg);
-      break;
+            case 'v':
+                epot_factor = atof(optarg);
+                break;
 
-    case 'P':
-        input_file_name = "/dev/stdin";
-        break;
+            case 'n':
+                n_stencil = atoi(optarg);
+                break;
 
-    case 's':
-      n_spline = atoi(optarg);
-      break;
+            case 'l':
+                e_min = atof(optarg);
+                break;
 
-    case 'a':
-      analyse = 1;
-      break;
+            case 'u':
+                e_max = atof(optarg);
+                break;
 
-    case 'd':
-      dipole_flag = 1;
-      break;
+            case 'P':
+                input_file_name = "/dev/stdin";
+                break;
 
-    case 'i':
-      input_file_name = optarg;
-      break;
+            case 's':
+                n_spline = atoi(optarg);
+                break;
 
-    case 'o':
-      output_file_name = optarg;
-      break;
+            case 'a':
+                analyse = 1;
+                break;
 
-        default:
-          printf("\n\n (-) Unkown flag %d - aborting. Please check your input.\n\n\n", option_index);
-          exit (-1);
+            case 'd':
+                dipole_flag = 1;
+                break;
+
+            case 'i':
+                input_file_name = optarg;
+                break;
+
+            case 'o':
+                output_file_name = optarg;
+                break;
+
+            default:
+//               Help(argv[0]);
+                exit(0);
         }
     }
 
-
 //------------------------------------------------------------------------------------------------------------------
-//  END FLAGS   END FLAGS   END FLAGS   END FLAGS   END FLAGS   END FLAGS   END FLAGS    END FLAGS    END FLAGS
+// Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input
 //------------------------------------------------------------------------------------------------------------------
 // check input argument if the file is not present give a silly statement
     if (input_file_name == NULL){
@@ -198,27 +185,6 @@ int main(int argc, char* argv[])
         exit (1);
     }
 
-// stencil has to have an odd number of entries
-    if (n_stencil%2 == 0){
-        fprintf(stderr, "\n (-) Stencil size is given as even (%d), but must be an odd number.", n_stencil);
-        fprintf(stderr, "\n     Aborting - please check your input...\n\n");
-        exit(1);
-    }
-
-// get stencil, in two dimensions the size is n_stencil * n_stencil.
-    stencil = malloc(n_stencil * n_stencil * sizeof(double));
-    control = get_stencil(stencil, n_stencil);
-
-    if(control != 0 ){
-        fprintf(stderr, "\n (-) Error initialising stencil parameters.");
-        fprintf(stderr, "\n     Aborting - please check your input...\n\n");
-        exit(1);
-    }
-
-
-//------------------------------------------------------------------------------------------------------------------
-// Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input
-//------------------------------------------------------------------------------------------------------------------
     q1 = malloc(sizeof(double));
     q2 = malloc(sizeof(double));
     v  = malloc(sizeof(double));
@@ -248,6 +214,31 @@ int main(int argc, char* argv[])
         exit(1);
     }
 
+
+//------------------------------------------------------------------------------------------------------------------
+//   Stencils  Stencils  Stencils  Stencils  Stencils  Stencils  Stencils  Stencils  Stencils  Stencils  Stencils
+//------------------------------------------------------------------------------------------------------------------
+// stencil has to have an odd number of entries
+    if (n_stencil%2 == 0){
+        fprintf(stderr, "\n (-) Stencil size is given as even (%d), but must be an odd number.", n_stencil);
+        fprintf(stderr, "\n     Aborting - please check your input...\n\n");
+        exit(1);
+    }
+
+// get stencil, in two dimensions the size is n_stencil * n_stencil.
+    stencil = malloc(n_stencil * n_stencil * sizeof(double));
+    control = get_stencil(stencil, n_stencil);
+
+    if(control != 0 ){
+        fprintf(stderr, "\n (-) Error initialising stencil parameters.");
+        fprintf(stderr, "\n     Aborting - please check your input...\n\n");
+        exit(1);
+    }
+
+
+//------------------------------------------------------------------------------------------------------------------
+// Body  Body  Body  Body  Body  Body  Body  Body  Body  Body  Body  Body  Body  Body  Body  Body  Body  Body  Body
+//------------------------------------------------------------------------------------------------------------------
 // get potential minimum and subtract it from the potential
     for(i = 0; i < n_pot; ++i){
         if(v[i] < v_min)   v_min = v[i];
@@ -484,7 +475,7 @@ int main(int argc, char* argv[])
 
     exit(0);
   }
-//'###########################################################################################################################################################//'###########################################################################################################################################################
+//'###########################################################################################################################################################
 //'###########################################################################################################################################################
 //'###########################################################################################################################################################
   // Output eigenvalues
