@@ -27,7 +27,6 @@ int main(int argc, char* argv[]){
 
   int i, j, k, l, xsh, ysh;
   int nq1, nq2;
-  int n_q1_new, n_q2_new;
 
   int control;
   int element;
@@ -35,7 +34,6 @@ int main(int argc, char* argv[]){
   int index;
   int option_index  = 0;
   int n_points      = 0;
-  int n_pot         = 0;
   int n_ts_dip      = 0;
   int n_stencil     = 9;
   int n_entries     = 0;
@@ -44,7 +42,7 @@ int main(int argc, char* argv[]){
   int n_spline      = 0;
   int analyse       = 0;
 
-  double dq,dx,dy, x_new, y_new;
+  double dq,dx,dy;
   double mass = 1.0;
   double ekin_param = -1.05457180013E-34 * 1.05457180013E-34 / 2.0 / 1.66053904020E-27 * 1.0E20 * 6.02214085774E23 / 4184.0;
   double kcal_per_mol_to_inv_cm = 219474.6313705/627.509469;
@@ -180,7 +178,7 @@ int main(int argc, char* argv[]){
 // Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input
 //------------------------------------------------------------------------------------------------------------------
 // check input argument if the file is not present give a silly statement
-    if (input_file_name == NULL){
+    if(input_file_name == NULL){
         fprintf(stderr, "\n (-) Please specify input file...\n\n");
         exit (1);
     }
@@ -192,24 +190,24 @@ int main(int argc, char* argv[]){
         dip_x = malloc(sizeof(double));
         dip_y = malloc(sizeof(double));
         dip_z = malloc(sizeof(double));
-        n_pot = InputFunctionDipole(input_file_name, &q1, &q2, &v, &dip_x, &dip_y, &dip_z, &nq1, &nq2);
+        n_points = InputFunctionDipole(input_file_name, &q1, &q2, &v, &dip_x, &dip_y, &dip_z, &nq1, &nq2);
     }
     else{
-        n_pot = InputFunction(input_file_name, &q1, &q2, &v, &nq1, &nq2);
+        n_points = InputFunction(input_file_name, &q1, &q2, &v, &nq1, &nq2);
     }
 
 // check if the "N nq1 nq2" line in input file matches the number of data points
-    if(n_pot != nq1*nq2){
+    if(n_points != nq1*nq2){
         fprintf(stderr, "\n (-) Error reading data from input-file: '%s'", input_file_name);
-        fprintf(stderr, "\n     Number of Data points (\"%d\") doesn't match \"%d*%d\"", n_pot, nq1, nq2);
+        fprintf(stderr, "\n     Number of Data points (\"%d\") doesn't match \"%d*%d\"", n_points, nq1, nq2);
         fprintf(stderr, "\n     Aborting - please check your input...\n\n");
         exit(1);
     }
 
 // there must be at least as many data points as the stencil size
-    if (n_pot < n_stencil){
+    if(n_points < n_stencil){
         fprintf(stderr, "\n (-) Error reading data from input-file: '%s'", input_file_name);
-        fprintf(stderr, "\n     Insufficient number of data points %d for stencil size %d.", n_pot, n_stencil);
+        fprintf(stderr, "\n     Insufficient number of data points %d for stencil size %d.", n_points, n_stencil);
         fprintf(stderr, "\n     Aborting - please check your input...\n\n");
         exit(1);
     }
@@ -219,7 +217,7 @@ int main(int argc, char* argv[]){
 //   Stencils  Stencils  Stencils  Stencils  Stencils  Stencils  Stencils  Stencils  Stencils  Stencils  Stencils
 //------------------------------------------------------------------------------------------------------------------
 // stencil has to have an odd number of entries
-    if (n_stencil%2 == 0){
+    if(n_stencil%2 == 0){
         fprintf(stderr, "\n (-) Stencil size is given as even (%d), but must be an odd number.", n_stencil);
         fprintf(stderr, "\n     Aborting - please check your input...\n\n");
         exit(1);
@@ -240,21 +238,18 @@ int main(int argc, char* argv[]){
 // Body  Body  Body  Body  Body  Body  Body  Body  Body  Body  Body  Body  Body  Body  Body  Body  Body  Body  Body
 //------------------------------------------------------------------------------------------------------------------
 // get potential minimum and subtract it from the potential
-    for(i = 0; i < n_pot; ++i){
+    for(i = 0; i < n_points; ++i){
         if(v[i] < v_min)   v_min = v[i];
     }
-    for(i = 0; i < n_pot; ++i){
+    for(i = 0; i < n_points; ++i){
         v[i] -= v_min;
     }
-
-
-    n_points=nq1*nq2;
 
 // get spacing interval dx and check for uniform spacing
     dq = q2[1] - q2[0];
 
 // testing equal spacing is more complicated in two dimensions.
-//  for (i = 1; i < n_pot-1; i++){
+//  for (i = 1; i < n_points-1; i++){
 //    if ( fabs(q1[i+1] - q1[i] - dq) > spacing_threshold){
 //      printf("\n\n (-) Error reading data from input-file: '%s'", input_file_name);
 //      printf(  "\n     Data not uniformly spaced. Exiting ... \n\n");
@@ -262,43 +257,32 @@ int main(int argc, char* argv[]){
 //    }
 //  }
 
-// hier muss das splinen eingebaut werden.
-    if (n_spline > 0){
-        n_q1_new = (nq1 - 1) * (n_spline + 1) + 1;
-        n_q2_new = (nq2 - 1) * (n_spline + 1) + 1;
 
-        n_points = n_q1_new * n_q2_new;
+//------------------------------------------------------------------------------------------------------------------
+//  Spline  Spline  Spline  Spline  Spline  Spline  Spline  Spline  Spline  Spline  Spline  Spline  Spline  Spline
+//------------------------------------------------------------------------------------------------------------------
+    if(n_spline > 0){
+    // new number of points by splining
+        n_points = ((nq1 - 1) * (n_spline + 1) + 1) * ((nq2 - 1) * (n_spline + 1) + 1);
 
-        q1  = realloc(q1, (n_points + 1) * sizeof(double) );
-        q2  = realloc(q2, (n_points + 1) * sizeof(double) );
-        v   = realloc(v,  (n_points + 1) * sizeof(double) );
-
+    // reallocate memory and call spline function
+        q1  = realloc(q1, n_points * sizeof(double));
+        q2  = realloc(q2, n_points * sizeof(double));
+        v   = realloc(v,  n_points * sizeof(double));
         spline_interpolate(nq1, nq2, n_spline, q1, q2, v);
 
-    // Finally interpolate 2d
-//        dx = x[nq2]  - x[0];
-//        dy = y[1]   - y[0];
-        dx = dy = dq;
-        for (i=0; i < n_points; i++){
-            j=i/n_q2_new;
-            k=i%n_q2_new;
+    // set new values for number of points for q1 and q2 and new dq
+        nq1 = (nq1 - 1) * (n_spline + 1) + 1;
+        nq2 = (nq2 - 1) * (n_spline + 1) + 1;
+        dq = dq / (double) (n_spline + 1);
 
-            x_new = q1[0] + dx * (double) (i/n_q2_new) / (double) (n_spline + 1);
-            y_new = q2[0] + dy * (double) (i%n_q2_new) / (double) (n_spline + 1); // careful - change to dy
-
-            q1[i]=x_new;
-            q2[i]=y_new;
-
-//          printf("%4d  %3d  %4d   -  %12.8lf   %12.8lf   %12.8lf\n", i, j, k, x_new, y_new, z_new[i]);
-//          printf(" %12.8lf   %12.8lf   %12.8lf\n", x_new, y_new, v[i]);
-
-//          if ( k == n_q2_new-1)
-//              printf("\n");
+    // set new values for q1 and q2:
+    //  add 1 step to q1 all "nq2"th iteration
+    //  add 1 step to q2 every iteration, reset to 0 at every "nq2"th
+        for(i = 0; i < n_points; i++){
+            q1[i] = q1[0] + dq * (double) (i/nq2);
+            q2[i] = q2[0] + dq * (double) (i%nq2);
         }
-//      printf("bis doher kimpa a no\n");
-        dq= q2[1]-q2[0];
-        nq1=n_q1_new;
-        nq2=n_q2_new;
     }
 
 // apply kinetic energy factor and spacing to ekin_param
@@ -306,79 +290,57 @@ int main(int argc, char* argv[]){
 //printf("%lf, x0 = %lf, x1 = %lf \n",ekin_param,q2[0],q2[1]);
 
 
-//////////////////////////////////////CREATING THE MATRIX USING CSR
-/// intel style CSR needs 1 as starting index. !!!!!!!!!!!!
-  // request MKL types
+//------------------------------------------------------------------------------------------------------------------
+// MKL FEAST eigenvalue solver  MKL FEAST eigenvalue solver  MKL FEAST eigenvalue solver MKL FEAST eigenvalue solver
+//------------------------------------------------------------------------------------------------------------------
     char          UPLO = 'F';
     const MKL_INT N = n_points;
     MKL_INT       rows_A[n_points+1];
 
     rows_A[0] = 1;
 
-/*
-    // calculate n_entries
-    for (i = n_stencil/2+1; i < n_stencil; i++)
-    {
-      max_entries = max_entries + 2*i;
-    }
-
-    max_entries = max_entries + n_stencil * (n_points - n_stencil + 1);
-*/
     // calculate max_entries
-    int sum_q1=nq1,sum_q2=nq2;
+    int sum_q1 = nq1;
+    int sum_q2 = nq2;
 
-    for ( i = 1; i<n_stencil/2+1; i++)
-    {
-     sum_q1=sum_q1 + 2*(nq1-i);
-     sum_q2=sum_q2 + 2*(nq2-i);
+    for(i = 1; i < (n_stencil/2+1); i++){
+        sum_q1=sum_q1 + 2*(nq1-i);
+        sum_q2=sum_q2 + 2*(nq2-i);
     }
     max_entries = sum_q1*sum_q2; // upper estimation for nnz entries in the matrix, but the easy way to code.
 
-//    MKL_INT       cols_A[max_entries];
-//   double        vals_A[max_entries];
 
     MKL_INT     *cols_A = (MKL_INT *) malloc( max_entries * sizeof(MKL_INT));
     double      *vals_A = (double * ) malloc( max_entries * sizeof(double) );
 
-    for (i = 0; i < nq1; i++)
-    {
-     for (j=0; j < nq2; j++)
-     {
-      for (xsh = -n_stencil/2; xsh < n_stencil/2 + 1; xsh++)
-      {
+    for(i = 0; i < nq1; i++){
+        for(j = 0; j < nq2; j++){
+            for(xsh = -n_stencil/2; xsh < n_stencil/2 + 1; xsh++){
+                
+                if( (i+xsh > -1) && (i+xsh < nq1) ){
+                    for(ysh = -n_stencil/2; ysh < n_stencil/2 + 1; ysh++){
 
-    if ( (i+xsh > -1) && ( i+xsh < nq1))
-    {
-          for (ysh = -n_stencil/2; ysh < n_stencil/2 + 1; ysh++)
-          {
-           if ( (j+ysh > -1) && ( j+ysh < nq2))
-        {
-          element = (i + xsh)*nq2 + j+ysh;
+                        if( (j+ysh > -1) && ( j+ysh < nq2) ){
+                            element = (i + xsh)*nq2 + j+ysh;
+                            cols_A[n_entries] = element+1; // wieso +1? weil intel!!
 
-          cols_A[n_entries] = element+1; // wieso +1? weil intel!!
+                        // stencil entries have to be divised by 2 to get the right result.
+                        //  in three dimensions it should be a division by 4
+                            vals_A[n_entries] = ekin_param * stencil[(xsh+n_stencil/2)*n_stencil+ysh+n_stencil/2]/2;
 
+                        // add potential to diagonal element
+                            if(xsh == 0 && ysh ==0){
+                                vals_A[n_entries] = vals_A[n_entries] + v[i*nq2+j] * epot_factor;
+                            }
 
-              vals_A[n_entries] = ekin_param * stencil[(xsh+n_stencil/2)*n_stencil+ysh+n_stencil/2]/2;
-              // stencil entries have to be divised by 2 to get the right result. in three dimensions it should be /4
-
-
-              // add potential to diagonal element
-              if (xsh == 0 && ysh ==0)
-              {
-               vals_A[n_entries] = vals_A[n_entries] + v[i*nq2+j] * epot_factor;
-
-                //  printf("potential added   %20.8lf", vals_A[n_entries]);
-              }
-
-           n_entries ++;
-       }
-      }
-    }
-      }
+                            n_entries ++;
+                        }
+                    }
+                }
+            }
       // after inserting all entries in a row the total number of entries is inserted in the CSR format.
-      //printf("\nn %d\n", n_entries +1 );
       rows_A[i*nq2+j+1]=n_entries+1;
-      }
+        }
     }
 
 
@@ -386,14 +348,12 @@ int main(int argc, char* argv[]){
 ///// START EIGENVALUE CALCULATION
 
     MKL_INT      fpm[128];      /* Array to pass parameters to Intel MKL Extended Eigensolvers */
-    //    double       Emin, Emax;    /* Lower/upper bound of search interval [Emin,Emax] */
 
     double       epsout;        /* Relative error on the trace */
     MKL_INT      loop;          /* Number of refinement loop */
     MKL_INT      L = n_points/2;
     MKL_INT      M0;            /* Initial guess for subspace dimension to be used */
     MKL_INT      n_out = 5;
-
 
 
     double       E[n_points];         /* Eigenvalues */
@@ -422,22 +382,22 @@ int main(int argc, char* argv[]){
     feastinit(fpm); /* OUT: Array is used to pass parameters to Intel MKL Extended Eigensolvers */
 
     dfeast_scsrev(
-        &UPLO,   /* IN: UPLO = 'F', stores the full matrix */
-        &N,      /* IN: Size of the problem */
-        vals_A,  /* IN: CSR matrix A, values of non-zero elements */
-        rows_A,  /* IN: CSR matrix A, index of the first non-zero element in row */
-        cols_A,  /* IN: CSR matrix A, columns indices for each non-zero element */
-        fpm,     /* IN/OUT: Array is used to pass parameters to Intel MKL Extended Eigensolvers */
-        &epsout, /* OUT: Relative error of on the trace */
-        &loop,   /* OUT: Contains the number of refinement loop executed */
-        &e_min,   /* IN: Lower bound of search interval */
-        &e_max,   /* IN: Upper bound of search interval */
-        &M0,     /* IN: The initial guess for subspace dimension to be used. */
-        E,       /* OUT: The first M entries of Eigenvalues */
-        X,       /* IN/OUT: The first M entries of Eigenvectors */
-        &n_out,  /* OUT: The total number of eigenvalues found in the interval */
-        res,     /* OUT: The first n_out components contain the relative residual vector */
-        &info    /* OUT: Error code */
+        &UPLO,      // IN: UPLO = 'F', stores the full matrix
+        &N,         // IN: Size of the problem
+        vals_A,     // IN: CSR matrix A, values of non-zero elements
+        rows_A,     // IN: CSR matrix A, index of the first non-zero element in row
+        cols_A,     // IN: CSR matrix A, columns indices for each non-zero element
+        fpm,        // IN/OUT: Array is used to pass parameters to Intel MKL Extended Eigensolvers
+        &epsout,    // OUT: Relative error of on the trace
+        &loop,      // OUT: Contains the number of refinement loop executed
+        &e_min,     // IN: Lower bound of search interval
+        &e_max,     // IN: Upper bound of search interval
+        &M0,        // IN: The initial guess for subspace dimension to be used.
+        E,          // OUT: The first M entries of Eigenvalues
+        X,          // IN/OUT: The first M entries of Eigenvectors
+        &n_out,     // OUT: The total number of eigenvalues found in the interval
+        res,        // OUT: The first n_out components contain the relative residual vector
+        &info       // OUT: Error code
         );
 
     // Error output
@@ -446,9 +406,9 @@ int main(int argc, char* argv[]){
         printf(" (-) Routine sfeast_scsrev returns code of ERROR: %i\n\n\n", (int)info);
         return 1;
     }
-//'###########################################################################################################################################################
-//'###########################################################################################################################################################
-//'###########################################################################################################################################################
+//'#################################################################################################################
+//'#################################################################################################################
+//'#################################################################################################################
     // get norm  <-------------- sollte nun auch 2d lafn
     integrand = (double *) calloc(n_points, sizeof(double) );
 
@@ -475,9 +435,9 @@ int main(int argc, char* argv[]){
 
     exit(0);
   }
-//'###########################################################################################################################################################
-//'###########################################################################################################################################################
-//'###########################################################################################################################################################
+//'#################################################################################################################
+//'#################################################################################################################
+//'#################################################################################################################
   // Output eigenvalues
   fprintf(file_ptr, "# Eigenvalues");
 
@@ -508,9 +468,9 @@ int main(int argc, char* argv[]){
     fprintf(file_ptr, "  %12.5e", freq);
       }
   }
-//'###########################################################################################################################################################
-//'###########################################################################################################################################################
-//'###########################################################################################################################################################
+//'#################################################################################################################
+//'#################################################################################################################
+//'#################################################################################################################
 
   if (analyse == 1)
   {
@@ -573,10 +533,10 @@ int main(int argc, char* argv[]){
       }
     }
     fprintf(file_ptr, "\n#\n#");
-//'###########################################################################################################################################################
-//'###########################################################################################################################################################
+//'#################################################################################################################
+//'#################################################################################################################
 // STENCIL TO BE APPLIED
-//'###########################################################################################################################################################
+//'#################################################################################################################
     // kinetic energy output
 
     fprintf(file_ptr, "\n# Kinetic Energy:\n#");
@@ -709,9 +669,9 @@ for (i = 0; i < n_out; i++)// for all psi
 //#####################################################################################
 //printf("ENDE\n");//*/
   }// if (analyse == 1)
-//'###########################################################################################################################################################
-//'###########################################################################################################################################################
-//'###########################################################################################################################################################
+//'#################################################################################################################
+//'#################################################################################################################
+//'#################################################################################################################
 // NOCH ZU ERLEDIGEN
   if (dipole_flag == 1)
   {
@@ -857,8 +817,8 @@ for (i = 0; i < n_out; i++)// for all psi
     fprintf(file_ptr, "\n#\n#");
   }
 //}
-//'###########################################################################################################################################################
-//'###########################################################################################################################################################
+//'#################################################################################################################
+//'#################################################################################################################
   fprintf(file_ptr,"\n# Potential and Eigenfunctions: %d datapoints\n", n_points);
 
   // Output eigenfunctions
