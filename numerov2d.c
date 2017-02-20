@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <ctype.h>
-#include <string.h>
 #include <getopt.h>
 #include "spline_interpolate.h"
 #include "mkl_solvers_ee.h"
@@ -90,7 +88,7 @@ int main(int argc, char* argv[]){
             {"e_max",      required_argument, 0, 'u'},
             {"spline",     required_argument, 0, 's'},
             {"pipe",             no_argument, 0, 'P'},
-            {"analye",           no_argument, 0, 'a'},
+            {"analyze",          no_argument, 0, 'a'},
             {"dipole",           no_argument, 0, 'd'},
             {"in-file",    required_argument, 0, 'i'},
             {"out-file",   required_argument, 0, 'o'},
@@ -232,9 +230,6 @@ int main(int argc, char* argv[]){
     }
 
 
-//------------------------------------------------------------------------------------------------------------------
-// Body  Body  Body  Body  Body  Body  Body  Body  Body  Body  Body  Body  Body  Body  Body  Body  Body  Body  Body
-//------------------------------------------------------------------------------------------------------------------
 // get potential minimum and subtract it from the potential
     for(i = 0; i < n_points; ++i){
         if(v[i] < v_min)   v_min = v[i];
@@ -434,441 +429,361 @@ int main(int argc, char* argv[]){
 //'#################################################################################################################
 //'#################################################################################################################
     // get norm  <-------------- sollte nun auch 2d lafn
-    integrand = (double *) calloc(n_points, sizeof(double) );
+    integrand = calloc(n_points, sizeof(double));
 
-    for (i = 0; i < n_out; i++)
-    {
+    for(i = 0; i < n_out; i++){
+        for (j = 0; j < n_points; j++){
+            integrand[j] = X[j+i*n_points] * X[j+i*n_points];
+        }
 
-      for (j = 0; j < n_points; j++)
-      {
-        integrand[j] = X[j+i*n_points] * X[j+i*n_points];
-      }
+        integral = integrate_2d(nq1,nq2, dq, integrand);
 
-      integral = integrate_2d(nq1,nq2, dq, integrand);
-
-      for (j = 0; j < n_points; j++)
-      {
-    X[j+i*n_points] = X[j+i*n_points] / sqrt(integral);
-      }
-  }
-
-  if ( (file_ptr = fopen(output_file_name,"w")) == NULL)
-  {
-    printf("\n\n (-) Error opening output-file: '%s'", output_file_name);
-    printf(  "\n     Exiting ... \n\n");
-
-    exit(0);
-  }
-//'#################################################################################################################
-//'#################################################################################################################
-//'#################################################################################################################
-  // Output eigenvalues
-  fprintf(file_ptr, "# Eigenvalues");
-
-  for (i=0; i < n_out; i++)
-  {
-    fprintf(file_ptr, "  %24.16lf", E[i]);
-  }
-
-  fprintf(file_ptr, "\n# Mass         %24.16lf", mass);
-
-  fprintf(file_ptr,"\n#");
-
-    fprintf(file_ptr, "\n# Frequencies:\n#");
-
-    fprintf(file_ptr, "\n# ");
-
-    for (i = 0; i < (n_out - 1); i++)
-      fprintf(file_ptr,"%11d   ", i);
-
-    element = 0;
-    for (i = 1; i < n_out; i++)
-    {
-      fprintf(file_ptr, "\n#%3d",i);
-
-      for (j = 0; j < i; j++)
-      {
-    freq = 219474.6313705/627.509469 * epot_factor * (E[i] - E[j]);
-    fprintf(file_ptr, "  %12.5e", freq);
-      }
-  }
-//'#################################################################################################################
-//'#################################################################################################################
-//'#################################################################################################################
-
-  if (analyse == 1)
-  {
-    // Orthogonality output
-
-    fprintf(file_ptr, "\n#");
-
-    fprintf(file_ptr, "\n# Orthonormality:\n#");
-
-    fprintf(file_ptr, "\n# ");
-
-    for (i=0; i < n_out; i++)
-      fprintf(file_ptr,"%11d   ", i);
-
-    for (i = 0; i < n_out; i++)
-    {
-      fprintf(file_ptr, "\n#%3d",i);
-
-      for (j = 0; j < (i+1); j++)
-      {
-    for (k = 0; k < n_points; k++)
-        {
-      // generate integrand
-      integrand[k] = X[k+i*n_points]*X[k+j*n_points];
+        for (j = 0; j < n_points; j++){
+            X[j+i*n_points] = X[j+i*n_points] / sqrt(integral);
+        }
     }
 
-    integral = integrate_2d(nq1, nq2, dq, integrand);
 
-    fprintf(file_ptr, "  %12.5e", integral);
-      }
+//------------------------------------------------------------------------------------------------------------------
+//  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output
+//------------------------------------------------------------------------------------------------------------------
+// open output file
+    file_ptr = fopen(output_file_name, "w");
+    if(file_ptr == NULL){
+        printf("\n\n (-) Error opening output-file: '%s'", output_file_name);
+        printf(  "\n     Exiting ... \n\n");
+        exit(0);
     }
-    fprintf(file_ptr, "\n#");
+
+// output eigenvalues
+    fprintf(file_ptr, "# Eigenvalues:");
+    for(i = 0; i < n_out; i++){
+        fprintf(file_ptr, " %24.16lf", E[i]);
+    }
+
+    fprintf(file_ptr, "\n# Mass:        %24.16lf", mass);
+
+// output and frequencies
+    fprintf(file_ptr, "\n#\n# Frequencies:\n#\n#");
+    for(i = 0; i < (n_out - 1); i++){
+        fprintf(file_ptr,"%11d   ", i);
+    }
+    for(i = 1; i < n_out; i++){
+        fprintf(file_ptr, "\n#%3d",i);
+
+        for(j = 0; j < i; j++){
+            freq = 219474.6313705/627.509469 * epot_factor * (E[i] - E[j]);
+            fprintf(file_ptr, "  %12.5e", freq);
+        }
+    }
+    fprintf(file_ptr, "\n#\n#");
+
+
+//------------------------------------------------------------------------------------------------------------------
+//  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output
+//------------------------------------------------------------------------------------------------------------------
+//    Analyze  Analyze  Analyze  Analyze  Analyze  Analyze  Analyze  Analyze  Analyze  Analyze  Analyze  Analyze
+//------------------------------------------------------------------------------------------------------------------
+// additional output information
+    if(analyse == 1){
+    // check for ortho-normality of evaluated wave functions:
+    //  calculate int Psi_i*Psi_j dxdy (i.e. <X[i]|X[j]>)
+        fprintf(file_ptr, "\n# Orthonormality:\n#\n#");
+
+        for(i = 0; i < n_out; i++){
+            fprintf(file_ptr, "%11d   ", i);
+        }
+        for(i = 0; i < n_out; i++){
+            fprintf(file_ptr, "\n#%3d",i);
+
+            for(j = 0; j < (i+1); j++){
+                for(k = 0; k < n_points; k++){
+                // generate integrand
+                    integrand[k] = X[k + i*n_points]*X[k + j*n_points];
+                }
+
+                integral = integrate_2d(nq1, nq2, dq, integrand);
+                fprintf(file_ptr, "  %12.5e", integral);
+            }
+        }
+        fprintf(file_ptr, "\n#\n#");
+
 
     // Potential output
+    //  calculate int Psi_i*V*Psi_j dxdy (i.e. <X[i]|V|X[j]>)
+        fprintf(file_ptr, "\n# Potential:\n#\n#");
 
-    fprintf(file_ptr, "\n#");
-
-    fprintf(file_ptr, "\n# Potential:\n#");
-
-    fprintf(file_ptr, "\n# ");
-
-    for (i=0; i < n_out; i++)
-      fprintf(file_ptr,"%11d   ", i);
-
-    for (i = 0; i < n_out; i++)
-    {
-      fprintf(file_ptr, "\n#%3d",i);
-
-      for (j = 0; j < (i+1); j++)
-      {
-    for (k = 0; k < n_points; k++)
-        {
-      // generate integrand
-      integrand[k] = X[k+i*n_points]*X[k+j*n_points] * v[k];
-    }
-
-    integral = integrate_2d(nq1, nq2, dq, integrand);
-
-    fprintf(file_ptr, "  %12.5e", integral);
-      }
-    }
-    fprintf(file_ptr, "\n#\n#");
-//'#################################################################################################################
-//'#################################################################################################################
-// STENCIL TO BE APPLIED
-//'#################################################################################################################
-    // kinetic energy output
-
-    fprintf(file_ptr, "\n# Kinetic Energy:\n#");
-
-    fprintf(file_ptr, "\n# ");
-
-    for (i=0; i < n_out; i++)
-      fprintf(file_ptr,"%11d   ", i);
-
-    for (i = 0; i < n_out; i++)
-    {
-      fprintf(file_ptr, "\n#%3d",i);
-
-      for (j = 0; j < (i+1); j++)
-      {
-//-----------------------------------------------------------------------------------------------------
-        for (k = 0; k < nq1; k++)
-        {
-           for (l = 0; l < nq2; l++)
-           {
-              index = k*nq2+l;
-              integrand[index]=0;
-              for( xsh = -n_stencil/2; xsh < n_stencil/2+1; xsh++)
-              {
-             if ( (k+xsh > -1) && ( k+xsh < nq1))
-             {
-                   for (ysh = -n_stencil/2; ysh < n_stencil/2 + 1; ysh++)
-                   {
-                      if ( (l+ysh > -1) && ( l+ysh < nq2))
-                  {
-                         element = (k + xsh)*nq2 + l+ysh;
-                        integrand[index] = integrand[index] + X[element+i*n_points] * stencil[(xsh+n_stencil/2)*n_stencil+ysh+n_stencil/2]/2; // durch d^2 ist dringend nötig aber schon in ekin_param enthalten.
-                      }
-                   }
-                 }
-              }
-              integrand[index]=integrand[index]*ekin_param*X[index+j*n_points];
-           }
+        for(i = 0; i < n_out; i++){
+            fprintf(file_ptr, "%11d   ", i);
         }
-//--------------------------------------------------------------------------------------------------
-/*  for (k = 0; k < n_points; k++)
-        {
-     // reset integrand because
-     // ekin-operator has to be applyed via a loop
-     integrand[k] = 0.0;
+        for(i = 0; i < n_out; i++){
+            fprintf(file_ptr, "\n#%3d",i);
 
-     // apply stencil
-         for (l = 0; l < n_stencil + 1; l++)
-     {
-       element = k+l-n_stencil/2;
+            for(j = 0; j < (i+1); j++){
+                for(k = 0; k < n_points; k++){
+                // generate integrand
+                    integrand[k] = X[k + i*n_points]*X[k + j*n_points] * v[k];
+                }
 
-       if ( (element > -1) && (element < (n_points +1) ) )
-       {
-         integrand[k] = integrand[k] + X[element+i*n_points] * stencil[l];
-       }
-     }
+                integral = integrate_2d(nq1, nq2, dq, integrand);
+                fprintf(file_ptr, "  %12.5e", integral);
+            }
+        }
+        fprintf(file_ptr, "\n#\n#");
 
-     integrand[k] = ekin_param * integrand[k] * X[k+j*n_points];
 
-    }*/
-//-------------------------------------------------------------------------------------------------------
+    // kinetic energy output
+        fprintf(file_ptr, "\n# Kinetic Energy:\n#\n#");
 
-    integral = integrate_2d(nq1, nq2, dq, integrand);
+        for(i = 0; i < n_out; i++){
+            fprintf(file_ptr,"%11d   ", i);
+        }
 
-    fprintf(file_ptr, "  %12.5e", integral);
-      }
+        for(i = 0; i < n_out; i++){
+            fprintf(file_ptr, "\n#%3d",i);
+
+            for(j = 0; j < (i+1); j++){
+                for(k = 0; k < nq1; k++){
+                    for(l = 0; l < nq2; l++){
+                        index = k*nq2 + l;
+                        integrand[index]=0;
+//------------------------------------------------------------------------------------------------------------------
+                        for(xsh = -n_stencil/2; xsh < (n_stencil/2 + 1); xsh++){
+
+                            if( (k+xsh > -1) && (k+xsh < nq1) ){
+                                for(ysh = -n_stencil/2; ysh < (n_stencil/2 + 1); ysh++){
+
+                                    if( (l+ysh > -1) && (l+ysh < nq2) ){
+                                        element = (k + xsh)*nq2 + l + ysh;
+
+                                    // integrand has to be divided by d^2,
+                                    //  but the division is already set in the "ekin_param" parameter
+                                        integrand[index] = integrand[index] + X[element + i*n_points] * stencil[(xsh + n_stencil/2)*n_stencil + ysh + n_stencil/2]/2;
+                                    }
+                                }
+                            }
+                        }
+//------------------------------------------------------------------------------------------------------------------
+                        integrand[index]=integrand[index]*ekin_param*X[index + j*n_points];
+                    }
+                }
+
+                integral = integrate_2d(nq1, nq2, dq, integrand);
+                fprintf(file_ptr, "  %12.5e", integral);
+            }
+        }
+        fprintf(file_ptr,"\n#\n#");
+
+
+    // calculate coupling
+        double *dichtematrix    = calloc(nq1*nq1, sizeof(double));
+        double *dichtematrix_sq = calloc(nq1*nq1, sizeof(double));
+        double *dm_integrand    = calloc(nq2,     sizeof(double));
+        double *dm_integrand_sq = calloc(nq1,     sizeof(double));
+        int r1,r2;
+
+        fprintf(file_ptr, "\n# Coupling:\n#");
+        for(i = 0; i < n_out; i++){
+        // calculate density-matrix for all wave functions
+            for(r1 = 0; r1 < nq1; r1++){
+                for(r2 = r1; r2 < nq1; r2++){
+                    for(j = 0; j < nq2; j++){
+                        dm_integrand[j] = X[i*n_points + r1*nq2 + j]*X[i*n_points + r2*nq2 + j];
+                    }
+
+                    integral = integrate_1d(nq2, dq, dm_integrand);
+                    dichtematrix[r1*nq1 + r2] = integral;
+
+                    if(r1 != r2){
+                        dichtematrix[r2*nq1 + r1] = integral;
+                    }
+                }
+            }
+
+        // calculate density-matrix square
+        //  careful: density-matrix has dimension nq1 times nq1!
+            for(r1 = 0; r1 < nq1; r1++){
+                for(r2 = r1; r2 < nq1; r2++){
+                    for(j = 0; j < nq1; j++){
+                        dm_integrand_sq[j] = dichtematrix[r1*nq1 + j]*dichtematrix[j*nq1 + r2];
+                    }
+
+                    integral = integrate_1d(nq1, dq, dm_integrand_sq);
+                    dichtematrix_sq[r1*nq1 + r2] = integral;
+
+                    if(r1 != r2){
+                       dichtematrix_sq[r2*nq1 + r1] = integral;
+                    }
+                }
+            }
+
+        // calculate the trace of density-matrix square
+            for(j = 0; j < nq1; j++){
+                dm_integrand_sq[j] = dichtematrix_sq[j*nq1 + j];
+            }
+            integral = integrate_1d(nq1, dq, dm_integrand_sq);
+
+            fprintf(file_ptr, "\n# state %02d: %2.15lf", i, integral);
+        }
+        fprintf(file_ptr,"\n#\n#");
+
+        free(dm_integrand_sq);
+        free(dm_integrand);
+        free(dichtematrix);
+        free(dichtematrix_sq);
+    }// end if(analyse == 1)
+
+
+//------------------------------------------------------------------------------------------------------------------
+//  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output
+//------------------------------------------------------------------------------------------------------------------
+//    Dipole   Dipole   Dipole   Dipole   Dipole   Dipole   Dipole   Dipole   Dipole   Dipole   Dipole   Dipole
+//------------------------------------------------------------------------------------------------------------------
+    if(dipole_flag == 1){
+        n_ts_dip = n_out * (n_out)/2;
+
+        ts_dip_x = malloc(n_ts_dip * sizeof(double));
+        ts_dip_y = malloc(n_ts_dip * sizeof(double));
+        ts_dip_z = malloc(n_ts_dip * sizeof(double));
+
+    // Evaluate x-component of IR-intensity
+    //  calculate int Psi_i * \mu_x * Psi_j dxdy (i.e. <X[i]|\mu_x|X[j]>
+        fprintf(file_ptr, "\n# Dipole - x-component:\n#\n#");
+        for(i = 0; i < n_out; i++){
+            fprintf(file_ptr,"%11d   ", i);
+        }
+
+        element = 0;
+        for(i = 0; i < n_out; i++){
+            fprintf(file_ptr, "\n#%3d",i);
+
+            for(j = 0; j < (i+1); j++){
+                for(k = 0; k < n_points; k++){
+                // generate integrand
+                    integrand[k] = X[k + i*n_points]*X[k + j*n_points] * dip_x[k];
+                }
+
+                integral = integrate_2d(nq1, nq2, dq, integrand);
+                fprintf(file_ptr, "  %12.5e", integral);
+
+                if(i != j){
+                    ts_dip_x[element] = integral;
+                    element ++;
+                }
+            }
+        }
+        fprintf(file_ptr, "\n#\n#");
+
+    // Evaluate y-component of IR-intensity
+    //  calculate int Psi_i * \mu_y * Psi_j dxdy (i.e. <X[i]|\mu_y|X[j]>
+        fprintf(file_ptr, "\n# Dipole - y-component:\n#\n#");
+        for(i = 0; i < n_out; i++){
+            fprintf(file_ptr,"%11d   ", i);
+        }
+
+        element = 0;
+        for(i = 0; i < n_out; i++){
+            fprintf(file_ptr, "\n#%3d",i);
+
+            for(j = 0; j < (i+1); j++){
+                for(k = 0; k < n_points; k++){
+                // generate integrand
+                    integrand[k] = X[k + i*n_points]*X[k + j*n_points] * dip_y[k];
+                }
+
+                integral = integrate_2d(nq1, nq2, dq, integrand);
+                fprintf(file_ptr, "  %12.5e", integral);
+
+                if(i != j){
+                    ts_dip_y[element] = integral;
+                    element ++;
+                }
+            }
+        }
+        fprintf(file_ptr, "\n#\n#");
+
+    // Evaluate z-component of IR-intensity
+    //  calculate int Psi_i * \mu_z * Psi_j dxdy (i.e. <X[i]|\mu_z|X[j]>
+        fprintf(file_ptr, "\n# Dipole - z-component:\n#\n#");
+        for(i = 0; i < n_out; i++){
+            fprintf(file_ptr,"%11d   ", i);
+        }
+
+        element = 0;
+        for(i = 0; i < n_out; i++){
+            fprintf(file_ptr, "\n#%3d",i);
+
+            for(j = 0; j < (i+1); j++){
+                for(k = 0; k < n_points; k++){
+                // generate integrand
+                    integrand[k] = X[k + i*n_points]*X[k + j*n_points] * dip_z[k];
+                }
+
+                integral = integrate_2d(nq1,nq2, dq, integrand);
+                fprintf(file_ptr, "  %12.5e", integral);
+
+                if(i != j){
+                    ts_dip_z[element] = integral;
+                    element ++;
+                }
+            }
+        }
+        fprintf(file_ptr, "\n#\n#");
+
+    // calculate oscillator strength:
+    //  (4m\pi) / (3e^2\hbar) * (<Psi_i|\mu_x|Psi_j> + <Psi_i|\mu_y|Psi_j> + <Psi_i|\mu_z|Psi_j>) * (E_j - E_i)
+        fprintf(file_ptr, "\n# Oscillator strength:\n#\n#");
+        for(i = 0; i < (n_out - 1); i++){
+            fprintf(file_ptr,"%11d   ", i);
+        }
+
+        element = 0;
+        for(i = 1; i < n_out; i++){
+            fprintf(file_ptr, "\n#%3d",i);
+
+            for(j = 0; j < i; j++){
+                ts_dip_square =   ts_dip_x[element]*ts_dip_x[element]
+                                + ts_dip_y[element]*ts_dip_y[element]
+                                + ts_dip_z[element]*ts_dip_z[element];
+                freq = 219474.6313705/627.509469 * epot_factor * (E[i] - E[j]);
+
+                fprintf(file_ptr, "  %12.5e", 4.702E-7 * ts_dip_square * freq);
+                element ++;
+            }
+        }
+        fprintf(file_ptr, "\n#\n#");
+    }// end if(dipole_flag == 1)
+
+
+//------------------------------------------------------------------------------------------------------------------
+//  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output
+//------------------------------------------------------------------------------------------------------------------
+//  Eigenvectors  Eigenvectors  Eigenvectors  Eigenvectors  Eigenvectors  Eigenvectors  Eigenvectors  Eigenvectors
+//------------------------------------------------------------------------------------------------------------------
+// output eigenfunctions
+    fprintf(file_ptr, "\n# Potential and Eigenfunctions: %d datapoints", n_points);
+    fprintf(file_ptr, "\n# N %2d %2d", nq1, nq2);
+    fprintf(file_ptr, "\n");
+
+    for(i = 0; i < n_points; i++){
+    // newline every "nq2"th line
+        if(i%nq2 == 0){
+            fprintf(file_ptr, "\n");
+        }
+
+    // output coordinates q1 and q2 as well as potential
+        fprintf(file_ptr,"%24.16lf    %24.16lf    %24.16lf", q1[i], q2[i], v[i]);
+
+    // output wave functions
+        for(j = 0; j < n_out; j++){
+            fprintf(file_ptr, "    %24.16lf", X[i + j*n_points]);
+        }
+
+        fprintf(file_ptr,"\n");
     }
 
-    fprintf(file_ptr,"\n#");
-
-  // calculate coupling
-//#####################################################################################
-///*
-double *dichtematrix    = (double *) calloc (nq1*nq1, sizeof (double));
-double *dichtematrix_sq = (double *) calloc (nq1*nq1, sizeof (double));
-//printf("im start\n");
-double *dm_integrand    = (double *) calloc (nq2, sizeof (double));
-double *dm_integrand_sq = (double *) calloc (nq1, sizeof (double));
-int r1,r2;
-     fprintf(file_ptr, "\n# COUPLING\n#");
-for (i = 0; i < n_out; i++)// for all psi
-    {
-    // calculate dichtematrix
-    for (r1=0;r1<nq1;r1++)
-        {
-        for (r2=r1; r2<nq1;r2++)
-            {
-             for(j=0;j<nq2;j++)
-                {
-                  dm_integrand[j]=X[i*n_points + r1*nq2 + j]*X[i*n_points + r2*nq2 + j];
-
-                }//endfor j
-             integral = integrate_1d(nq2, dq, dm_integrand);
-             dichtematrix[r1*nq1+r2]= integral;
-             if(r1!=r2)
-             dichtematrix[r2*nq1+r1]= integral;
-            }//endfor r2
-        }//endfor r1
-
-      //calculate dichtematrix quadrat
-    for (r1=0;r1<nq1;r1++)
-        {
-        for (r2=r1; r2<nq1;r2++)
-            {
-             for(j=0;j<nq1;j++)// because dichtematrix is nq1 times nq1
-                {
-                  dm_integrand_sq[j]=dichtematrix[r1*nq1+j]*dichtematrix[j*nq1+r2];
-
-                }//endfor j
-             integral = integrate_1d(nq1, dq, dm_integrand_sq);
-             dichtematrix_sq[r1*nq1+r2]= integral;
-             if(r1!=r2)
-             dichtematrix_sq[r2*nq1+r1]= integral;
-            }//endfor r2
-        }//endfor r1
-
-        // jetzt sollte noch die spur berechnet werden.
-     for(j=0;j<nq1;j++)
-     {
-      dm_integrand_sq[j] = dichtematrix_sq[j*nq1+j];
-     }
-     integral =  integrate_1d(nq1, dq, dm_integrand_sq);
-
-     fprintf(file_ptr, "# state %d: %2.15lf \n",i,integral);
-     //free(dm_integrand_sq);
-     //free(dm_integrand);
-     //free(dichtematrix);
-     //free(dichtematrix_sq);
-    }// endfor i
-//#####################################################################################
-//printf("ENDE\n");//*/
-  }// if (analyse == 1)
-//'#################################################################################################################
-//'#################################################################################################################
-//'#################################################################################################################
-// NOCH ZU ERLEDIGEN
-  if (dipole_flag == 1)
-  {
-
-    n_ts_dip = n_out * (n_out)/2;
-
-    ts_dip_x = (double *) malloc( n_ts_dip * sizeof(double) );
-    ts_dip_y = (double *) malloc( n_ts_dip * sizeof(double) );
-    ts_dip_z = (double *) malloc( n_ts_dip * sizeof(double) );
-
-    fprintf(file_ptr, "\n#");
-
-    fprintf(file_ptr, "\n# Dipole - x-component\n#");
-
-    fprintf(file_ptr, "\n# ");
-
-    for (i=0; i < n_out; i++)
-      fprintf(file_ptr,"%11d   ", i);
-
-    element = 0;
-
-    for (i = 0; i < n_out; i++)
-    {
-      fprintf(file_ptr, "\n#%3d",i);
-
-      for (j = 0; j < (i+1); j++)
-      {
-    for (k = 0; k < n_points; k++)
-        {
-      // generate integrand
-      integrand[k] = X[k+i*n_points]*X[k+j*n_points] * dip_x[k];
-    }
-
-    integral = integrate_2d(nq1, nq2, dq, integrand);
-
-    fprintf(file_ptr, "  %12.5e", integral);
-
-    if (i != j)
-    {
-      ts_dip_x[element] = integral;
-      element ++;
-    }
-      }
-    }
-    fprintf(file_ptr, "\n#\n#");
-
-    fprintf(file_ptr, "\n# Dipole - y-component\n#");
-
-    fprintf(file_ptr, "\n# ");
-
-    for (i = 0; i < n_out; i++)
-      fprintf(file_ptr,"%11d   ", i);
-
-    element = 0;
-
-    for (i = 0; i < n_out; i++)
-    {
-      fprintf(file_ptr, "\n#%3d",i);
-
-      for (j = 0; j < (i+1); j++)
-      {
-    for (k = 0; k < n_points; k++)
-        {
-      // generate integrand
-      integrand[k] = X[k+i*n_points]*X[k+j*n_points] * dip_y[k];
-    }
-
-    integral = integrate_2d(nq1, nq2, dq, integrand);
-
-    fprintf(file_ptr, "  %12.5e", integral);
-
-    if (i != j)
-    {
-      ts_dip_y[element] = integral;
-      element ++;
-    }
-      }
-    }
-    fprintf(file_ptr, "\n#\n#");
-
-    fprintf(file_ptr, "\n# Dipole - z-component\n#");
-
-    fprintf(file_ptr, "\n# ");
-
-    for (i = 0; i < n_out; i++)
-      fprintf(file_ptr,"%11d   ", i);
-
-    element = 0;
-
-    for (i = 0; i < n_out; i++)
-    {
-      fprintf(file_ptr, "\n#%3d",i);
-
-      for (j = 0; j < (i+1); j++)
-      {
-    for (k = 0; k < n_points; k++)
-        {
-      // generate integrand
-      integrand[k] = X[k+i*n_points]*X[k+j*n_points] * dip_z[k];
-    }
-
-    integral = integrate_2d(nq1,nq2, dq, integrand);
-
-    fprintf(file_ptr, "  %12.5e", integral);
-
-    if (i != j)
-    {
-      ts_dip_z[element] = integral;
-      element ++;
-    }
-      }
-    }
-//<------------------------------------------------
-
-    fprintf(file_ptr, "\n#\n#");
-
-    fprintf(file_ptr, "\n# Oscillator strength\n#");
-
-    fprintf(file_ptr, "\n# ");
-
-    for (i = 0; i < (n_out - 1); i++)
-      fprintf(file_ptr,"%11d   ", i);
-
-    element = 0;
-    for (i = 1; i < n_out; i++)
-    {
-      fprintf(file_ptr, "\n#%3d",i);
-
-      for (j = 0; j < i; j++)
-      {
-    ts_dip_square =  ts_dip_x[element] * ts_dip_x[element] + ts_dip_y[element] * ts_dip_y[element]+ ts_dip_z[element] * ts_dip_z[element];
-
-    freq = 219474.6313705/627.509469 * epot_factor * (E[i] - E[j]);
-
-    fprintf(file_ptr, "  %12.5e", 4.702E-7 * ts_dip_square * freq);
-    //fprintf(file_ptr, "  %12.5e", ts_dip_z[element]);
-
-    element ++;
-      }
-    ///////////////////
-
-    }
-    fprintf(file_ptr, "\n#\n#");
-  }
-//}
-//'#################################################################################################################
-//'#################################################################################################################
-  fprintf(file_ptr,"\n# Potential and Eigenfunctions: %d datapoints\n", n_points);
-
-  // Output eigenfunctions
-  for (i = 0; i < n_points; i++)
-  {
-    if(i%nq2==0)
-      fprintf(file_ptr, "\n");
-
-    fprintf(file_ptr,"%24.16lf %24.16lf    %24.16lf", q1[i], q2[i], v[i]);
-
-    for (j=0; j<n_out; j++)
-    {
-      fprintf(file_ptr, "  %24.16lf", X[i+j*n_points]);
-    }
-
-    fprintf(file_ptr,"\n");
-  }
-
-  fprintf(file_ptr,"\n\n");
-
-  fclose(file_ptr);
-
-
-  printf("\n\n");
-
-  exit (0);
+    fclose(file_ptr);
+    return 0;
 }
 
 
