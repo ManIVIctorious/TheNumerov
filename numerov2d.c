@@ -25,24 +25,22 @@ int InputFunctionDipole(char *inputfile, double **q1, double **q2, double **V, d
 
 int main(int argc, char* argv[]){
 
-  int i, j, k, l, xsh, ysh;
+  int i, j, k, l;
   int nq1, nq2;
+  double dq, dq1, dq2;
 
   int control;
-  int element;
 
   int index;
   int option_index  = 0;
   int n_points      = 0;
   int n_ts_dip      = 0;
   int n_stencil     = 9;
-  int n_entries     = 0;
-  int max_entries   = 0;
 
   int n_spline      = 0;
   int analyse       = 0;
 
-  double dq,dx,dy;
+  double dx, dy;
   double mass = 1.0;
   double ekin_param = -1.05457180013E-34 * 1.05457180013E-34 / 2.0 / 1.66053904020E-27 * 1.0E20 * 6.02214085774E23 / 4184.0;
   double kcal_per_mol_to_inv_cm = 219474.6313705/627.509469;
@@ -51,7 +49,7 @@ int main(int argc, char* argv[]){
   double epot_factor = 1.0;
   double e_min = 0.0;
   double e_max = 100.0;
-  double spacing_threshold = 1.0E-12;;
+  double spacing_threshold = 1.0E-12;
 
   double v_min = 1.0E100;
 
@@ -245,17 +243,43 @@ int main(int argc, char* argv[]){
         v[i] -= v_min;
     }
 
-// get spacing interval dx and check for uniform spacing
-    dq = q2[1] - q2[0];
 
-// testing equal spacing is more complicated in two dimensions.
-//  for (i = 1; i < n_points-1; i++){
-//    if ( fabs(q1[i+1] - q1[i] - dq) > spacing_threshold){
-//      printf("\n\n (-) Error reading data from input-file: '%s'", input_file_name);
-//      printf(  "\n     Data not uniformly spaced. Exiting ... \n\n");
-//      exit(0);
-//    }
-//  }
+//------------------------------------------------------------------------------------------------------------------
+//  Check Coordinate Spacing    Check Coordinate Spacing    Check Coordinate Spacing    Check Coordinate Spacing
+//------------------------------------------------------------------------------------------------------------------
+    dq1 = q1[nq2] - q1[0];
+    dq2 = q2[ 1 ] - q2[0];
+    for(i = 1; i < (n_points-nq2); ++i){
+
+    // spacing between q1[i] and q1[i-1]
+        if( (dq1 - (q1[i+nq2] - q1[i]))*(dq1 - (q1[i+nq2] - q1[i])) > spacing_threshold*spacing_threshold ){
+            fprintf(stderr, "\n (-) Error in input file.");
+            fprintf(stderr, "\n     Coordinate spacing not equivalent.");
+            fprintf(stderr, "\n     Aborting - please check your input...\n\n");
+            exit(-1);
+        }
+        dq1 = q1[i+nq2] - q1[i];
+
+    // spacing between q2[i] and q2[i-1]
+        if( (i+1)%nq2 != 0 ){
+            if( (dq2 - (q2[i+1] - q2[i]))*(dq2 - (q2[i+1] - q2[i])) > spacing_threshold*spacing_threshold ){
+                fprintf(stderr, "\n (-) Error in input file.");
+                fprintf(stderr, "\n     Coordinate spacing not equivalent.");
+                fprintf(stderr, "\n     Aborting - please check your input...\n\n");
+                exit(-1);
+            }
+            dq2 = q2[i+1] - q2[i];
+        }
+
+    // spacing between q1[i] and q2[i]
+        if( (dq1 - dq2)*(dq1 - dq2) > spacing_threshold*spacing_threshold ){
+            fprintf(stderr, "\n (-) Error in input file.");
+            fprintf(stderr, "\n     Coordinate spacing not equivalent.");
+            fprintf(stderr, "\n     Aborting - please check your input...\n\n");
+            exit(-1);
+        }
+    }
+    dq = dq1;
 
 
 //------------------------------------------------------------------------------------------------------------------
@@ -287,36 +311,36 @@ int main(int argc, char* argv[]){
 
 // apply kinetic energy factor and spacing to ekin_param
     ekin_param = ekin_param * ekin_factor / dq / dq / mass;
-//printf("%lf, x0 = %lf, x1 = %lf \n",ekin_param,q2[0],q2[1]);
 
 
 //------------------------------------------------------------------------------------------------------------------
 // MKL FEAST eigenvalue solver  MKL FEAST eigenvalue solver  MKL FEAST eigenvalue solver MKL FEAST eigenvalue solver
 //------------------------------------------------------------------------------------------------------------------
-    char          UPLO = 'F';
+    char  UPLO = 'F';
     const MKL_INT N = n_points;
-    MKL_INT       rows_A[n_points+1];
-
-    rows_A[0] = 1;
+    int   n_entries = 0;
+    int   xsh, ysh;
+    int   element;
 
     // calculate max_entries
+    int max_entries   = 0;
     int sum_q1 = nq1;
     int sum_q2 = nq2;
 
-    for(i = 1; i < (n_stencil/2+1); i++){
+    for(i = 1; i < (n_stencil/2 + 1); i++){
         sum_q1=sum_q1 + 2*(nq1-i);
         sum_q2=sum_q2 + 2*(nq2-i);
     }
     max_entries = sum_q1*sum_q2; // upper estimation for nnz entries in the matrix, but the easy way to code.
 
-
-    MKL_INT     *cols_A = (MKL_INT *) malloc( max_entries * sizeof(MKL_INT));
-    double      *vals_A = (double * ) malloc( max_entries * sizeof(double) );
+    MKL_INT     rows_A[n_points+1];
+    MKL_INT     *cols_A = malloc( max_entries * sizeof(MKL_INT));
+    double      *vals_A = malloc( max_entries * sizeof(double) );
 
     for(i = 0; i < nq1; i++){
         for(j = 0; j < nq2; j++){
             for(xsh = -n_stencil/2; xsh < n_stencil/2 + 1; xsh++){
-                
+
                 if( (i+xsh > -1) && (i+xsh < nq1) ){
                     for(ysh = -n_stencil/2; ysh < n_stencil/2 + 1; ysh++){
 
@@ -324,7 +348,7 @@ int main(int argc, char* argv[]){
                             element = (i + xsh)*nq2 + j+ysh;
                             cols_A[n_entries] = element+1; // wieso +1? weil intel!!
 
-                        // stencil entries have to be divised by 2 to get the right result.
+                        // stencil entries have to be divided by 2 to get the right result.
                         //  in three dimensions it should be a division by 4
                             vals_A[n_entries] = ekin_param * stencil[(xsh+n_stencil/2)*n_stencil+ysh+n_stencil/2]/2;
 
@@ -339,10 +363,10 @@ int main(int argc, char* argv[]){
                 }
             }
       // after inserting all entries in a row the total number of entries is inserted in the CSR format.
-      rows_A[i*nq2+j+1]=n_entries+1;
+        rows_A[i*nq2+j+1]=n_entries+1;
         }
     }
-
+    rows_A[0] = 1;
 
 
 ///// START EIGENVALUE CALCULATION
