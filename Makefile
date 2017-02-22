@@ -8,8 +8,8 @@ CFLAGS = -I/usr/local/intel/mkl/include/ -L/usr/local/intel/mkl/lib/intel64 -L/u
 EXE = bin/numerov2d
 # Objekts (.o bzw. .out), Libraries und Dependencies
 # (wenn Abhängigkeit geändert -> make wird neu ausgeführt)
-OBJ =          numerov2d.o stencils.o cubic_spline.o InputFunction.o InputFunctionDipole.o
-DEP = Makefile numerov2d.c stencils.c cubic_spline.c InputFunction.c InputFunctionDipole.c 
+OBJ =          numerov2d.o stencils.o cubic_spline.o InputFunction.o InputFunctionDipole.o Help.o
+DEP = Makefile numerov2d.c stencils.c cubic_spline.c InputFunction.c InputFunctionDipole.c Help.c
 LIB = `pkg-config --cflags --libs gsl` -lmkl_core -lmkl_intel_ilp64 -lmkl_intel_thread -liomp5 -lpthread -ldl -m64
 # Kommandoblock "all:" als Einsprungspunkt für make
 all: $(EXE)

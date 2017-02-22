@@ -5,103 +5,77 @@
 #include "spline_interpolate.h"
 #include "mkl_solvers_ee.h"
 
+int Help(char *filename);
 int get_stencil(double stencil[], int n_stencil);
 double integrate_1d(int n, double dx, double integrand[]);
 double integrate_2d(int nx, int ny, double dx, double integrand[]);
 int InputFunction(char *inputfile, double **q1, double **q2, double **V, int *nq1, int *nq2);
 int InputFunctionDipole(char *inputfile, double **q1, double **q2, double **V, double **mux, double **muy, double **muz, int *nq1, int *nq2);
 
-// used constants
-//
-// factor for -h_bar^2/2m for reduced mass in g
-// h_bar                 1.05457180013E-34 Js
-// Avogadro's constant   6.02214085774E23 1/mol
-// atomic mass unit      1.66053904020E-27 kg
-//
-// Conversion factors    1.0E20          Ang^2 / m^2
-//                       1.0 / 4184.0    kcal / J
 
 int main(int argc, char* argv[]){
 
-  int i, j, k, l;
-  int nq1, nq2;
-  double dq, dq1, dq2;
+// Conversion factors    1.0E20          Ang^2 / m^2
+//                       1.0 / 4184.0    kcal / J
+// Constants
+    double pi         = 3.1415926535897932384626433832795;
+    double lightspeed = 299792458;        // m/s
+    double planck     = 6.626070040E-34;  // Js
+    double avogadro   = 6.022140857E23;   // 1/mol
 
-  int control;
+// Default values
+    int dipole_flag = 0;
+    int n_stencil   = 9;
+    int n_spline    = 0;
+    int analyse     = 0;
 
-  int index;
-  int option_index  = 0;
-  int n_points      = 0;
-  int n_ts_dip      = 0;
-  int n_stencil     = 9;
+    char *input_file_name  = NULL;
+    char *output_file_name = "/dev/stdout";
 
-  int n_spline      = 0;
-  int analyse       = 0;
+    double ekin_factor = 1.0/4.184;     // (kcal/mol) / (kJ/mol)
+    double epot_factor = 1.0;           // (output unit) / (input unit)
+    double mass        = 1.0;           // g/mol
+    double e_min       = 0.0;           // output energy unit
+    double e_max       = 100.0;         // output energy unit
+    double spacing_threshold = 1.0E-12; // abs(q[i] - q[i+1])
 
-  double dx, dy;
-  double mass = 1.0;
-  double ekin_param = -1.05457180013E-34 * 1.05457180013E-34 / 2.0 / 1.66053904020E-27 * 1.0E20 * 6.02214085774E23 / 4184.0;
-  double kcal_per_mol_to_inv_cm = 219474.6313705/627.509469;
 
-  double ekin_factor = 1.0;
-  double epot_factor = 1.0;
-  double e_min = 0.0;
-  double e_max = 100.0;
-  double spacing_threshold = 1.0E-12;
-
-  double v_min = 1.0E100;
-
-  double freq;
-  double integral;
-  double ts_dip_square;
-
-  double * q1 = NULL;
-  double * q2 = NULL;
-  double * v = NULL;
-
-  double * dip_x = NULL;
-  double * dip_y = NULL;
-  double * dip_z = NULL;
-
-  double * ts_dip_x = NULL;
-  double * ts_dip_y = NULL;
-  double * ts_dip_z = NULL;
-
-  double * stencil;
-  double * integrand;
-
-  int dipole_flag = 0;
-  char *input_file_name  = NULL;
-  char *output_file_name = "/dev/stdout";
-
-  FILE * file_ptr;
-
-/// FLAGS // FLAGS /// FLAGS // FLAGS /// FLAGS // FLAGS /// FLAGS // FLAGS /// FLAGS // FLAGS
+    int control;
+    if(argc == 1){
+       control = Help(argv[0]);
+       exit(control);
+    }
+//------------------------------------------------------------------------------------------------------------------
+//  FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS
+//------------------------------------------------------------------------------------------------------------------
     while(1){
         static struct option long_options[] = {
-            {"help",             no_argument, 0, 'h'},
-            {"mass",       required_argument, 0, 'm'},
-            {"fkin",       required_argument, 0, 'k'},
-            {"fpot",       required_argument, 0, 'v'},
-            {"n_stencil",  required_argument, 0, 'n'},
-            {"e_min",      required_argument, 0, 'l'},
-            {"e_max",      required_argument, 0, 'u'},
-            {"spline",     required_argument, 0, 's'},
-            {"pipe",             no_argument, 0, 'P'},
-            {"analyze",          no_argument, 0, 'a'},
-            {"dipole",           no_argument, 0, 'd'},
-            {"in-file",    required_argument, 0, 'i'},
-            {"out-file",   required_argument, 0, 'o'},
+            {"help",               no_argument, 0, 'h'},
+            {"mass",         required_argument, 0, 'm'},
+            {"fkin",         required_argument, 0, 'k'},
+            {"fpot",         required_argument, 0, 'v'},
+            {"n-stencil",    required_argument, 0, 'n'},
+            {"lower-bound",  required_argument, 0, 'l'},
+            {"upper-bound",  required_argument, 0, 'u'},
+            {"dq-threshold", required_argument, 0, 't'},
+            {"spline",       required_argument, 0, 's'},
+            {"analyze",            no_argument, 0, 'a'},
+            {"dipole",             no_argument, 0, 'd'},
+            {"pipe",               no_argument, 0, 'P'},
+            {"input-file",   required_argument, 0, 'i'},
+            {"output-file",  required_argument, 0, 'o'},
             { 0, 0, 0, 0 }
         };
     // getopt_long stores the option index here.
-        i = getopt_long(argc, argv, "hm:k:v:n:l:u:s:adi:Po:", long_options, &option_index);
+        int option_index  = 0;
+
+        control = getopt_long(argc, argv, "hm:k:v:n:l:u:s:adi:Po:", long_options, &option_index);
 
     // Detect the end of the options.
-        if(i == -1)
+        if(control == -1)
             break;
 
-        switch(i){
+        switch(control){
             case 0:
                 /* If this option set a flag, do nothing else now. */
                 if(long_options[option_index].flag != 0)    break;
@@ -113,8 +87,8 @@ int main(int argc, char* argv[]){
                 break;
 
             case 'h':
-//                Help(argv[0]);
-                exit (0);
+                control = Help(argv[0]);
+                exit(control);
 
             case 'm':
                 mass = atof(optarg);
@@ -148,6 +122,10 @@ int main(int argc, char* argv[]){
                 n_spline = atoi(optarg);
                 break;
 
+            case 't':
+                spacing_threshold = atof(optarg);
+                break;
+
             case 'a':
                 analyse = 1;
                 break;
@@ -165,10 +143,48 @@ int main(int argc, char* argv[]){
                 break;
 
             default:
-//               Help(argv[0]);
-                exit(0);
+                control = Help(argv[0]);
+                exit(control);
         }
     }
+
+//------------------------------------------------------------------------------------------------------------------
+//   Declaration Declaration Declaration Declaration Declaration Declaration Declaration Declaration Declaration
+//------------------------------------------------------------------------------------------------------------------
+
+    int i, j, k, l, index;
+    int nq1, nq2, n_points;
+
+// Input
+    double * q1 = NULL;
+    double * q2 = NULL;
+    double * v  = NULL;
+    double * dip_x = NULL;
+    double * dip_y = NULL;
+    double * dip_z = NULL;
+    double v_min = 1.0E100;
+    double dq, dq1, dq2;
+
+    double * stencil;
+    double * integrand;
+    double integral;
+
+// kinetic energy factor:   - hbar^2/2 * 10^20          * 1000 * avogadro^2 / 1000 = -10^20 * hbar^2/2 * avogadro^2
+//                            J kg m^2 * angstrom^2/m^2 * g/kg * (1/mol)^2  / kJ/J =  kJ/mol * g * angstrom^2 / mol
+    double ekin_param = -1.0E20 * avogadro*avogadro * planck*planck/(8.0*pi*pi); // kJ/mol / (mol/g/angstrom^2)
+    double kJmolToWavenumber = 10.0 / (avogadro*planck*lightspeed);              // cm^-1 / (kJ/mol)
+
+// dipole integration
+    int n_ts_dip = 0;
+    double ts_dip_square;
+    double * ts_dip_x = NULL;
+    double * ts_dip_y = NULL;
+    double * ts_dip_z = NULL;
+
+// Output
+    double freq;
+    FILE * file_ptr;
+
 
 //------------------------------------------------------------------------------------------------------------------
 // Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input
@@ -230,12 +246,13 @@ int main(int argc, char* argv[]){
     }
 
 
-// get potential minimum and subtract it from the potential
+// get potential minimum, subtract it from the potential
+//  and apply potential energy factor to convert to desired energy output
     for(i = 0; i < n_points; ++i){
         if(v[i] < v_min)   v_min = v[i];
     }
     for(i = 0; i < n_points; ++i){
-        v[i] -= v_min;
+        v[i] = (v[i] - v_min) * epot_factor;
     }
 
 
@@ -305,7 +322,8 @@ int main(int argc, char* argv[]){
     }
 
 // apply kinetic energy factor and spacing to ekin_param
-    ekin_param = ekin_param * ekin_factor / dq / dq / mass;
+    ekin_param = ekin_param / dq / dq / mass;
+    ekin_param *= ekin_factor;
 
 
 //------------------------------------------------------------------------------------------------------------------
@@ -349,7 +367,7 @@ int main(int argc, char* argv[]){
 
                         // add potential to diagonal element
                             if(xsh == 0 && ysh ==0){
-                                vals_A[n_entries] = vals_A[n_entries] + v[i*nq2+j] * epot_factor;
+                                vals_A[n_entries] = vals_A[n_entries] + v[i*nq2+j];
                             }
 
                             n_entries ++;
@@ -463,7 +481,7 @@ int main(int argc, char* argv[]){
 
     fprintf(file_ptr, "\n# Mass:        %24.16lf", mass);
 
-// output and frequencies
+// and output frequencies
     fprintf(file_ptr, "\n#\n# Frequencies:\n#\n#");
     for(i = 0; i < (n_out - 1); i++){
         fprintf(file_ptr,"%11d   ", i);
@@ -472,7 +490,7 @@ int main(int argc, char* argv[]){
         fprintf(file_ptr, "\n#%3d",i);
 
         for(j = 0; j < i; j++){
-            freq = 219474.6313705/627.509469 * epot_factor * (E[i] - E[j]);
+            freq = (E[i] - E[j]) * kJmolToWavenumber / ekin_factor;
             fprintf(file_ptr, "  %12.5e", freq);
         }
     }
@@ -745,7 +763,7 @@ int main(int argc, char* argv[]){
                 ts_dip_square =   ts_dip_x[element]*ts_dip_x[element]
                                 + ts_dip_y[element]*ts_dip_y[element]
                                 + ts_dip_z[element]*ts_dip_z[element];
-                freq = 219474.6313705/627.509469 * epot_factor * (E[i] - E[j]);
+                freq = (E[i] - E[j]) * kJmolToWavenumber / ekin_factor;
 
                 fprintf(file_ptr, "  %12.5e", 4.702E-7 * ts_dip_square * freq);
                 element ++;
