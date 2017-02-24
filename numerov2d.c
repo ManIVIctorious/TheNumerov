@@ -165,8 +165,8 @@ int main(int argc, char* argv[]){
     double v_min = 1.0E100;
     double dq, dq1, dq2;
 
-    double * stencil;
-    double * integrand;
+    double * stencil   = NULL;
+    double * integrand = NULL;
     double integral;
 
 // kinetic energy factor:   - hbar^2/2 * 10^20          * 1000 * avogadro^2 / 1000 = -10^20 * hbar^2/2 * avogadro^2
@@ -183,7 +183,7 @@ int main(int argc, char* argv[]){
 
 // Output
     double freq;
-    FILE * file_ptr;
+    FILE * file_ptr = NULL;
 
 
 //------------------------------------------------------------------------------------------------------------------
@@ -198,10 +198,20 @@ int main(int argc, char* argv[]){
     q1 = malloc(sizeof(double));
     q2 = malloc(sizeof(double));
     v  = malloc(sizeof(double));
+    if(q1 == NULL || q2 == NULL || v  == NULL){
+        fprintf(stderr, "\n (-) Error in memory allocation for q1, q2 or v");
+        fprintf(stderr, "\n     Aborting...\n\n");
+        exit(1);
+    }
     if(dipole_flag == 1){
         dip_x = malloc(sizeof(double));
         dip_y = malloc(sizeof(double));
         dip_z = malloc(sizeof(double));
+        if(dip_x == NULL || dip_y == NULL || dip_z == NULL){
+            fprintf(stderr, "\n (-) Error in memory allocation for dip_x, dip_y or dip_z");
+            fprintf(stderr, "\n     Aborting...\n\n");
+            exit(1);
+        }
         n_points = InputFunctionDipole(input_file_name, &q1, &q2, &v, &dip_x, &dip_y, &dip_z, &nq1, &nq2);
     }
     else{
@@ -237,6 +247,11 @@ int main(int argc, char* argv[]){
 
 // get stencil, in two dimensions the size is n_stencil * n_stencil.
     stencil = malloc(n_stencil * n_stencil * sizeof(double));
+    if(stencil == NULL){
+        fprintf(stderr, "\n (-) Error in memory allocation for dip_x");
+        fprintf(stderr, "\n     Aborting...\n\n");
+        exit(1);
+    }
     control = get_stencil(stencil, n_stencil);
 
     if(control != 0 ){
@@ -302,15 +317,25 @@ int main(int argc, char* argv[]){
         n_points = ((nq1 - 1) * (n_spline + 1) + 1) * ((nq2 - 1) * (n_spline + 1) + 1);
 
     // reallocate memory and call spline function
-        q1  = realloc(q1, n_points * sizeof(double));
-        q2  = realloc(q2, n_points * sizeof(double));
-        v   = realloc(v,  n_points * sizeof(double));
-        spline_interpolate(nq1, nq2, n_spline, q1, q2, v);
+        q1 = realloc(q1, n_points * sizeof(double));
+        q2 = realloc(q2, n_points * sizeof(double));
+        v  = realloc(v,  n_points * sizeof(double));
+        if(q1 == NULL || q2 == NULL || v  == NULL){
+            fprintf(stderr, "\n (-) Error in memory reallocation for q1, q2 or v");
+            fprintf(stderr, "\n     Aborting...\n\n");
+            exit(1);
+        }
+        control = spline_interpolate(nq1, nq2, n_spline, q1, q2, v);
+        if(control != 0){
+            fprintf(stderr, "\n (-) Error in execution of spline interpolation function.");
+            fprintf(stderr, "\n     Aborting...\n\n");
+            exit(1);
+        }
 
     // set new values for number of points for q1 and q2 and new dq
         nq1 = (nq1 - 1) * (n_spline + 1) + 1;
         nq2 = (nq2 - 1) * (n_spline + 1) + 1;
-        dq = dq / (double) (n_spline + 1);
+        dq  = dq / (double) (n_spline + 1);
 
     // set new values for q1 and q2:
     //  add 1 step to q1 all "nq2"th iteration
@@ -346,9 +371,19 @@ int main(int argc, char* argv[]){
     }
     max_entries = sum_q1*sum_q2; // upper estimation for nnz entries in the matrix, but the easy way to code.
 
-    MKL_INT     rows_A[n_points+1];
-    MKL_INT     *cols_A = malloc( max_entries * sizeof(MKL_INT));
-    double      *vals_A = malloc( max_entries * sizeof(double) );
+    MKL_INT   rows_A[n_points+1];
+    MKL_INT * cols_A = malloc(max_entries * sizeof(MKL_INT));
+    if(cols_A == NULL){
+        fprintf(stderr, "\n (-) Error in memory allocation for cols_A");
+        fprintf(stderr, "\n     Aborting...\n\n");
+        exit(1);
+    }
+    double  * vals_A = malloc(max_entries * sizeof(double));
+    if(vals_A == NULL){
+        fprintf(stderr, "\n (-) Error in memory allocation for vals_A");
+        fprintf(stderr, "\n     Aborting...\n\n");
+        exit(1);
+    }
 
     for(i = 0; i < nq1; i++){
         for(j = 0; j < nq2; j++){
@@ -395,21 +430,16 @@ int main(int argc, char* argv[]){
 
     double       E[n_points];         /* Eigenvalues */
 
-    double *X;
-
-    X = calloc (n_points*(n_points-1)/2, sizeof (double));  /* Eigenvectors */
+    double * X = calloc (n_points*(n_points-1)/2, sizeof (double));
+    if(X == NULL){
+        fprintf(stderr, "\n (-) Error in memory allocation for Eigenvectors X");
+        fprintf(stderr, "\n     Aborting...\n\n");
+        exit(1);
+    }
 
     double       res[n_points];       /* Residual */
 
     MKL_INT      info;          /* Errors */
-
-    char         SGEMMC = 'T';   /* Character for GEMM routine, transposed case */
-    char         SGEMMN = 'N';   /* Character for GEMM routine, non-transposed case */
-    double       one = 1.0;      /* alpha parameter for GEMM */
-    double       zero = 0.0;     /* beta  parameter for GEMM */
-    MKL_INT      ldx = n_points; /* Leading dimension for source arrays in GEMM */
-    MKL_INT      ldy = n_points; /* Leading dimension for destination array in GEMM */
-
     M0    = L;
     n_out = L;
     loop  = 0;
@@ -438,10 +468,9 @@ int main(int argc, char* argv[]){
         );
 
     // Error output
-    if ( info != 0 )
-    {
-        printf(" (-) Routine sfeast_scsrev returns code of ERROR: %i\n\n\n", (int)info);
-        return 1;
+    if ( info != 0 ){
+        printf("\n(-) Routine sfeast_scsrev returns code of ERROR: %i\n\n", (int)info);
+        exit((int)info);
     }
 //'#################################################################################################################
 //'#################################################################################################################
@@ -461,6 +490,8 @@ int main(int argc, char* argv[]){
         }
     }
 
+    free(cols_A);   cols_A  = NULL;
+    free(vals_A);   vals_A  = NULL;
 
 //------------------------------------------------------------------------------------------------------------------
 //  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output
@@ -596,8 +627,18 @@ int main(int argc, char* argv[]){
     // calculate coupling
         double *dichtematrix    = calloc(nq1*nq1, sizeof(double));
         double *dichtematrix_sq = calloc(nq1*nq1, sizeof(double));
+        if(dichtematrix == NULL || dichtematrix_sq == NULL){
+            fprintf(stderr, "\n (-) Error in memory allocation for dichtematrix or its square.");
+            fprintf(stderr, "\n     Aborting...\n\n");
+            exit(1);
+        }
         double *dm_integrand    = calloc(nq2,     sizeof(double));
         double *dm_integrand_sq = calloc(nq1,     sizeof(double));
+        if(dm_integrand == NULL || dm_integrand_sq == NULL){
+            fprintf(stderr, "\n (-) Error in memory allocation for density matrix integrand or its square.");
+            fprintf(stderr, "\n     Aborting...\n\n");
+            exit(1);
+        }
         int r1,r2;
 
         fprintf(file_ptr, "\n# Coupling:\n#");
@@ -645,11 +686,12 @@ int main(int argc, char* argv[]){
         }
         fprintf(file_ptr,"\n#\n#");
 
-        free(dm_integrand_sq);
-        free(dm_integrand);
-        free(dichtematrix);
-        free(dichtematrix_sq);
+        free(dichtematrix);     dichtematrix    = NULL;
+        free(dichtematrix_sq);  dichtematrix_sq = NULL;
+        free(dm_integrand);     dm_integrand    = NULL;
+        free(dm_integrand_sq);  dm_integrand_sq = NULL;
     }// end if(analyse == 1)
+    free(stencil);  stencil = NULL;
 
 
 //------------------------------------------------------------------------------------------------------------------
@@ -663,6 +705,11 @@ int main(int argc, char* argv[]){
         ts_dip_x = malloc(n_ts_dip * sizeof(double));
         ts_dip_y = malloc(n_ts_dip * sizeof(double));
         ts_dip_z = malloc(n_ts_dip * sizeof(double));
+        if(ts_dip_x == NULL || ts_dip_y == NULL || ts_dip_z == NULL){
+            fprintf(stderr, "\n (-) Error in memory allocation for ts_dip_x, ts_dip_y or ts_dip_z");
+            fprintf(stderr, "\n     Aborting...\n\n");
+            exit(1);
+        }
 
     // Evaluate x-component of IR-intensity
     //  calculate int Psi_i * \mu_x * Psi_j dxdy (i.e. <X[i]|\mu_x|X[j]>
@@ -770,6 +817,13 @@ int main(int argc, char* argv[]){
             }
         }
         fprintf(file_ptr, "\n#\n#");
+
+        free(dip_x);    dip_x    = NULL;
+        free(dip_y);    dip_y    = NULL;
+        free(dip_z);    dip_z    = NULL;
+        free(ts_dip_x); ts_dip_x = NULL;
+        free(ts_dip_y); ts_dip_y = NULL;
+        free(ts_dip_z); ts_dip_z = NULL;
     }// end if(dipole_flag == 1)
 
 
@@ -779,7 +833,7 @@ int main(int argc, char* argv[]){
 //  Eigenvectors  Eigenvectors  Eigenvectors  Eigenvectors  Eigenvectors  Eigenvectors  Eigenvectors  Eigenvectors
 //------------------------------------------------------------------------------------------------------------------
 // output eigenfunctions
-    fprintf(file_ptr, "\n# Potential and Eigenfunctions: %d datapoints", n_points);
+    fprintf(file_ptr, "\n# Potential and Eigenfunctions: %d data-points", n_points);
     fprintf(file_ptr, "\n# N %2d %2d", nq1, nq2);
     fprintf(file_ptr, "\n");
 
@@ -801,6 +855,11 @@ int main(int argc, char* argv[]){
     }
 
     fclose(file_ptr);
+    free(q1);   q1 = NULL;
+    free(q2);   q2 = NULL;
+    free(v);    v  = NULL;
+    free(X);    X  = NULL;
+
     return 0;
 }
 

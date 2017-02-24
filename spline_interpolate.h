@@ -6,26 +6,21 @@
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_vector.h>
 
+int cubic_spline(double x[], double y[], double b[], double c [], double d[], int n_points);
+int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], double z[]);
 
-int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], double z[])
-{
-  int cubic_spline(double x[], double y[], double b[], double c [], double d[], int n_points);
 
-  int i;
-  int j = 0;
-  int k;
-  int l;
-  int m, n;
+int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], double z[]){
+
+  int i, j, k, l, m, n;
 
   int max_dim;
-
   int count = 0;
 
   int n_x_new = (n_x - 1) * (n_spline +1) + 1;
   int n_y_new = (n_y - 1) * (n_spline +1) + 1;
 
   int n_data = n_x * n_y;
-
   int n_points = n_x_new * n_y_new;
 
   int signum;
@@ -34,12 +29,10 @@ int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], d
 
   double * mixed_deriv;
 
-  if ( n_x < n_y)
-  {
+  if(n_x < n_y){
     max_dim = n_y;
   }
-  else
-  {
+  else{
     max_dim = n_x;
   }
 
@@ -54,15 +47,11 @@ int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], d
   double beta[16];
 
   double x_new, x_int;
-  double y_new, y_int;
+  double y_int;
   double z_int;
 
   double first_deriv_x[n_data];
   double first_deriv_y[n_data];
-
-  double second_deriv_x2[n_data];
-  double second_deriv_xy[n_data];
-  double second_deriv_y2[n_data];
 
   double *z_new;
   double dx, dy;
@@ -103,7 +92,6 @@ int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], d
     for (j = 0; j < n_y; j++)
     {
       first_deriv_y[j + i * n_y]   = b[j];
-      second_deriv_y2[j + i * n_y] = 2.0 * c[j];
     }
 
     // Interpolate along spline
@@ -147,7 +135,6 @@ int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], d
     for (j = 0; j < n_x; j++)
     {
       first_deriv_x[i + j * n_y]   = b[j];
-      second_deriv_x2[i + j * n_y] = 2.0 * c[j];
     }
     
     // Interpolate along spline
@@ -530,7 +517,7 @@ int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], d
       z[i] = z_new[i];
     }
 
-  return(1);
+  return(0);
 }
 
 int spline_equalise(int n_points, int n_equal, double x[], double y[])
@@ -602,9 +589,8 @@ int spline_equalise(int n_points, int n_equal, double x[], double y[])
 }
 
 
+int cubic_spline(double x[], double y[], double b[], double c [], double d[], int n_points){
 
-int cubic_spline(double x[], double y[], double b[], double c [], double d[], int n_points)
-{
   int i, j;
 
   double ratio;
@@ -665,5 +651,6 @@ int cubic_spline(double x[], double y[], double b[], double c [], double d[], in
   c[n_points-1] = 3.0 * c[n_points-1];
   d[n_points-1] = d[n_points-2];
  
+    return 0;
 }
 

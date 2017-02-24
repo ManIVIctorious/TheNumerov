@@ -9,9 +9,10 @@
 
 int InputFunction(char *inputfile, double **q1, double **q2, double **V, int *nq1, int *nq2){
 
-    char *comment = "#%\n";
     int i, rows, comment_flag, control;
-    char *line, buffer[_MaxLineLength_];
+    char * comment = "#%\n";
+    char * line    = NULL;
+    char   buffer[_MaxLineLength_] = "";
     FILE *fd;
 
     fd = fopen(inputfile, "r");
@@ -72,7 +73,7 @@ int InputFunction(char *inputfile, double **q1, double **q2, double **V, int *nq
 
         ++rows;
     }
-    fclose(fd);
+    fclose(fd); fd = NULL;
 
     return rows;
 }
