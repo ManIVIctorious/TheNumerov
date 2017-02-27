@@ -331,6 +331,19 @@ int main(int argc, char* argv[]){
             fprintf(stderr, "\n     Aborting...\n\n");
             exit(1);
         }
+        if(dipole_flag == 1){
+            dip_x = realloc(dip_x, n_points * sizeof(double));
+            dip_y = realloc(dip_y, n_points * sizeof(double));
+            dip_z = realloc(dip_z, n_points * sizeof(double));
+            if(dip_x == NULL || dip_y == NULL || dip_z == NULL){
+                fprintf(stderr, "\n (-) Error in memory reallocation for dip_x, dip_y or dip_z");
+                fprintf(stderr, "\n     Aborting...\n\n");
+                exit(1);
+            }
+            i = spline_interpolate(nq1, nq2, n_spline, q1, q2, dip_x);
+            j = spline_interpolate(nq1, nq2, n_spline, q1, q2, dip_y);
+            k = spline_interpolate(nq1, nq2, n_spline, q1, q2, dip_z);
+        }
 
     // set new values for number of points for q1 and q2 and new dq
         nq1 = (nq1 - 1) * (n_spline + 1) + 1;
