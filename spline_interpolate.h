@@ -60,7 +60,7 @@ int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], d
 
   gsl_matrix * spline_matrix = gsl_matrix_alloc (16, 16);
   gsl_matrix * inverse_matrix = gsl_matrix_alloc (16, 16);
-  
+
   gsl_permutation * permute = gsl_permutation_alloc (16);
 
   double M_inv[16][16];
@@ -88,7 +88,7 @@ int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], d
     // execute spline interpolation
     cubic_spline(spline_x, spline_y, b, c, d, n_y);
 
-    // get y-derivatives at grid points 
+    // get y-derivatives at grid points
     for (j = 0; j < n_y; j++)
     {
       first_deriv_y[j + i * n_y]   = b[j];
@@ -98,9 +98,9 @@ int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], d
     count = 0;
 
     for (j = 0; j < n_y - 1; j++)
-    { 
+    {
       dx = (spline_x[j + 1] - spline_x[j]) / (double) (1 + n_spline);
- 
+
       for (x_new = spline_x[j]; x_new < spline_x[j + 1]-dx/2; x_new = x_new + dx)
       {
 	x_int = x_new - spline_x[j];
@@ -131,17 +131,17 @@ int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], d
     // execute spline interpolation
     cubic_spline(spline_x, spline_y, b, c, d, n_x);
 
-    // get x-derivatives at grid points 
+    // get x-derivatives at grid points
     for (j = 0; j < n_x; j++)
     {
       first_deriv_x[i + j * n_y]   = b[j];
     }
-    
+
     // Interpolate along spline
     count = 0;
 
     for (j = 0; j < n_x - 1; j++)
-    { 
+    {
       dx = (spline_x[j + 1] - spline_x[j]) / (double) (1 + n_spline);
 
       for (x_new = spline_x[j]; x_new < spline_x[j + 1]-dx/2; x_new = x_new + dx)
@@ -159,7 +159,7 @@ int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], d
 
     // last point manually
     z_new[count * n_y_new + i*(n_spline+1)] = spline_y[j];
-    
+
     // printf("%d  %d x_new  %20.14lf   %20.14lf   %20.14lf  %d\n", j, count, x_new, x_int, z_new[count * n_y_new + i*(n_spline+1)], count * n_y_new + i*(n_spline+1) );
 
 
@@ -173,13 +173,13 @@ int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], d
 
   mixed_deriv = (double *) calloc(n_points, sizeof(double) );
 
-  // get mixed derivatives 
+  // get mixed derivatives
 
   for (i = 1; i < n_x - 1; i++)
   {
     for (j = 1; j < n_y - 1; j++)
     {
-      idx = i * n_y + j; 
+      idx = i * n_y + j;
 
       idx_mm = (i-1) * n_y + (j-1);
       idx_mp = (i-1) * n_y + (j+1);
@@ -187,11 +187,11 @@ int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], d
       idx_pp = (i+1) * n_y + (j+1);
 
       mixed_deriv[idx] = 0.25 * ( z[idx_mm] - z[idx_mp] - z[idx_pm] + z[idx_pp] ) / (x[idx_pm] - x[idx_mm]) /(y[idx_mp] - y[idx_mm]);
-
     }
   }
 
   // get cross-derivatives at the edge via cubic spline extrapolation
+
 
   ////////////////////
   // work on y-part first
@@ -246,7 +246,7 @@ int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], d
 
   // finally extrapolate cross-derivatives at corners via diagonal
 /*
-  // diagonal #1 
+  // diagonal #1
     for (i = 1; i < n_x-1; i++)
     {
       spline_x[i-1] = x[i+i*n_y]/fabs((x[i+i*n_y]+0.0000000000000000001))*sqrt(x[i+i*n_y] * x[i+i*n_y] + y[i+i*n_y]*y[i+i*n_y]);
@@ -261,7 +261,7 @@ int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], d
     mixed_deriv[0] = spline_y[0] + x_int * (b[0] + x_int * (c[0] + x_int * d[0]));
 
     // extrapolate right side -- carefule: ny-2 points, ny-3 intervals!!!
-    x_int = sqrt( (y[n_x*n_y-1] - y[n_x*(n_y-1) - 2]) * (y[n_x*n_y-1] - y[n_x*(n_y-1) - 2]) + 
+    x_int = sqrt( (y[n_x*n_y-1] - y[n_x*(n_y-1) - 2]) * (y[n_x*n_y-1] - y[n_x*(n_y-1) - 2]) +
                   (x[n_x*n_y-1] - x[n_x*(n_y-1) - 2]) * (x[n_x*n_y-1] - x[n_x*(n_y-1) - 2]) ) *
       (y[n_x*n_y-1] - y[(n_x-1)*(n_y-1) - 1])/fabs(y[n_x*n_y-1] - y[(n_x-1)*(n_y-1) - 1]);
 
@@ -274,7 +274,7 @@ int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], d
       spline_y[i-1] = mixed_deriv[n_y * (n_x-i-1)+i];
 
     }
-   
+
     cubic_spline(spline_x, spline_y, b, c, d, n_x-2);
 
     // extrapolate left side
@@ -285,21 +285,25 @@ int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], d
     mixed_deriv[n_y*(n_x-1)] = spline_y[n_y - 3] + x_int * (b[n_y - 3] + x_int * (c[n_y - 3] + x_int * d[n_y - 3]));
 
     // extrapolate right side -- carefule: ny-2 points, ny-3 intervals!!!
-    x_int = sqrt( (y[n_y-1] - y[2*(n_y-1)]) * (y[n_y-1] - y[2*(n_y-1)]) + 
+    x_int = sqrt( (y[n_y-1] - y[2*(n_y-1)]) * (y[n_y-1] - y[2*(n_y-1)]) +
                   (x[n_y-1] - x[2*(n_y-1)]) * (x[n_y-1] - x[2*(n_y-1)]) ) *
                   (y[n_y-1] - y[2*(n_y-1)])/fabs(y[n_y-1] - y[2*(n_y-1)]);
 
     mixed_deriv[n_y-1] = spline_y[n_y - 3] + x_int * (b[n_y - 3] + x_int * (c[n_y - 3] + x_int * d[n_y - 3]));
 */
 
+  mixed_deriv[n_x*n_y-1]   = 0.0;
+  mixed_deriv[n_y*(n_x-1)] = 0.0;
+  mixed_deriv[n_y-1]       = 0.0;
+  mixed_deriv[n_x*n_y-1]   = 0.0;
 
     // Finally interpolate 2d
     dx = x[n_y] - x[0];
     dy = y[1]   - y[0];
-   
+
     M[0][0]  = 1.0;
 
-    M[1][0]  = 1.0; 
+    M[1][0]  = 1.0;
     M[1][1]  = dx;
     M[1][2]  = dx * dx;
     M[1][3]  = dx * dx * dx;
@@ -398,24 +402,24 @@ int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], d
       for (j = 0; j < 16; j++)
 	gsl_matrix_set (spline_matrix, i, j, M[i][j]);
 
-    //  inverse matrix with the help of GSL 
+    //  inverse matrix with the help of GSL
     gsl_linalg_LU_decomp (spline_matrix, permute, &signum);
     gsl_linalg_LU_invert (spline_matrix, permute, inverse_matrix);
-    
+
     // extract inverse matrix from gsl
     for (i = 0; i < 16; i++)
-    { 
+    {
       for (j = 0; j < 16; j++)
       {
 	M_inv[i][j] = gsl_matrix_get (inverse_matrix, i, j);
       }
     }
-    
+
     // loop over grid
     for (i = 0; i < n_x - 1; i++)
-    { 
+    {
       for (j = 0; j < n_y - 1; j++)
-      { 
+      {
 	// generate vector beta
 
 	beta[0]  = z[i     * n_y + j    ];
@@ -457,29 +461,29 @@ int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], d
 	      x_int = dx * (double) (m + 1) / (double) (n_spline + 1);
 	      y_int = dy * (double) (n + 1) / (double) (n_spline + 1);
 
-           z_int = alpha[0]  +
-                   alpha[1]  * pow(y_int, 1.0) +
-	           alpha[2]  * pow(y_int, 2.0) +
-	           alpha[3]  * pow(y_int, 3.0) +
-	           alpha[4]                    * pow(x_int, 1.0) +
-	           alpha[5]  * pow(y_int, 1.0) * pow(x_int, 1.0) +
-	           alpha[6]  * pow(y_int, 2.0) * pow(x_int, 1.0) +
-	           alpha[7]  * pow(y_int, 3.0) * pow(x_int, 1.0) +
-	           alpha[8]                    * pow(x_int, 2.0) +
-	           alpha[9]  * pow(y_int, 1.0) * pow(x_int, 2.0) +
-	           alpha[10] * pow(y_int, 2.0) * pow(x_int, 2.0) +
-	           alpha[11] * pow(y_int, 3.0) * pow(x_int, 2.0) +
-	           alpha[12]                   * pow(x_int, 3.0) +
-	           alpha[13] * pow(y_int, 1.0) * pow(x_int, 3.0) +
-	           alpha[14] * pow(y_int, 2.0) * pow(x_int, 3.0) +
-	           alpha[15] * pow(y_int, 3.0) * pow(x_int, 3.0);
-		   
+           z_int =  alpha[0]  +
+                    alpha[1]  * pow(y_int, 1.0) +
+	                alpha[2]  * pow(y_int, 2.0) +
+	                alpha[3]  * pow(y_int, 3.0) +
+	                alpha[4]                    * pow(x_int, 1.0) +
+	                alpha[5]  * pow(y_int, 1.0) * pow(x_int, 1.0) +
+	                alpha[6]  * pow(y_int, 2.0) * pow(x_int, 1.0) +
+	                alpha[7]  * pow(y_int, 3.0) * pow(x_int, 1.0) +
+	                alpha[8]                    * pow(x_int, 2.0) +
+	                alpha[9]  * pow(y_int, 1.0) * pow(x_int, 2.0) +
+	                alpha[10] * pow(y_int, 2.0) * pow(x_int, 2.0) +
+	                alpha[11] * pow(y_int, 3.0) * pow(x_int, 2.0) +
+	                alpha[12]                   * pow(x_int, 3.0) +
+	                alpha[13] * pow(y_int, 1.0) * pow(x_int, 3.0) +
+	                alpha[14] * pow(y_int, 2.0) * pow(x_int, 3.0) +
+	                alpha[15] * pow(y_int, 3.0) * pow(x_int, 3.0);
+
 	   idx = i * n_y + j;
 
 	   idx_new = (i * (n_spline + 1) + m + 1) * n_y_new + j * (n_spline + 1) + n  + 1;
 
-	   x[idx_new] = x[i * n_y + j] + x_int;
-	   y[idx_new] = y[i * n_y + j] + y_int;
+          x[idx_new] = x[i * n_y + j] + x_int;
+          y[idx_new] = y[i * n_y + j] + y_int;
 	   z_new[idx_new] = z_int;
 	  }  // loop over interpolation
 	}  // loop over interpolation
@@ -487,10 +491,14 @@ int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], d
     } // loop over grid
 
 
-//    printf("N %d %d\n\n", n_x_new , n_y_new);
-
 
     /*
+    printf("N %d %d\n\n", n_x_new , n_y_new);
+
+
+
+    double y_new;
+
     for (i=0; i < n_points; i++)
     {
       j=i/n_y_new;
@@ -501,23 +509,29 @@ int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], d
       y_new = y[0] + dy * (double) (i%n_y_new) / (double) (n_spline + 1); // careful - change to dy
 
       // printf("%4d  %3d  %4d   -  %12.8lf   %12.8lf   %12.8lf\n", i, j, k, x_new, y_new, z_new[i]);
-      printf(" %12.8lf   %12.8lf   %12.8lf\n", x_new, y_new, z_new[i]);
+      fprintf(stderr,"Debug %12.8lf   %12.8lf   %12.8lf\n", x_new, y_new, z_new[i]);
 
       if ( k == n_y_new-1)
-	printf("\n");
+	    fprintf(stderr, "\n");
     }
-*/
-    // to do - transfer z back
+    */
+
+
+    // transfer z back
     // determine x and y in previuos subroutine
-
-
-
     for (i=0; i < n_points; i++)
     {
       z[i] = z_new[i];
     }
 
-  return(0);
+    free(M);                         M              = NULL;
+    free(z_new);                     z_new          = NULL;
+    free(mixed_deriv);               mixed_deriv    = NULL;
+    gsl_matrix_free(spline_matrix);  spline_matrix  = NULL;
+    gsl_matrix_free(inverse_matrix); inverse_matrix = NULL;
+    gsl_permutation_free(permute);   permute        = NULL;
+
+    return(0);
 }
 
 int spline_equalise(int n_points, int n_equal, double x[], double y[])
@@ -621,7 +635,7 @@ int cubic_spline(double x[], double y[], double b[], double c [], double d[], in
     c[n_points-1] = -c[n_points-1] * d[n_points-2] * d[n_points-2] / (x[n_points-1] - x[n_points-4]);
   }
 
-  // Forward elimination 
+  // Forward elimination
   for (i = 1; i < n_points; i++)
   {
     ratio = d[i-1] / b[i-1];
@@ -650,7 +664,7 @@ int cubic_spline(double x[], double y[], double b[], double c [], double d[], in
   }
   c[n_points-1] = 3.0 * c[n_points-1];
   d[n_points-1] = d[n_points-2];
- 
+
     return 0;
 }
 

@@ -1,8 +1,8 @@
 # Compiler
-CC = icc
+CC = gcc -g -Wall -Werror
 # Compilerflags
 #CFLAGS = -g03 -Wall -Werror -Wstrict-prototypes -Wno-parentheses -Wmissing-prototypes -mtune=native
-CFLAGS = -I/usr/local/intel/mkl/include/ -L/usr/local/intel/mkl/lib/intel64 -L/usr/local/intel/composer_xe_2015.3.187/compiler/lib/intel64 -DMKL_ILP64 -w 
+CFLAGS = -I/usr/local/intel/mkl/include/ -L/usr/local/intel/mkl/lib/intel64 -L/usr/local/intel/composer_xe_2015.3.187/compiler/lib/intel64 -DMKL_ILP64
 #CFLAGS = -I/opt/intel/mkl/include -L/opt/intel/mkl/lib/intel64 -L/opt/intel/compilers_and_libraries_2017.0.098/linux/compiler/lib/intel64_lin -DMKL_ILP64 -w
 # Zu erstellende fertige Programme (mit relativem Pfad vorangestellt)
 EXE = bin/numerov2d
