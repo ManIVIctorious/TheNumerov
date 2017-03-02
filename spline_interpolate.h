@@ -481,9 +481,6 @@ int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], d
 	   idx = i * n_y + j;
 
 	   idx_new = (i * (n_spline + 1) + m + 1) * n_y_new + j * (n_spline + 1) + n  + 1;
-
-          x[idx_new] = x[i * n_y + j] + x_int;
-          y[idx_new] = y[i * n_y + j] + y_int;
 	   z_new[idx_new] = z_int;
 	  }  // loop over interpolation
 	}  // loop over interpolation
