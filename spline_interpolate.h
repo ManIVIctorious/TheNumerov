@@ -25,7 +25,7 @@ int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], d
 
   int signum;
 
-  int idx, idx_new, idx_mm, idx_mp, idx_pm, idx_pp;
+  int idx, idx_mm, idx_mp, idx_pm, idx_pp;
 
   double * mixed_deriv;
 
@@ -103,11 +103,11 @@ int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], d
 
       for (x_new = spline_x[j]; x_new < spline_x[j + 1]-dx/2; x_new = x_new + dx)
       {
-	x_int = x_new - spline_x[j];
+    x_int = x_new - spline_x[j];
 
-	z_new[count + i * n_y_new*(1+n_spline)] = spline_y[j] + x_int * (b[j] + x_int * (c[j] + x_int * d[j]));
+    z_new[count + i * n_y_new*(1+n_spline)] = spline_y[j] + x_int * (b[j] + x_int * (c[j] + x_int * d[j]));
 
-	count ++;
+    count ++;
       }
 
     }// Interpolate for (j=0; j < n_points - 1; j++)
@@ -146,13 +146,13 @@ int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], d
 
       for (x_new = spline_x[j]; x_new < spline_x[j + 1]-dx/2; x_new = x_new + dx)
       {
-	x_int = x_new - spline_x[j];
+    x_int = x_new - spline_x[j];
 
-	z_new[count * n_y_new + i*(n_spline+1)] = spline_y[j] + x_int * (b[j] + x_int * (c[j] + x_int * d[j]));
+    z_new[count * n_y_new + i*(n_spline+1)] = spline_y[j] + x_int * (b[j] + x_int * (c[j] + x_int * d[j]));
 
-	// printf("%d  %d x_new  %20.14lf   %20.14lf   %20.14lf  %d\n", j, count, x_new, x_int, z_new[count * n_y_new + i*(n_spline+1)], count * n_y_new + i*(n_spline+1) );
+    // printf("%d  %d x_new  %20.14lf   %20.14lf   %20.14lf  %d\n", j, count, x_new, x_int, z_new[count * n_y_new + i*(n_spline+1)], count * n_y_new + i*(n_spline+1) );
 
-	count ++;
+    count ++;
       }
 
     }// Interpolate for (j=0; j < n_points - 1; j++)
@@ -400,7 +400,7 @@ int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], d
 
     for (i = 0; i < 16; i++)
       for (j = 0; j < 16; j++)
-	gsl_matrix_set (spline_matrix, i, j, M[i][j]);
+    gsl_matrix_set (spline_matrix, i, j, M[i][j]);
 
     //  inverse matrix with the help of GSL
     gsl_linalg_LU_decomp (spline_matrix, permute, &signum);
@@ -411,7 +411,7 @@ int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], d
     {
       for (j = 0; j < 16; j++)
       {
-	M_inv[i][j] = gsl_matrix_get (inverse_matrix, i, j);
+    M_inv[i][j] = gsl_matrix_get (inverse_matrix, i, j);
       }
     }
 
@@ -420,70 +420,68 @@ int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], d
     {
       for (j = 0; j < n_y - 1; j++)
       {
-	// generate vector beta
+    // generate vector beta
 
-	beta[0]  = z[i     * n_y + j    ];
-	beta[1]  = z[i     * n_y + j + 1];
-	beta[2]  = z[(i+1) * n_y + j    ];
-	beta[3]  = z[(i+1) * n_y + j + 1];
+    beta[0]  = z[i     * n_y + j    ];
+    beta[1]  = z[i     * n_y + j + 1];
+    beta[2]  = z[(i+1) * n_y + j    ];
+    beta[3]  = z[(i+1) * n_y + j + 1];
 
-	beta[4]  = first_deriv_y[i     * n_y + j    ] ;
-	beta[5]  = first_deriv_y[i     * n_y + j + 1] ;
-	beta[6]  = first_deriv_y[(i+1) * n_y + j    ] ;
-	beta[7]  = first_deriv_y[(i+1) * n_y + j + 1] ;
+    beta[4]  = first_deriv_y[i     * n_y + j    ] ;
+    beta[5]  = first_deriv_y[i     * n_y + j + 1] ;
+    beta[6]  = first_deriv_y[(i+1) * n_y + j    ] ;
+    beta[7]  = first_deriv_y[(i+1) * n_y + j + 1] ;
 
-	beta[8]  = first_deriv_x[i     * n_y + j    ] ;
-	beta[9]  = first_deriv_x[i     * n_y + j + 1] ;
-	beta[10] = first_deriv_x[(i+1) * n_y + j    ] ;
-	beta[11] = first_deriv_x[(i+1) * n_y + j + 1] ;
+    beta[8]  = first_deriv_x[i     * n_y + j    ] ;
+    beta[9]  = first_deriv_x[i     * n_y + j + 1] ;
+    beta[10] = first_deriv_x[(i+1) * n_y + j    ] ;
+    beta[11] = first_deriv_x[(i+1) * n_y + j + 1] ;
 
-	beta[12] = mixed_deriv[i     * n_y + j    ] ;
-	beta[13] = mixed_deriv[i     * n_y + j + 1] ;
-	beta[14] = mixed_deriv[(i+1) * n_y + j    ] ;
-	beta[15] = mixed_deriv[(i+1) * n_y + j + 1] ;
+    beta[12] = mixed_deriv[i     * n_y + j    ] ;
+    beta[13] = mixed_deriv[i     * n_y + j + 1] ;
+    beta[14] = mixed_deriv[(i+1) * n_y + j    ] ;
+    beta[15] = mixed_deriv[(i+1) * n_y + j + 1] ;
 
-	// multply M_inv with beta
-	for (k = 0; k < 16; k++)
-	{
+    // multply M_inv with beta
+    for (k = 0; k < 16; k++)
+    {
           alpha[k] = 0.0;
 
           for (l  = 0; l < 16; l++)
-	  {
-	    alpha[k] = alpha[k] + M_inv[k][l] * beta[l];
-	  }
-	}
+      {
+        alpha[k] = alpha[k] + M_inv[k][l] * beta[l];
+      }
+    }
 
-	for ( m = 0; m < n_spline; m = m + 1)
-	{
-	  for ( n = 0; n < n_spline; n = n +1)
-	    {
+    for ( m = 0; m < n_spline; m = m + 1)
+    {
+      for ( n = 0; n < n_spline; n = n +1)
+        {
 
-	      x_int = dx * (double) (m + 1) / (double) (n_spline + 1);
-	      y_int = dy * (double) (n + 1) / (double) (n_spline + 1);
+          x_int = dx * (double) (m + 1) / (double) (n_spline + 1);
+          y_int = dy * (double) (n + 1) / (double) (n_spline + 1);
 
            z_int =  alpha[0]  +
                     alpha[1]  * pow(y_int, 1.0) +
-	                alpha[2]  * pow(y_int, 2.0) +
-	                alpha[3]  * pow(y_int, 3.0) +
-	                alpha[4]                    * pow(x_int, 1.0) +
-	                alpha[5]  * pow(y_int, 1.0) * pow(x_int, 1.0) +
-	                alpha[6]  * pow(y_int, 2.0) * pow(x_int, 1.0) +
-	                alpha[7]  * pow(y_int, 3.0) * pow(x_int, 1.0) +
-	                alpha[8]                    * pow(x_int, 2.0) +
-	                alpha[9]  * pow(y_int, 1.0) * pow(x_int, 2.0) +
-	                alpha[10] * pow(y_int, 2.0) * pow(x_int, 2.0) +
-	                alpha[11] * pow(y_int, 3.0) * pow(x_int, 2.0) +
-	                alpha[12]                   * pow(x_int, 3.0) +
-	                alpha[13] * pow(y_int, 1.0) * pow(x_int, 3.0) +
-	                alpha[14] * pow(y_int, 2.0) * pow(x_int, 3.0) +
-	                alpha[15] * pow(y_int, 3.0) * pow(x_int, 3.0);
+                    alpha[2]  * pow(y_int, 2.0) +
+                    alpha[3]  * pow(y_int, 3.0) +
+                    alpha[4]                    * pow(x_int, 1.0) +
+                    alpha[5]  * pow(y_int, 1.0) * pow(x_int, 1.0) +
+                    alpha[6]  * pow(y_int, 2.0) * pow(x_int, 1.0) +
+                    alpha[7]  * pow(y_int, 3.0) * pow(x_int, 1.0) +
+                    alpha[8]                    * pow(x_int, 2.0) +
+                    alpha[9]  * pow(y_int, 1.0) * pow(x_int, 2.0) +
+                    alpha[10] * pow(y_int, 2.0) * pow(x_int, 2.0) +
+                    alpha[11] * pow(y_int, 3.0) * pow(x_int, 2.0) +
+                    alpha[12]                   * pow(x_int, 3.0) +
+                    alpha[13] * pow(y_int, 1.0) * pow(x_int, 3.0) +
+                    alpha[14] * pow(y_int, 2.0) * pow(x_int, 3.0) +
+                    alpha[15] * pow(y_int, 3.0) * pow(x_int, 3.0);
 
-	   idx = i * n_y + j;
-
-	   idx_new = (i * (n_spline + 1) + m + 1) * n_y_new + j * (n_spline + 1) + n  + 1;
-	   z_new[idx_new] = z_int;
-	  }  // loop over interpolation
-	}  // loop over interpolation
+       idx = (i * (n_spline + 1) + m + 1) * n_y_new + j * (n_spline + 1) + n  + 1;
+       z_new[idx] = z_int;
+      }  // loop over interpolation
+    }  // loop over interpolation
       } // loop over grid
     } // loop over grid
 
@@ -509,7 +507,7 @@ int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], d
       fprintf(stderr,"Debug %12.8lf   %12.8lf   %12.8lf\n", x_new, y_new, z_new[i]);
 
       if ( k == n_y_new-1)
-	    fprintf(stderr, "\n");
+        fprintf(stderr, "\n");
     }
     */
 
@@ -558,26 +556,26 @@ int spline_equalise(int n_points, int n_equal, double x[], double y[])
 
   // Equalise grid
   for (i=0; i < n_equal - 1; i++)
-  { 
+  {
     x_new = x[0] + dx * (double) i;
 
       // identfy interval
       if ((x[j] > x_new) || (x[j+1] < x_new))
       {
-	j = 0;
-	k = n_points;
+    j = 0;
+    k = n_points;
 
-	do
-	{
-	  l = (j + k) / 2;
-	      
-	  if (x_new < x[l])
-	    k = l;
-	      
-	  if (x_new >= x[l])
-	    j = l;
+    do
+    {
+      l = (j + k) / 2;
 
-	} while (k > j+1);
+      if (x_new < x[l])
+        k = l;
+
+      if (x_new >= x[l])
+        j = l;
+
+    } while (k > j+1);
       }
 
       x_int = x_new - x[j];
@@ -592,7 +590,7 @@ int spline_equalise(int n_points, int n_equal, double x[], double y[])
   y_new[count] = y[n_points-1];
 
   for (i=0; i < n_equal; i++)
-  { 
+  {
     y[i] = y_new[i];
   }
 
