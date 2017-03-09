@@ -1,6 +1,9 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 
+// Offered prototypes
+int get_stencil(double stencil[], int n_stencil);
 
 int get_stencil(double stencil[], int n_stencil){
 

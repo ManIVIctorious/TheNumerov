@@ -2,6 +2,8 @@
 #include <stdlib.h>
 
 
+// Offered prototypes
+int spline1d(int n_points, int n_spline, double x[], double y[]);
 
 int spline1d(int n_points, int n_spline, double x[], double y[])
 {

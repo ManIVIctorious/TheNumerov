@@ -1,6 +1,10 @@
 
 #include <stdio.h>
 
+// Offered prototypes
+int Help(char *filename);
+
+
 int Help(char *filename){
 
     printf("\n%s\t [OPTIONS] -i INPUT-FILENAME -o OUTPUT-FILENAME", filename);

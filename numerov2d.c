@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <getopt.h>
-#include "spline_interpolate.h"
 #include "mkl_solvers_ee.h"
 
 int Help(char *filename);
@@ -11,6 +10,7 @@ double integrate_1d(int n, double dx, double integrand[]);
 double integrate_2d(int nx, int ny, double dx, double integrand[]);
 int InputFunction(char *inputfile, double **q1, double **q2, double **V, int *nq1, int *nq2);
 int InputFunctionDipole(char *inputfile, double **q1, double **q2, double **V, double **mux, double **muy, double **muz, int *nq1, int *nq2);
+int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], double z[]);
 
 
 int main(int argc, char* argv[]){

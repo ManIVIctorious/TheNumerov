@@ -6,8 +6,10 @@
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_vector.h>
 
+// Offered prototypes
 int cubic_spline(double x[], double y[], double b[], double c [], double d[], int n_points);
 int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], double z[]);
+int spline_equalise(int n_points, int n_equal, double x[], double y[]);
 
 
 int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], double z[]){

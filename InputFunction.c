@@ -7,6 +7,9 @@
 #include <string.h>
 #include <ctype.h>
 
+// Offered prototypes
+int InputFunction(char *inputfile, double **q1, double **q2, double **V, int *nq1, int *nq2);
+
 int InputFunction(char *inputfile, double **q1, double **q2, double **V, int *nq1, int *nq2){
 
     int i, rows, comment_flag, control;
