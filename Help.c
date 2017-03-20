@@ -27,7 +27,9 @@ int Help(char *filename){
 
 // I/O
     printf("\n");
-    printf("\n\t"); printf("-t, --q-threshold       Maximal value of abs(q[i]-q[i+1])");
+    printf("\n\t"); printf("-t, --dq-threshold      Maximal value of abs(q[i]-q[i+1])");
+    printf("\n\t"); printf("-a, --analyze           Output additional information containing");
+    printf("\n\t"); printf("                            Orthonormality, Potential, kinetic energy and coupling");
     printf("\n\t"); printf("-d, --dipole            Expect 6 columns of input (q1, q2, potential, dipolemoment{x,y,z})");
     printf("\n\t"); printf("-P, --pipe              Read input from pipe instead of input file");
     printf("\n\t"); printf("-i, --input-file        Set name of input file");

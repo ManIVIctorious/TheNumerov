@@ -18,7 +18,6 @@ int main(int argc, char* argv[]){
 // Conversion factors    1.0E20          Ang^2 / m^2
 //                       1.0 / 4184.0    kcal / J
 // Constants
-    double pi         = 3.1415926535897932384626433832795;
     double lightspeed = 299792458;        // m/s
     double planck     = 6.626070040E-34;  // Js
     double avogadro   = 6.022140857E23;   // 1/mol
@@ -171,7 +170,7 @@ int main(int argc, char* argv[]){
 
 // kinetic energy factor:   - hbar^2/2 * 10^20          * 1000 * avogadro^2 / 1000 = -10^20 * hbar^2/2 * avogadro^2
 //                            J kg m^2 * angstrom^2/m^2 * g/kg * (1/mol)^2  / kJ/J =  kJ/mol * g * angstrom^2 / mol
-    double ekin_param = -1.0E20 * avogadro*avogadro * planck*planck/(8.0*pi*pi); // kJ/mol / (mol/g/angstrom^2)
+    double ekin_param = -1.0E20 * avogadro*avogadro * planck*planck/(8.0*M_PI*M_PI); // kJ/mol / (mol/g/angstrom^2)
     double kJmolToWavenumber = 10.0 / (avogadro*planck*lightspeed);              // cm^-1 / (kJ/mol)
 
 // dipole integration
@@ -443,7 +442,7 @@ int main(int argc, char* argv[]){
 
     double       E[n_points];         /* Eigenvalues */
 
-    double * X = calloc (n_points*(n_points-1)/2, sizeof (double));
+    double * X = calloc (n_points*n_points, sizeof (double));
     if(X == NULL){
         fprintf(stderr, "\n (-) Error in memory allocation for Eigenvectors X");
         fprintf(stderr, "\n     Aborting...\n\n");
