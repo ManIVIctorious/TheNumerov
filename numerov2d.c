@@ -35,7 +35,7 @@ int main(int argc, char* argv[]){
     double epot_factor = 1.0;           // (output unit) / (input unit)
     double mass        = 1.0;           // g/mol
     double e_min       = 0.0;           // output energy unit
-    double e_max       = 100.0;         // output energy unit
+    double e_max       = 400.0;         // output energy unit
     double spacing_threshold = 1.0E-12; // abs(q[i] - q[i+1])
 
 
