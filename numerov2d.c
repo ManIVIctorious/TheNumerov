@@ -846,7 +846,7 @@ int main(int argc, char* argv[]){
 //------------------------------------------------------------------------------------------------------------------
 // output eigenfunctions
     fprintf(file_ptr, "\n# Potential and Eigenfunctions: %d data-points", n_points);
-    fprintf(file_ptr, "\n# N %2d %2d", nq1, nq2);
+    fprintf(file_ptr, "\n  N %2d %2d", nq1, nq2);
     fprintf(file_ptr, "\n");
 
     for(i = 0; i < n_points; i++){
