@@ -3,34 +3,29 @@
 #include <stdlib.h>
 
 int InputComFile(char *inputfile, double **x, double **y, double **z);
-int InputNormalMode(char *inputfile, double **dx, double **dy, double **dz, double **mass);
+int InputNormalMode(char *inputfile, int start, double **modedisplacement, double **mass);
 
 int main(int argc, char **argv){
 
     int i, j, k;
-    int control, control2;
+    int control;
+    int dimension = 2;
     double threshold = 1E-10;
 
 // input files
-//    char * comfile   = "2D_scan_resorcinol-A_b3lyp_ccl4_modes_35_36_dr=+0.00000000000000_+0.00000000000000.com";
-    char * comfile   = "2D_scan_resorcinol-A_b3lyp_ccl4_modes_35_36_dr=-0.05162332776183_-0.15486998328547.com";
-    char * modefile1 = "mode_35";
-    char * modefile2 = "mode_36";
+    char * comfile   = "2D_scan_resorcinol-A_b3lyp_ccl4_modes_35_36_dr=+0.00000000000000_+0.00000000000000.com";
+//    char * comfile   = "2D_scan_resorcinol-A_b3lyp_ccl4_modes_35_36_dr=-0.05162332776183_-0.15486998328547.com";
+    char modefiles[2][1024] = {"mode_35", "mode_36"};
+
 // coordinates
-    int n_atoms;
-    double * x;
-    double * y;
-    double * z;
-// first mode
-    double * dx1;
-    double * dy1;
-    double * dz1;
-    double * mass;
-// second mode
-    double * dx2;
-    double * dy2;
-    double * dz2;
-    double * mass2; // freed
+    int n_atoms = 0;
+    double * x  = NULL;
+    double * y  = NULL;
+    double * z  = NULL;
+// modes
+    double * modes  = NULL;
+    double * masses = NULL; // freed
+    double * mass   = NULL;
 
 // center of mass coordinates and moment of inertia tensor
     double x0, y0, z0, tot_mass;
@@ -48,10 +43,17 @@ int main(int argc, char **argv){
 //      4: File inconsistencies
 
 // check input argument
-    if(comfile == NULL || modefile1 == NULL || modefile2 == NULL){
+    if(comfile == NULL){
         fprintf(stderr, "\n (-) Please specify valid coordinates and mode files");
         fprintf(stderr, "\n     Aborting...\n\n");
         exit(1);
+    }
+    for(i = 0; i < dimension; ++i){
+        if(modefiles[i] == NULL){
+            fprintf(stderr, "\n (-) Please specify valid coordinates and mode files");
+            fprintf(stderr, "\n     Aborting...\n\n");
+            exit(1);
+        }
     }
 
 // input of com file
@@ -70,83 +72,81 @@ int main(int argc, char **argv){
         exit(3);
     }
 
-// input of first mode
-    dx1   = malloc(sizeof(double));
-    dy1   = malloc(sizeof(double));
-    dz1   = malloc(sizeof(double));
-    mass  = malloc(sizeof(double));
-    if(dx1 == NULL || dy1 == NULL || dz1 == NULL || mass == NULL){
-        fprintf(stderr, "\n (-) Error in memory allocation for dx1, dy1, dz1 or mass");
+// input of modes
+    modes  = malloc(sizeof(double));
+    masses = malloc(sizeof(double));
+    if(modes == NULL || masses == NULL){
+        fprintf(stderr, "\n (-) Error in memory allocation for mode1 or mass");
         fprintf(stderr, "\n     Aborting...\n\n");
         exit(2);
     }
-    control  = InputNormalMode(modefile1, &dx1, &dy1, &dz1, &mass);
 
-// input of second mode
-    dx2   = malloc(sizeof(double));
-    dy2   = malloc(sizeof(double));
-    dz2   = malloc(sizeof(double));
-    mass2 = malloc(sizeof(double));
-    if(dx2 == NULL || dy2 == NULL || dz2 == NULL || mass2 == NULL){
-        fprintf(stderr, "\n (-) Error in memory allocation for dx2, dy2, dz2 or mass");
-        fprintf(stderr, "\n     Aborting...\n\n");
-        exit(2);
-    }
-    control2 = InputNormalMode(modefile2, &dx2, &dy2, &dz2, &mass2);
+    for(i = 0; i < dimension; ++i){
+        control  = InputNormalMode(modefiles[i], i*n_atoms, &modes, &masses);
 
-// check if all files contain the same number of atoms
-    if(control != n_atoms || control2 != n_atoms){
-        fprintf(stderr, "\n (-) Error in reading input files.");
-        fprintf(stderr, "\n     Number of atoms doesn't match.");
-        fprintf(stderr, "\n     Aborting...\n\n");
-        exit(4);
-    }
-
-// check for same masses in mode files (atom order/type)
-    for(i = 0; i < n_atoms; ++i){
-        if( labs(mass[i] - mass2[i]) > threshold ){
+    // check if all files contain the same number of atoms
+        if(control/(i+1) != n_atoms){
             fprintf(stderr, "\n (-) Error in reading input files.");
-            fprintf(stderr, "\n     Atom masses differ between modes.\n");
+            fprintf(stderr, "\n     Number of atoms doesn't match.");
             fprintf(stderr, "\n     Aborting...\n\n");
             exit(4);
         }
     }
-    free(mass2); mass2 = NULL;
 
-//// output input for control
-//    fprintf(stderr,"\nNumber of Atoms: %d\n", n_atoms);
-//    fprintf(stderr,"\nInput coordinates\n", n_atoms);
-//    fprintf(stderr,"\t x             ");
-//    fprintf(stderr,"\t y             ");
-//    fprintf(stderr,"\t z             ");
-//    fprintf(stderr,"\t dx1           ");
-//    fprintf(stderr,"\t dy1           ");
-//    fprintf(stderr,"\t dz1           ");
-//    fprintf(stderr,"\t dx2           ");
-//    fprintf(stderr,"\t dy2           ");
-//    fprintf(stderr,"\t dz2           ");
-//    fprintf(stderr,"\t mass          ");
-//    fprintf(stderr,"\n");
-//    for(i = 0; i < n_atoms; ++i){
-//        fprintf(stderr,"\t% .8le\t% .8le\t% .8le", x[i], y[i], z[i]);   
-//        fprintf(stderr,"\t% .8le\t% .8le\t% .8le", dx1[i], dy1[i], dz1[i]);   
-//        fprintf(stderr,"\t% .8le\t% .8le\t% .8le", dx2[i], dy2[i], dz2[i]);   
-//        fprintf(stderr,"\t% .8le", mass[i]);   
-//        fprintf(stderr,"\n");
-//    }
+// check for same masses in mode files (atom order/type)
+    for(i = 0; i < dimension; ++i){
+        for(j = 0; j < n_atoms; ++j){
+            if( labs(masses[j] - masses[j + i*n_atoms]) > threshold ){
+                fprintf(stderr, "\n (-) Error in reading input files.");
+                fprintf(stderr, "\n     Atom masses differ between modes.\n");
+                fprintf(stderr, "\n     Aborting...\n\n");
+                exit(4);
+            }
+        }
+    }
+    mass = malloc(n_atoms * sizeof(double));
+    for(i = 0; i < n_atoms; ++i){
+        mass[i] = masses[i];
+    }
+    free(masses); masses = NULL;
 
+
+// output input for control
+    fprintf(stderr,"\nNumber of Atoms: %d", n_atoms);
+    fprintf(stderr,"\nInput coordinates:\n", n_atoms);
+    for(i = 0; i < dimension; ++i){
+        fprintf(stderr,"\n\t x             ");
+        fprintf(stderr,  "\t y             ");
+        fprintf(stderr,  "\t z             ");
+        fprintf(stderr,  "\t dx%d          ", i+1);
+        fprintf(stderr,  "\t dy%d          ", i+1);
+        fprintf(stderr,  "\t dz%d          ", i+1);
+        fprintf(stderr,  "\t mass          ");
+        fprintf(stderr,"\n");
+        for(j = 0; j < n_atoms; ++j){
+            fprintf(stderr,"\t% .8le\t% .8le\t% .8le", x[j], y[j], z[j]);
+            fprintf(stderr,"\t% .8le\t% .8le\t% .8le",
+                            modes[j*3     + i*n_atoms*3],
+                            modes[j*3 + 1 + i*n_atoms*3],
+                            modes[j*3 + 2 + i*n_atoms*3]
+                   );
+            fprintf(stderr,"\t% .8le", mass[j]);
+            fprintf(stderr,"\n");
+        }
+    }
 
 //------------------------------------------------------------------------------------------------------------------
 // Moment of inertia  Moment of inertia  Moment of inertia  Moment of inertia  Moment of inertia  Moment of inertia
 //------------------------------------------------------------------------------------------------------------------
 
 // calculate center of mass
+    x0 = y0 = z0 = tot_mass = 0.0;
     for(i = 0; i < n_atoms; ++i){
         x0 += x[i] * mass[i];
         y0 += y[i] * mass[i];
         z0 += z[i] * mass[i];
 
-        tot_mass += mass[i];
+        tot_mass  += mass[i];
     }
     x0 /= tot_mass;
     y0 /= tot_mass;
@@ -192,36 +192,36 @@ int main(int argc, char **argv){
         fprintf(stderr,"\n");
     }
 
-//------------------------------------------------------------------------------------------------------------------
-// Coriolis coefficients  Coriolis coefficients  Coriolis coefficients  Coriolis coefficients  Coriolis coefficients
-//------------------------------------------------------------------------------------------------------------------
-    int dimension;
-
-    double zeta[3];
-
-    for(i = 0; i < n_atoms; ++i){
-        zeta[0] += dy1[i]*dz2[i] - dz1[i]*dy2[i];
-        zeta[1] += dz1[i]*dx2[i] - dx1[i]*dz2[i];
-        zeta[2] += dx1[i]*dy2[i] - dy1[i]*dx2[i];
-    } 
-
-// output moment of inertia tensor
-    fprintf(stderr,"\nCorriolis coefficients\n");
-    fprintf(stderr,"\t zeta_x        ");
-    fprintf(stderr,"\t zeta_y        ");
-    fprintf(stderr,"\t zeta_z        ");
-    fprintf(stderr,"\n");
-    fprintf(stderr,"\t% .8le", zeta[0]);
-    fprintf(stderr,"\t% .8le", zeta[1]);
-    fprintf(stderr,"\t% .8le", zeta[2]);
-    fprintf(stderr,"\n");
-
-//------------------------------------------------------------------------------------------------------------------
-// Coriolis corrected moment of inertia  Coriolis corrected moment of inertia  Coriolis corrected moment of inertia   
-//------------------------------------------------------------------------------------------------------------------
-
-    double deviation_a = -0.05162332776183;
-    double deviation_b = -0.15486998328547;
+////------------------------------------------------------------------------------------------------------------------
+//// Coriolis coefficients  Coriolis coefficients  Coriolis coefficients  Coriolis coefficients  Coriolis coefficients
+////------------------------------------------------------------------------------------------------------------------
+//    int dimension;
+//
+//    double zeta[3];
+//
+//    for(i = 0; i < n_atoms; ++i){
+//        zeta[0] += dy1[i]*dz2[i] - dz1[i]*dy2[i];
+//        zeta[1] += dz1[i]*dx2[i] - dx1[i]*dz2[i];
+//        zeta[2] += dx1[i]*dy2[i] - dy1[i]*dx2[i];
+//    }
+//
+//// output moment of inertia tensor
+//    fprintf(stderr,"\nCorriolis coefficients\n");
+//    fprintf(stderr,"\t zeta_x        ");
+//    fprintf(stderr,"\t zeta_y        ");
+//    fprintf(stderr,"\t zeta_z        ");
+//    fprintf(stderr,"\n");
+//    fprintf(stderr,"\t% .8le", zeta[0]);
+//    fprintf(stderr,"\t% .8le", zeta[1]);
+//    fprintf(stderr,"\t% .8le", zeta[2]);
+//    fprintf(stderr,"\n");
+//
+////------------------------------------------------------------------------------------------------------------------
+//// Coriolis corrected moment of inertia  Coriolis corrected moment of inertia  Coriolis corrected moment of inertia
+////------------------------------------------------------------------------------------------------------------------
+//
+//    double deviation_a = -0.05162332776183;
+//    double deviation_b = -0.15486998328547;
 
 
     return 0;

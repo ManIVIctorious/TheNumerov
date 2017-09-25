@@ -8,9 +8,9 @@
 #include <ctype.h>
 
 // Offered prototypes
-int InputNormalMode(char *inputfile, double **dx, double **dy, double **dz, double **mass);
+int InputNormalMode(char *inputfile, int start, double **modedisplacement, double **mass);
 
-int InputNormalMode(char *inputfile, double **dx, double **dy, double **dz, double **mass){
+int InputNormalMode(char *inputfile, int start, double **modedisplacement, double **mass){
 
     int i, rows, comment_flag, control;
     char * comment = "#%\n";
@@ -25,7 +25,7 @@ int InputNormalMode(char *inputfile, double **dx, double **dy, double **dz, doub
         return(-1);
     }
 
-    rows = 0;
+    rows = start;
     while(fgets(buffer, sizeof(buffer), fd) != NULL){
 
     // check if the first character in buffer is a comment char,
@@ -53,12 +53,15 @@ int InputNormalMode(char *inputfile, double **dx, double **dy, double **dz, doub
     //printf("%s\n", line);
 //-----------------------------------------------------------------------------------
 
-        (*dx)   = realloc((*dx),   (rows + 1) * sizeof(double));
-        (*dy)   = realloc((*dy),   (rows + 1) * sizeof(double));
-        (*dz)   = realloc((*dz),   (rows + 1) * sizeof(double));
-        (*mass) = realloc((*mass), (rows + 1) * sizeof(double));
+        (*modedisplacement) = realloc((*modedisplacement), 3*(rows + 1) * sizeof(double));
+        (*mass)             = realloc((*mass),               (rows + 1) * sizeof(double));
 
-        control = sscanf(line, "%lf  %lf  %lf  %lf", &(*dx)[rows], &(*dy)[rows], &(*dz)[rows], &(*mass)[rows]);
+        control = sscanf(line, "%lf  %lf  %lf  %lf",
+                                &(*modedisplacement)[3*rows],
+                                &(*modedisplacement)[3*rows + 1],
+                                &(*modedisplacement)[3*rows + 2],
+                                &(*mass)[rows]
+                        );
         if(control != 4){
           fprintf(stderr, "\n(-) ERROR reading data from input-file \"%s\".", inputfile);
           fprintf(stderr, "\n    Aborting - please check your input...\n\n");
