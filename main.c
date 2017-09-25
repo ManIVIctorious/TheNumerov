@@ -5,6 +5,8 @@
 int InputComFile(char *inputfile, double **x, double **y, double **z);
 int InputNormalMode(char *inputfile, int start, double **modedisplacement, double **mass);
 
+int CorriolisCoefficients(int n_atoms, double *mode1, double *mode2, double *zeta);
+
 int main(int argc, char **argv){
 
     int i, j, k;
@@ -13,8 +15,7 @@ int main(int argc, char **argv){
     double threshold = 1E-10;
 
 // input files
-    char * comfile   = "2D_scan_resorcinol-A_b3lyp_ccl4_modes_35_36_dr=+0.00000000000000_+0.00000000000000.com";
-//    char * comfile   = "2D_scan_resorcinol-A_b3lyp_ccl4_modes_35_36_dr=-0.05162332776183_-0.15486998328547.com";
+    char * comfile   = "2D_scan_resorcinol-A_b3lyp_ccl4_modes_35_36_dr=-0.05162332776183_-0.15486998328547.com";
     char modefiles[2][1024] = {"mode_35", "mode_36"};
 
 // coordinates
@@ -26,6 +27,11 @@ int main(int argc, char **argv){
     double * modes  = NULL;
     double * masses = NULL; // freed
     double * mass   = NULL;
+
+    double * auxmode1 = NULL; // freed
+    double * auxmode2 = NULL; // freed
+    double auxzeta[3];
+    double zeta[dimension][dimension][3];
 
 // center of mass coordinates and moment of inertia tensor
     double x0, y0, z0, tot_mass;
@@ -112,7 +118,7 @@ int main(int argc, char **argv){
 
 
 // output input for control
-    fprintf(stderr,"\nNumber of Atoms: %d", n_atoms);
+    fprintf(stderr,"\nNumber of Atoms:\t%d", n_atoms);
     fprintf(stderr,"\nInput coordinates:\n", n_atoms);
     for(i = 0; i < dimension; ++i){
         fprintf(stderr,"\n\t x             ");
@@ -135,6 +141,7 @@ int main(int argc, char **argv){
         }
     }
 
+
 //------------------------------------------------------------------------------------------------------------------
 // Moment of inertia  Moment of inertia  Moment of inertia  Moment of inertia  Moment of inertia  Moment of inertia
 //------------------------------------------------------------------------------------------------------------------
@@ -152,12 +159,12 @@ int main(int argc, char **argv){
     y0 /= tot_mass;
     z0 /= tot_mass;
 
-//// output center of mass
-//    fprintf(stderr,"\nCenter of mass\n");
-//    fprintf(stderr,"\t% 15.8lf", x0);
-//    fprintf(stderr,"\t% 15.8lf", y0);
-//    fprintf(stderr,"\t% 15.8lf", z0);
-//    fprintf(stderr,"\n");
+// output center of mass
+    fprintf(stderr,"\nCenter of mass\n");
+    fprintf(stderr,"\t% 15.8lf", x0);
+    fprintf(stderr,"\t% 15.8lf", y0);
+    fprintf(stderr,"\t% 15.8lf", z0);
+    fprintf(stderr,"\n");
 
 // translate molecule center of mass to origin
     for(i = 0; i < n_atoms; ++i){
@@ -192,30 +199,58 @@ int main(int argc, char **argv){
         fprintf(stderr,"\n");
     }
 
-////------------------------------------------------------------------------------------------------------------------
-//// Coriolis coefficients  Coriolis coefficients  Coriolis coefficients  Coriolis coefficients  Coriolis coefficients
-////------------------------------------------------------------------------------------------------------------------
-//    int dimension;
-//
-//    double zeta[3];
-//
-//    for(i = 0; i < n_atoms; ++i){
-//        zeta[0] += dy1[i]*dz2[i] - dz1[i]*dy2[i];
-//        zeta[1] += dz1[i]*dx2[i] - dx1[i]*dz2[i];
-//        zeta[2] += dx1[i]*dy2[i] - dy1[i]*dx2[i];
-//    }
-//
-//// output moment of inertia tensor
-//    fprintf(stderr,"\nCorriolis coefficients\n");
-//    fprintf(stderr,"\t zeta_x        ");
-//    fprintf(stderr,"\t zeta_y        ");
-//    fprintf(stderr,"\t zeta_z        ");
-//    fprintf(stderr,"\n");
-//    fprintf(stderr,"\t% .8le", zeta[0]);
-//    fprintf(stderr,"\t% .8le", zeta[1]);
-//    fprintf(stderr,"\t% .8le", zeta[2]);
-//    fprintf(stderr,"\n");
-//
+
+//------------------------------------------------------------------------------------------------------------------
+// Coriolis coefficients  Coriolis coefficients  Coriolis coefficients  Coriolis coefficients  Coriolis coefficients
+//------------------------------------------------------------------------------------------------------------------
+
+// fill auxiliary mode arrays:
+    auxmode1 = malloc(3*n_atoms*sizeof(double));
+    auxmode2 = malloc(3*n_atoms*sizeof(double));
+
+// calculate upper triangle of the zeta tensors (upper triangle of dim x dim)
+//  [i][j] values are -[j][i] values and main diagonal remains zero
+    for(i = 0; i < dimension; ++i){
+        for(j = i+1; j < dimension; ++j){
+            for(k = 0; k < n_atoms*3; ++k){
+                auxmode1[k] = modes[i*n_atoms*3 + k];
+                auxmode2[k] = modes[j*n_atoms*3 + k];
+            }
+
+            fprintf(stderr, "\ndim = %d%d\n", i, j);
+            for(k = 0; k < n_atoms*3; ++k){
+                fprintf(stderr, "\t% le", auxmode1[k]);
+                if(k%3 == 2) fprintf(stderr, "\n");
+            }
+            fprintf(stderr, "\n");
+            for(k = 0; k < n_atoms*3; ++k){
+                fprintf(stderr, "\t% le", auxmode2[k]);
+                if(k%3 == 2) fprintf(stderr, "\n");
+            }
+
+            auxzeta[0] = auxzeta[1] = auxzeta[2] = 0.0;
+            CorriolisCoefficients(n_atoms, auxmode1, auxmode2, auxzeta);
+
+            zeta[i][j][0] =  auxzeta[0];
+            zeta[i][j][1] =  auxzeta[1];
+            zeta[i][j][2] =  auxzeta[2];
+            zeta[j][i][0] = -auxzeta[0];
+            zeta[j][i][1] = -auxzeta[1];
+            zeta[j][i][2] = -auxzeta[2];
+        }
+    }
+    free(auxmode1); auxmode1 = NULL;
+    free(auxmode2); auxmode2 = NULL;
+
+// output Coriolis coefficient tensor (dimension x dimension x 3)
+    fprintf(stderr, "\nCoriolis coefficients\n");
+    for(i = 0; i < dimension; ++i){
+        for(j = 0; j < dimension; ++j){
+            fprintf(stderr, "\t%d%d\t% le\t% le\t% le\n", i, j, zeta[i][j][0], zeta[i][j][1], zeta[i][j][2]);
+        }
+    }
+
+
 ////------------------------------------------------------------------------------------------------------------------
 //// Coriolis corrected moment of inertia  Coriolis corrected moment of inertia  Coriolis corrected moment of inertia
 ////------------------------------------------------------------------------------------------------------------------
@@ -223,6 +258,19 @@ int main(int argc, char **argv){
 //    double deviation_a = -0.05162332776183;
 //    double deviation_b = -0.15486998328547;
 
+
+    return 0;
+}
+
+int CorriolisCoefficients(int n_atoms, double *mode1, double *mode2, double *zeta){
+
+    int i;
+
+    for(i = 0; i < n_atoms; ++i){
+        zeta[0] += mode1[i*3 + 1]*mode2[i*3 + 2] - mode1[i*3 + 2]*mode2[i*3 + 1]; // dy1*dz2 - dz1*dy2
+        zeta[1] += mode1[i*3 + 2]*mode2[i*3    ] - mode1[i*3    ]*mode2[i*3 + 2]; // dz1*dx2 - dx1*dz2
+        zeta[2] += mode1[i*3    ]*mode2[i*3 + 1] - mode1[i*3 + 1]*mode2[i*3    ]; // dx1*dy2 - dy1*dx2
+    }
 
     return 0;
 }
