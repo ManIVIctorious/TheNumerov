@@ -9,7 +9,7 @@ int CorriolisCoefficients(int n_atoms, double *mode1, double *mode2, double *zet
 
 int main(int argc, char **argv){
 
-    int i, j, k;
+    int i, j, k, m, n;
     int control;
     int dimension = 2;
     double threshold = 1E-10;
@@ -37,6 +37,13 @@ int main(int argc, char **argv){
     double x0, y0, z0, tot_mass;
     double MomentOfInertia[9];
 
+// set verbose level
+    int verbose = 1;
+    FILE *fdverb = fopen("/dev/null", "w");
+    if(verbose == 1){
+        fclose(fdverb);
+        fdverb = stderr;
+    }
 
 //------------------------------------------------------------------------------------------------------------------
 // Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input
@@ -118,26 +125,27 @@ int main(int argc, char **argv){
 
 
 // output input for control
-    fprintf(stderr,"\nNumber of Atoms:\t%d", n_atoms);
-    fprintf(stderr,"\nInput coordinates:\n", n_atoms);
+    fprintf(fdverb, "\nNumber of Atoms:\t%d", n_atoms);
+    fprintf(fdverb, "\nInput coordinates:", n_atoms);
     for(i = 0; i < dimension; ++i){
-        fprintf(stderr,"\n\t x             ");
-        fprintf(stderr,  "\t y             ");
-        fprintf(stderr,  "\t z             ");
-        fprintf(stderr,  "\t dx%d          ", i+1);
-        fprintf(stderr,  "\t dy%d          ", i+1);
-        fprintf(stderr,  "\t dz%d          ", i+1);
-        fprintf(stderr,  "\t mass          ");
-        fprintf(stderr,"\n");
+    fprintf(fdverb, "\n   Mode No: %d\n", i);
+        fprintf(fdverb, "\t x             ");
+        fprintf(fdverb, "\t y             ");
+        fprintf(fdverb, "\t z             ");
+        fprintf(fdverb, "\t dx%d          ", i+1);
+        fprintf(fdverb, "\t dy%d          ", i+1);
+        fprintf(fdverb, "\t dz%d          ", i+1);
+        fprintf(fdverb, "\t mass          ");
+        fprintf(fdverb, "\n");
         for(j = 0; j < n_atoms; ++j){
-            fprintf(stderr,"\t% .8le\t% .8le\t% .8le", x[j], y[j], z[j]);
-            fprintf(stderr,"\t% .8le\t% .8le\t% .8le",
+            fprintf(fdverb, "\t% .8le\t% .8le\t% .8le", x[j], y[j], z[j]);
+            fprintf(fdverb, "\t% .8le\t% .8le\t% .8le",
                             modes[j*3     + i*n_atoms*3],
                             modes[j*3 + 1 + i*n_atoms*3],
                             modes[j*3 + 2 + i*n_atoms*3]
                    );
-            fprintf(stderr,"\t% .8le", mass[j]);
-            fprintf(stderr,"\n");
+            fprintf(fdverb, "\t% .8le", mass[j]);
+            fprintf(fdverb, "\n");
         }
     }
 
@@ -160,11 +168,11 @@ int main(int argc, char **argv){
     z0 /= tot_mass;
 
 // output center of mass
-    fprintf(stderr,"\nCenter of mass\n");
-    fprintf(stderr,"\t% 15.8lf", x0);
-    fprintf(stderr,"\t% 15.8lf", y0);
-    fprintf(stderr,"\t% 15.8lf", z0);
-    fprintf(stderr,"\n");
+    fprintf(fdverb, "\nCenter of mass\n");
+    fprintf(fdverb, "\t% 15.8lf", x0);
+    fprintf(fdverb, "\t% 15.8lf", y0);
+    fprintf(fdverb, "\t% 15.8lf", z0);
+    fprintf(fdverb, "\n");
 
 // translate molecule center of mass to origin
     for(i = 0; i < n_atoms; ++i){
@@ -191,12 +199,12 @@ int main(int argc, char **argv){
     MomentOfInertia[7] = MomentOfInertia[5];    // 32 zy
 
 // output moment of inertia tensor
-    fprintf(stderr,"\nMoment of inertia tensor\n");
+    fprintf(fdverb, "\nMoment of inertia tensor\n");
     for(i = 0; i < 3; ++i){
         for(j = 0; j < 3; ++j){
-            fprintf(stderr,"\t% 15.8lf", MomentOfInertia[i*3 + j]);
+            fprintf(fdverb, "\t% 15.8lf", MomentOfInertia[i*3 + j]);
         }
-        fprintf(stderr,"\n");
+        fprintf(fdverb, "\n");
     }
 
 
@@ -217,15 +225,15 @@ int main(int argc, char **argv){
                 auxmode2[k] = modes[j*n_atoms*3 + k];
             }
 
-            fprintf(stderr, "\ndim = %d%d\n", i, j);
+            fprintf(fdverb, "\ndim = %d%d\n", i, j);
             for(k = 0; k < n_atoms*3; ++k){
-                fprintf(stderr, "\t% le", auxmode1[k]);
-                if(k%3 == 2) fprintf(stderr, "\n");
+                fprintf(fdverb, "\t% le", auxmode1[k]);
+                if(k%3 == 2) fprintf(fdverb, "\n");
             }
-            fprintf(stderr, "\n");
+            fprintf(fdverb, "\n");
             for(k = 0; k < n_atoms*3; ++k){
-                fprintf(stderr, "\t% le", auxmode2[k]);
-                if(k%3 == 2) fprintf(stderr, "\n");
+                fprintf(fdverb, "\t% le", auxmode2[k]);
+                if(k%3 == 2) fprintf(fdverb, "\n");
             }
 
             auxzeta[0] = auxzeta[1] = auxzeta[2] = 0.0;
@@ -243,20 +251,81 @@ int main(int argc, char **argv){
     free(auxmode2); auxmode2 = NULL;
 
 // output Coriolis coefficient tensor (dimension x dimension x 3)
-    fprintf(stderr, "\nCoriolis coefficients\n");
+    fprintf(fdverb, "\nCoriolis coefficients zeta^a_ij (a in {x,y,z}, i,j in mode_{0,...,n})\n");
+    fprintf(fdverb, "\tModeA\tModeB\t\tx\t\ty\t\tz\n");
     for(i = 0; i < dimension; ++i){
         for(j = 0; j < dimension; ++j){
-            fprintf(stderr, "\t%d%d\t% le\t% le\t% le\n", i, j, zeta[i][j][0], zeta[i][j][1], zeta[i][j][2]);
+            fprintf(fdverb, "\t%d\t%d\t% le\t% le\t% le\n", i, j, zeta[i][j][0], zeta[i][j][1], zeta[i][j][2]);
         }
     }
 
 
-////------------------------------------------------------------------------------------------------------------------
-//// Coriolis corrected moment of inertia  Coriolis corrected moment of inertia  Coriolis corrected moment of inertia
-////------------------------------------------------------------------------------------------------------------------
-//
-//    double deviation_a = -0.05162332776183;
-//    double deviation_b = -0.15486998328547;
+//------------------------------------------------------------------------------------------------------------------
+// Coriolis corrected moment of inertia  Coriolis corrected moment of inertia  Coriolis corrected moment of inertia
+//------------------------------------------------------------------------------------------------------------------
+
+    double deviation_a = -0.05162332776183;
+    double deviation_b = -0.15486998328547;
+
+
+    fprintf(fdverb, "\nCoriolis correction of moment of inertia (a,b in {x,y,z}, i,j,k in mode_{0,...,n})\n");
+    fprintf(fdverb, "\tab\tik\tjk\tzeta^a_ik * zeta^b_jk * Q_i * Q_j\n");
+    fprintf(fdverb, "\t---------------------------------------------------------\n");
+    for(m = 0; m < 3; ++m){
+        for(n = 0; n < 3; ++n){
+
+            for(i = 0; i < dimension; ++i){
+                for(j = i+1; j < dimension; ++j){
+                    for(k = 0; k < j; ++k){
+//                        printf("\t% le\n", zeta[i][j][m] * zeta[k][j][n]);
+
+                        fprintf(fdverb, "\t%d%d", m,n);
+                        fprintf(fdverb, "\t%d%d", i,j);
+                        fprintf(fdverb, "\t%d%d", k,j);
+                        fprintf(fdverb, "\tzeta^%d_%d%d ", m, i, j);
+                        fprintf(fdverb, "* zeta^%d_%d%d ", n, k, j);
+                        fprintf(fdverb, "* Q_%d * Q_%d", i, k);
+                        fprintf(fdverb, "\n");
+                    }
+                    for(k = j+1; k < dimension; ++k){
+//                        printf("\t% le\n", zeta[i][j][m] * zeta[k][j][n]);
+
+                        fprintf(fdverb, "\t%d%d", m,n);
+                        fprintf(fdverb, "\t%d%d", i,j);
+                        fprintf(fdverb, "\t%d%d", k,j);
+                        fprintf(fdverb, "\tzeta^%d_%d%d ", m, i, j);
+                        fprintf(fdverb, "* zeta^%d_%d%d ", n, k, j);
+                        fprintf(fdverb, "* Q_%d * Q_%d", i, k);
+                        fprintf(fdverb, "\n");
+                    }
+
+                    for(k = 0; k < i; ++k){
+//                        printf("\t% le\n", zeta[j][i][m] * zeta[k][i][n]);
+
+                        fprintf(fdverb, "\t%d%d", m,n);
+                        fprintf(fdverb, "\t%d%d", j,i);
+                        fprintf(fdverb, "\t%d%d", k,i);
+                        fprintf(fdverb, "\tzeta^%d_%d%d ", m, j, i);
+                        fprintf(fdverb, "* zeta^%d_%d%d ", n, k, i);
+                        fprintf(fdverb, "* Q_%d * Q_%d", j, k);
+                        fprintf(fdverb, "\n");
+                    }
+                    for(k = i+1; k < dimension; ++k){
+//                        printf("\t% le\n", zeta[j][i][m] * zeta[k][i][n]);
+
+                        fprintf(fdverb, "\t%d%d", m,n);
+                        fprintf(fdverb, "\t%d%d", j,i);
+                        fprintf(fdverb, "\t%d%d", k,i);
+                        fprintf(fdverb, "\tzeta^%d_%d%d ", m, j, i);
+                        fprintf(fdverb, "* zeta^%d_%d%d ", n, k, i);
+                        fprintf(fdverb, "* Q_%d * Q_%d", j, k);
+                        fprintf(fdverb, "\n");
+                    }
+                }
+            }
+        }
+    }
+
 
 
     return 0;
