@@ -12,7 +12,7 @@ CFLAGS = -g -Og
 
 # executable to be generated
 EXE = bin/watson
-OBJ = main.o InputComFile.o InputNormalMode.o
+OBJ = main.o InputComFile.o InputNormalMode.o InvertMatrix.o
 #LIB = `pkg-config --cflags --libs gsl` -lmkl_core -lmkl_intel_ilp64 -lmkl_intel_thread -liomp5 -lpthread -ldl -m64 -DMKL_ILP64
 LIB = `pkg-config --cflags --libs gsl`
 

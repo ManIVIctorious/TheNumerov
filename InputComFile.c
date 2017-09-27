@@ -29,10 +29,6 @@ int InputComFile(char *inputfile, double **x, double **y, double **z){
         return(-1);
     }
 
-//    (*x)  = realloc((*x),   sizeof(double));
-//    (*y)  = realloc((*y),   sizeof(double));
-//    (*z)  = realloc((*z),   sizeof(double));
-
     rows = 0;
     while(fgets(buffer, sizeof(buffer), fd) != NULL){
 
