@@ -7,14 +7,14 @@ int InputComFile(char *inputfile, double **x, double **y, double **z);
 int InputNormalMode(char *inputfile, int start, double **modedisplacement, double **mass);
 int InvertMatrix(gsl_matrix *Matrix, gsl_matrix *InvMatrix, int dimension);
 
-int CoriolisCoefficients(int n_atoms, double *mode1, double *mode2, double *zeta);
+int CoriolisCoefficients(int n_atoms, double *mode1, double *mode2, double *zeta_x, double *zeta_y, double *zeta_z);
 
 int main(int argc, char **argv){
 
 //------------------------------------------------------------------------------------------------------------------
 //   Deklaration   Deklaration   Deklaration   Deklaration   Deklaration   Deklaration   Deklaration   Deklaration
 //------------------------------------------------------------------------------------------------------------------
-    int m, n;       // m,n always in {x,y,z}
+    int m, n;       // for all m,n: m,n in {x,y,z}
     int i, j, k;
     int control = 0;
 
@@ -53,13 +53,6 @@ int main(int argc, char **argv){
     int    verbose   = 1;       // set level of verbosity
     int    dimension = 2;       // number of included modes
     double threshold = 1E-10;   // threshold for number comparison
-
-
-
-
-
-
-    double auxzeta[3];
 
 
 
@@ -275,15 +268,17 @@ int main(int argc, char **argv){
                 if(k%3 == 2) fprintf(fdverb, "\n");
             }
 
-            auxzeta[0] = auxzeta[1] = auxzeta[2] = 0.0;
-            CoriolisCoefficients(n_atoms, auxmode1, auxmode2, auxzeta);
+            CoriolisCoefficients( n_atoms,
+                                  auxmode1,
+                                  auxmode2,
+                                  &zeta[(i*dimension + j)*3 + 0],
+                                  &zeta[(i*dimension + j)*3 + 1],
+                                  &zeta[(i*dimension + j)*3 + 2]
+                            );
 
-            zeta[(i*dimension + j)*3 + 0] =  auxzeta[0];
-            zeta[(i*dimension + j)*3 + 1] =  auxzeta[1];
-            zeta[(i*dimension + j)*3 + 2] =  auxzeta[2];
-            zeta[(j*dimension + i)*3 + 0] = -auxzeta[0];
-            zeta[(j*dimension + i)*3 + 1] = -auxzeta[1];
-            zeta[(j*dimension + i)*3 + 2] = -auxzeta[2];
+            zeta[(j*dimension + i)*3 + 0] = -zeta[(i*dimension + j)*3 + 0];
+            zeta[(j*dimension + i)*3 + 1] = -zeta[(i*dimension + j)*3 + 1];
+            zeta[(j*dimension + i)*3 + 2] = -zeta[(i*dimension + j)*3 + 2];
         }
     }
     free(modes); modes = NULL;
@@ -439,14 +434,14 @@ int main(int argc, char **argv){
     return 0;
 }
 
-int CoriolisCoefficients(int n_atoms, double *mode1, double *mode2, double *zeta){
+int CoriolisCoefficients(int n_atoms, double *mode1, double *mode2, double *zeta_x, double *zeta_y, double *zeta_z){
 
     int i;
 
     for(i = 0; i < n_atoms; ++i){
-        zeta[0] += mode1[i*3 + 1]*mode2[i*3 + 2] - mode1[i*3 + 2]*mode2[i*3 + 1]; // dy1*dz2 - dz1*dy2
-        zeta[1] += mode1[i*3 + 2]*mode2[i*3    ] - mode1[i*3    ]*mode2[i*3 + 2]; // dz1*dx2 - dx1*dz2
-        zeta[2] += mode1[i*3    ]*mode2[i*3 + 1] - mode1[i*3 + 1]*mode2[i*3    ]; // dx1*dy2 - dy1*dx2
+        *zeta_x += mode1[i*3 + 1]*mode2[i*3 + 2] - mode1[i*3 + 2]*mode2[i*3 + 1]; // dy1*dz2 - dz1*dy2
+        *zeta_y += mode1[i*3 + 2]*mode2[i*3    ] - mode1[i*3    ]*mode2[i*3 + 2]; // dz1*dx2 - dx1*dz2
+        *zeta_z += mode1[i*3    ]*mode2[i*3 + 1] - mode1[i*3 + 1]*mode2[i*3    ]; // dx1*dy2 - dy1*dx2
     }
 
     return 0;
