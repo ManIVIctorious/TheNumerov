@@ -12,7 +12,8 @@ int InputComFile(char *inputfile, double **x, double **y, double **z);
 
 int InputComFile(char *inputfile, double **x, double **y, double **z){
 
-    int i, rows, comment_flag, control;
+    int rows, comment_flag, control;
+    unsigned int i;
     char * comment = "#%\n";
     char * line    = NULL;
     char   buffer[_MaxLineLength_] = "";

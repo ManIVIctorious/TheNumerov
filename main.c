@@ -6,11 +6,10 @@
 int InputComFile(char *inputfile, double **x, double **y, double **z);
 int InputNormalMode(char *inputfile, int start, double **modedisplacement, double **mass);
 int InvertMatrix(gsl_matrix *Matrix, gsl_matrix *InvMatrix, int dimension);
-
 int CoriolisCoefficients(int n_atoms, double *mode1, double *mode2, double *zeta_x, double *zeta_y, double *zeta_z);
 
-int main(int argc, char **argv){
 
+int main(int argc, char **argv){
 //------------------------------------------------------------------------------------------------------------------
 //   Deklaration   Deklaration   Deklaration   Deklaration   Deklaration   Deklaration   Deklaration   Deklaration
 //------------------------------------------------------------------------------------------------------------------
@@ -146,7 +145,7 @@ int main(int argc, char **argv){
 
 // output input for control
     fprintf(fdverb, "\nNumber of Atoms:\t%d", n_atoms);
-    fprintf(fdverb, "\nInput coordinates:", n_atoms);
+    fprintf(fdverb, "\nInput coordinates:");
     for(i = 0; i < dimension; ++i){
         fprintf(fdverb, "\n   Mode No: %d", i);
         fprintf(fdverb, "\n   Mode deviation: % 20.14lf\n", deviation[i]);
@@ -311,7 +310,7 @@ int main(int argc, char **argv){
 
     fprintf(fdverb, "\nCoriolis correction of moment of inertia (a,b in {x,y,z}, i,j,k in mode_{0,...,n})\n");
     fprintf(fdverb, "\tab\tik\tjk\tzeta^a_ik * zeta^b_jk * Q_i * Q_j\n");
-    fprintf(fdverb, "\t---------------------------------------------------------\n");
+    fprintf(fdverb, "\t-------------------------------------------------------------------------\n");
 // m,n in {x,y,z}, i,j,k in mode_{0,...,n}
     for(m = 0; m < 3; ++m){
         for(n = 0; n < 3; ++n){

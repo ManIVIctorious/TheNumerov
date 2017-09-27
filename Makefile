@@ -1,8 +1,6 @@
 # Compiler and compiler flags
 CC = gcc
-CFLAGS = -g -Og -Wall -Wextra -Wstrict-prototypes -Wmissing-prototypes -Werror -Wno-sign-compare -Wno-unused-parameter -march=native #-mtune=native
-
-CFLAGS = -g -Og
+CFLAGS = -g -Og -Wall -Wextra -Wstrict-prototypes -Wmissing-prototypes -Werror -Wno-unused-parameter -march=native #-mtune=native
 
 # additional header and library file directories
 #INCDIR = -I/usr/local/intel/mkl/include/

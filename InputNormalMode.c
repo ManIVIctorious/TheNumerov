@@ -12,7 +12,8 @@ int InputNormalMode(char *inputfile, int start, double **modedisplacement, doubl
 
 int InputNormalMode(char *inputfile, int start, double **modedisplacement, double **mass){
 
-    int i, rows, comment_flag, control;
+    int rows, comment_flag, control;
+    unsigned int i;
     char * comment = "#%\n";
     char * line    = NULL;
     char   buffer[_MaxLineLength_] = "";
@@ -31,7 +32,7 @@ int InputNormalMode(char *inputfile, int start, double **modedisplacement, doubl
     // check if the first character in buffer is a comment char,
     //  if yes jump to next line
         comment_flag = 0;
-        for(i=0; i<strlen(comment); ++i){
+        for(i = 0; i < strlen(comment); ++i){
             if(buffer[0] == comment[i]){
                 comment_flag = 1;
                 break;
