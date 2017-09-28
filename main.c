@@ -1,36 +1,190 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <gsl/gsl_matrix.h>
+#include <getopt.h>
 
 int InputComFile(char *inputfile, double **x, double **y, double **z);
 int InputNormalMode(char *inputfile, int start, double **modedisplacement, double **mass);
 int InvertMatrix(gsl_matrix *Matrix, gsl_matrix *InvMatrix, int dimension);
 int CoriolisCoefficients(int n_atoms, double *mode1, double *mode2, double *zeta_x, double *zeta_y, double *zeta_z);
+int Help(char *app_name);
 
 
 int main(int argc, char **argv){
 //------------------------------------------------------------------------------------------------------------------
+//  Default values  Default values  Default values  Default values  Default values  Default values  Default values
+//------------------------------------------------------------------------------------------------------------------
+    int    verbose   = 0;       // set level of verbosity
+    int    dimension = 0;       // number of included modes
+    double threshold = 1E-10;   // threshold for number comparison
+
+// files
+    char  * operation = "w";                    // whether to write or append to output-file
+    char  * verbout  = NULL;                    // destination of verbosity output
+    char  * outfile  = NULL;                    // standard output file
+    char  * comfile  = NULL;                    // input comfile
+    char ** modelist = malloc(sizeof(char*));   // list of input modefiles
+    if(modelist == NULL){
+        fprintf(stderr, "\n (-) Error in memory allocation for modelist");
+        fprintf(stderr, "\n     Aborting...\n\n");
+        exit(2);
+    }
+
+// deviation from equilibrium position by i^th mode
+    double  * deviation = malloc(sizeof(double));   // freed
+    if(deviation == NULL){
+        fprintf(stderr, "\n (-) Error in memory allocation for deviation");
+        fprintf(stderr, "\n     Aborting...\n\n");
+        exit(2);
+    }
+
+    int i = 0;
+    int j = 0;
+    int k = 0;
+//------------------------------------------------------------------------------------------------------------------
+//  FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS
+//------------------------------------------------------------------------------------------------------------------
+    if(argc == 1){ exit(Help(argv[0])); }
+    // optstring contains a list of all short option indices,
+    //  indices followed by a colon are options requiring an argument.
+    const char         * optstring = "havV:t:c:m:o:d:";
+    const struct option longopts[] = {
+    //  *name:      option name,
+    //  has_arg:    if option requires argument,
+    //  *flag:      if set to NULL getopt_long() returns val,
+    //              else it returns 0 and flag points to a variable set to val
+    //  val:        value to return
+        {"help",                  no_argument, NULL, 'h'},
+        {"append",                no_argument, NULL, 'a'},
+        {"verbose",               no_argument, NULL, 'v'},
+        {"verb-to-file",    required_argument, NULL, 'V'},
+        {"threshold",       required_argument, NULL, 't'},
+        {"coordinates",     required_argument, NULL, 'c'},
+        {"modefile",        required_argument, NULL, 'm'},
+        {"deviation",       required_argument, NULL, 'd'},
+        {"outputfile",      required_argument, NULL, 'o'},
+    };
+
+    optind = 1; // option index starting by 1, provided by <getopt.h>
+    while(optind < argc){
+
+    // i is the integer representation of the corresponding option, e.g. x = 120
+    //  i = -1 corresponds to the end of the options
+        i = getopt_long(argc, argv, optstring, longopts, &j);
+
+    // iterate over options i
+        switch(i){
+            case 'h':
+                exit(Help(argv[0]));
+                break;
+
+            case 'v':
+                ++verbose;
+                break;
+
+            case 'V':
+                ++verbose;
+                verbout = optarg;
+                break;
+
+            case 'c':
+                comfile = optarg;
+                break;
+
+            case 'm':
+            // increment dimension by 1
+                ++dimension;
+            // set number of entries in modelist to dimension
+                modelist              = realloc(modelist, dimension * sizeof(char*));
+            // allocate memory for the new entry
+                modelist[dimension-1] =  malloc(strlen(optarg) * sizeof(char));
+            // copy the content of optarg into the newly allocated char array
+                strncpy(modelist[dimension-1], optarg, strlen(optarg));
+                break;
+
+            case 'd':
+            // increment k by 1
+                ++k;
+            // set number of entries is deviation array to k
+                deviation = realloc(deviation, k*sizeof(double));
+                deviation[k-1] = atof(optarg);
+                break;
+
+            case 'o':
+                outfile = optarg;
+                break;
+
+            case 'a':
+                operation = "a";
+                break;
+
+            case 't':
+                threshold = atof(optarg);
+                break;
+
+
+            default:
+                exit(Help(argv[0]));
+        }
+    }
+
+//------------------------------------------------------------------------------------------------------------------
+//  Error handling  Error handling  Error handling  Error handling  Error handling  Error handling  Error handling
+//------------------------------------------------------------------------------------------------------------------
+
+// Error code cheat sheet:
+//      1: Wrong input (program handling)
+//      2: Memory allocation problem
+//      3: Problem with input function
+//      4: File inconsistencies
+
+// check if dimension is at least 2
+    if(dimension < 2){
+        fprintf(stderr, "\n (-) At least two modes have to be considered");
+        fprintf(stderr, "\n     Please check your input");
+        fprintf(stderr, "\n     Aborting...\n\n");
+        exit(1);
+    }
+
+// check if there are as many entries in deviation as in modelist
+    if(k != dimension){
+        fprintf(stderr, "\n (-) Number of deviation entries and number of modes differ");
+        fprintf(stderr, "\n     Please check your input");
+        fprintf(stderr, "\n     Aborting...\n\n");
+        exit(1);
+    }
+
+// check input argument
+    if(comfile == NULL){
+        fprintf(stderr, "\n (-) Please specify valid coordinates and mode files");
+        fprintf(stderr, "\n     Aborting...\n\n");
+        exit(1);
+    }
+    for(i = 0; i < dimension; ++i){
+        if(modelist[i] == NULL){
+            fprintf(stderr, "\n (-) Please specify valid coordinates and mode files");
+            fprintf(stderr, "\n     Aborting...\n\n");
+            exit(1);
+        }
+    }
+
+
+//------------------------------------------------------------------------------------------------------------------
 //   Deklaration   Deklaration   Deklaration   Deklaration   Deklaration   Deklaration   Deklaration   Deklaration
 //------------------------------------------------------------------------------------------------------------------
     int m, n;       // for all m,n: m,n in {x,y,z}
-    int i, j, k;
-    int control = 0;
-
+    int control  = 0;
     double entry = 0.0;
-
-// input files
-    char * comfile = NULL;
-    //char modefiles[2][1024] = {"mode_35", "mode_36"};
 
 // coordinates and modes input
     int n_atoms = 0;
-    double * x  = NULL;         // freed
-    double * y  = NULL;         // freed
-    double * z  = NULL;         // freed
-    double * modes     = NULL;  // freed
-    double * masses    = NULL;  // freed
-    double * deviation = NULL;  // freed
+    double * x  = NULL;      // freed
+    double * y  = NULL;      // freed
+    double * z  = NULL;      // freed
+    double * modes  = NULL;  // freed
+    double * masses = NULL;  // freed
 
 // center of mass coordinates and moment of inertia tensor
     double x0, y0, z0, tot_mass;
@@ -45,54 +199,32 @@ int main(int argc, char **argv){
     double * auxmode1 = NULL;   // freed
     double * auxmode2 = NULL;   // freed
 
-//------------------------------------------------------------------------------------------------------------------
-//  Default values  Default values  Default values  Default values  Default values  Default values  Default values
-//------------------------------------------------------------------------------------------------------------------
 
-    int    verbose   = 1;       // set level of verbosity
-    int    dimension = 2;       // number of included modes
-    double threshold = 1E-10;   // threshold for number comparison
-
-
-
+    FILE * fdverb = NULL;   // verbosity output file handler
+    FILE * fdout  = NULL;   // output file handler
 
 // set level of verbosity
-    FILE *fdverb = fopen("/dev/null", "w");
-    if(verbose == 1){
-        fclose(fdverb);
-        fdverb = stderr;
+    if(verbose == 0){
+        fdverb = fopen("/dev/null", "w");
+    }
+    else if (verbose > 0){
+        if(verbout == NULL){
+            fdverb = stderr;
+        }else{
+            fdverb = fopen(verbout, "w");
+        }
     }
 
-    comfile  = "2D_scan_resorcinol-A_b3lyp_ccl4_modes_35_36_dr=-0.05162332776183_-0.15486998328547.com";
-    char modefiles[2][1024] = {"mode_35", "mode_36"};
-    deviation = calloc(dimension, sizeof(double));
-    deviation[0] = -0.05162332776183;
-    deviation[1] = -0.15486998328547;
+// open outputfile
+    if(outfile == NULL){
+        fdout = stdout;
+    }else{
+        fdout = fopen(outfile, operation);
+    }
 
 //------------------------------------------------------------------------------------------------------------------
 // Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input
 //------------------------------------------------------------------------------------------------------------------
-
-// Error code cheat sheet:
-//      1: Wrong input (program handling)
-//      2: Memory allocation problem
-//      3: Problem with input function
-//      4: File inconsistencies
-
-// check input argument
-    if(comfile == NULL){
-        fprintf(stderr, "\n (-) Please specify valid coordinates and mode files");
-        fprintf(stderr, "\n     Aborting...\n\n");
-        exit(1);
-    }
-    for(i = 0; i < dimension; ++i){
-        if(modefiles[i] == NULL){
-            fprintf(stderr, "\n (-) Please specify valid coordinates and mode files");
-            fprintf(stderr, "\n     Aborting...\n\n");
-            exit(1);
-        }
-    }
-
 // input of com file
     x = malloc(sizeof(double));
     y = malloc(sizeof(double));
@@ -119,7 +251,7 @@ int main(int argc, char **argv){
     }
 
     for(i = 0; i < dimension; ++i){
-        control  = InputNormalMode(modefiles[i], i*n_atoms, &modes, &masses);
+        control  = InputNormalMode(modelist[i], i*n_atoms, &modes, &masses);
 
     // check if all files contain the same number of atoms
         if(control/(i+1) != n_atoms){
@@ -379,6 +511,23 @@ int main(int argc, char **argv){
             }
         }
     }
+//------------------------------------------------------------------------------------------------------------------
+// Ouput mode deviations Output mode deviations Output mode deviations Output mode deviations Output mode deviations
+    for(i = 0; i < dimension; ++i){
+        fprintf(fdout, "\t% .12le", deviation[i]);
+    }
+// Ouput mode deviations Output mode deviations Output mode deviations Output mode deviations Output mode deviations
+//------------------------------------------------------------------------------------------------------------------
+//  Output upper triangle of zeta (without main diagonal)    Output upper triangle of zeta (without main diagonal)
+    for(m = 0; m < 3; ++m){
+        for(i = 0; i < dimension; ++i){
+            for(j = i+1; j < dimension; ++j){
+                fprintf(fdout, "\t% .12le", zeta[(i*dimension + j)*3 + m]);
+            }
+        }
+    }
+//  Output upper triangle of zeta (without main diagonal)    Output upper triangle of zeta (without main diagonal)
+//------------------------------------------------------------------------------------------------------------------
     free(deviation); deviation = NULL;
     free(zeta); zeta = NULL;
 
@@ -418,7 +567,6 @@ int main(int argc, char **argv){
     InvertMatrix(CorrMomentOfInertia, mu, 3);
     gsl_matrix_free(CorrMomentOfInertia); CorrMomentOfInertia = NULL;
 
-
 // output inverse of corrected moment of inertia (mu)
     fprintf(fdverb, "\nInverse of corrected moment of inertia (mu)\n");
     for(m = 0; m < 3; ++m){
@@ -427,9 +575,21 @@ int main(int argc, char **argv){
         }
         fprintf(fdverb, "\n");
     }
+//------------------------------------------------------------------------------------------------------------------
+//Output upper triangle of mu  Output upper triangle of mu  Output upper triangle of mu  Output upper triangle of mu
+    for(m = 0; m < 3; ++m){
+        for(n = 0; n < 3; ++n){
+            fprintf(fdout, "\t% .12le", gsl_matrix_get(mu, m, n));
+        }
+    }
+//Output upper triangle of mu  Output upper triangle of mu  Output upper triangle of mu  Output upper triangle of mu
+//------------------------------------------------------------------------------------------------------------------
     gsl_matrix_free(mu); mu = NULL;
 
 
+    fprintf(fdout, "\n");
+    fclose(fdout);  fdout  = NULL;
+    fclose(fdverb); fdverb = NULL;
     return 0;
 }
 
@@ -443,5 +603,10 @@ int CoriolisCoefficients(int n_atoms, double *mode1, double *mode2, double *zeta
         *zeta_z += mode1[i*3    ]*mode2[i*3 + 1] - mode1[i*3 + 1]*mode2[i*3    ]; // dx1*dy2 - dy1*dx2
     }
 
+    return 0;
+}
+
+int Help(char *app_name){
+    printf("Help function not yet implemented\n");
     return 0;
 }
