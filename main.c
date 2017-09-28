@@ -17,6 +17,7 @@ int main(int argc, char **argv){
 //  Default values  Default values  Default values  Default values  Default values  Default values  Default values
 //------------------------------------------------------------------------------------------------------------------
     int    verbose   = 0;       // set level of verbosity
+    int    legend    = 0;       // whether to output header with column description
     int    dimension = 0;       // number of included modes
     double threshold = 1E-10;   // threshold for number comparison
 
@@ -49,7 +50,7 @@ int main(int argc, char **argv){
     if(argc == 1){ exit(Help(argv[0])); }
     // optstring contains a list of all short option indices,
     //  indices followed by a colon are options requiring an argument.
-    const char         * optstring = "havV:t:c:m:o:d:";
+    const char         * optstring = "halvV:t:c:m:o:d:";
     const struct option longopts[] = {
     //  *name:      option name,
     //  has_arg:    if option requires argument,
@@ -57,6 +58,7 @@ int main(int argc, char **argv){
     //              else it returns 0 and flag points to a variable set to val
     //  val:        value to return
         {"help",                  no_argument, NULL, 'h'},
+        {"legend",                no_argument, NULL, 'l'},
         {"append",                no_argument, NULL, 'a'},
         {"verbose",               no_argument, NULL, 'v'},
         {"verb-to-file",    required_argument, NULL, 'V'},
@@ -82,6 +84,10 @@ int main(int argc, char **argv){
 
             case 'v':
                 ++verbose;
+                break;
+
+            case 'l':
+                legend = 1;
                 break;
 
             case 'V':
@@ -512,17 +518,39 @@ int main(int argc, char **argv){
         }
     }
 //------------------------------------------------------------------------------------------------------------------
-// Ouput mode deviations Output mode deviations Output mode deviations Output mode deviations Output mode deviations
-    for(i = 0; i < dimension; ++i){
-        fprintf(fdout, "\t% .12le", deviation[i]);
+//  Output legend   Output legend   Output legend   Output legend   Output legend   Output legend   Output legend
+    if(legend == 1){
+        fprintf(fdout, "#");
+        for(i = 0; i < dimension; ++i){
+            fprintf(fdout, "\t deviation[%d]    ", i);
+        }
+    for(m = 0; m < 3; ++m){
+        for(i = 0; i < dimension; ++i){
+            for(j = i+1; j < dimension; ++j){
+                fprintf(fdout, "\t zeta^%d_%d%d       ", m, i, j);
+            }
+        }
     }
-// Ouput mode deviations Output mode deviations Output mode deviations Output mode deviations Output mode deviations
+    for(m = 0; m < 3; ++m){
+        for(n = 0; n < 3; ++n){
+            fprintf(fdout, "\t mu_%d%d           ", m, n);
+        }
+    }
+    fprintf(fdout, "\n");
+    }
+//  Output legend   Output legend   Output legend   Output legend   Output legend   Output legend   Output legend
+//------------------------------------------------------------------------------------------------------------------
+//Output mode deviations Output mode deviations Output mode deviations Output mode deviations Output mode deviations
+    for(i = 0; i < dimension; ++i){
+        fprintf(fdout, "\t% 16.12le", deviation[i]);
+    }
+//Output mode deviations Output mode deviations Output mode deviations Output mode deviations Output mode deviations
 //------------------------------------------------------------------------------------------------------------------
 //  Output upper triangle of zeta (without main diagonal)    Output upper triangle of zeta (without main diagonal)
     for(m = 0; m < 3; ++m){
         for(i = 0; i < dimension; ++i){
             for(j = i+1; j < dimension; ++j){
-                fprintf(fdout, "\t% .12le", zeta[(i*dimension + j)*3 + m]);
+                fprintf(fdout, "\t% 16.12le", zeta[(i*dimension + j)*3 + m]);
             }
         }
     }
@@ -607,6 +635,29 @@ int CoriolisCoefficients(int n_atoms, double *mode1, double *mode2, double *zeta
 }
 
 int Help(char *app_name){
-    printf("Help function not yet implemented\n");
+
+    printf("\nAvailable options for %s:", app_name);
+
+    printf("\n\nFlags not requiring arguments:");
+    printf("\n\t-h|--help           Print this help dialogue");
+    printf("\n\t-a|--append         Append to file instead of overwriting it");
+    printf("\n\t-l|--legend         Precede output with a header describing each column");
+    printf("\n\t-v|--verbose        Increase verbosity of program (default to stderr)");
+
+    printf("\n\nFlags which require an argument:");
+    printf("\n\t-c|--coordinates    Name of file to get coordinates");
+
+    printf("\n\t-m|--modefile       Name of file to get mode displacement coordinates,");
+    printf("\n\t                      can be called multiple times (at least twice)");
+    printf("\n\t-d|--deviation      Actual deviation from coordinates by mode, can be");
+    printf("\n\t                      called multiple times, same number as coordinates");
+
+    printf("\n\t-o|--outputfile     Name of outputfile");
+    printf("\n\t-t|--threshold      Threshold for number comparison (default 1E-10)");
+    printf("\n\t-V|--verb-to-file   Write verbose output to file instead of stderr");
+
+    printf("\n\n");
+
+
     return 0;
 }
