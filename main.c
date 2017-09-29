@@ -50,7 +50,7 @@ int main(int argc, char **argv){
     if(argc == 1){ exit(Help(argv[0])); }
     // optstring contains a list of all short option indices,
     //  indices followed by a colon are options requiring an argument.
-    const char         * optstring = "halvV:t:c:m:o:d:";
+    const char         * optstring = "halLvV:t:c:m:o:d:";
     const struct option longopts[] = {
     //  *name:      option name,
     //  has_arg:    if option requires argument,
@@ -59,6 +59,7 @@ int main(int argc, char **argv){
     //  val:        value to return
         {"help",                  no_argument, NULL, 'h'},
         {"legend",                no_argument, NULL, 'l'},
+        {"legend-only",           no_argument, NULL, 'L'},
         {"append",                no_argument, NULL, 'a'},
         {"verbose",               no_argument, NULL, 'v'},
         {"verb-to-file",    required_argument, NULL, 'V'},
@@ -88,6 +89,10 @@ int main(int argc, char **argv){
 
             case 'l':
                 legend = 1;
+                break;
+
+            case 'L':
+                legend = 2;
                 break;
 
             case 'V':
@@ -221,13 +226,37 @@ int main(int argc, char **argv){
         }
     }
 
-// open outputfile
+// open output-file
     if(outfile == NULL){
         fdout = stdout;
     }else{
         fdout = fopen(outfile, operation);
     }
+//------------------------------------------------------------------------------------------------------------------
+//  Output legend   Output legend   Output legend   Output legend   Output legend   Output legend   Output legend
+    if(legend > 0){
+        fprintf(fdout, "#");
+        for(i = 0; i < dimension; ++i){
+            fprintf(fdout, "\t deviation[%d]    ", i);
+        }
+    for(m = 0; m < 3; ++m){
+        for(i = 0; i < dimension; ++i){
+            for(j = i+1; j < dimension; ++j){
+                fprintf(fdout, "\t zeta^%d_%d%d       ", m, i, j);
+            }
+        }
+    }
+    for(m = 0; m < 3; ++m){
+        for(n = m; n < 3; ++n){
+            fprintf(fdout, "\t mu_%d%d           ", m, n);
+        }
+    }
+    fprintf(fdout, "\n");
+    }
 
+    if(legend == 2){ exit(0); }
+//  Output legend   Output legend   Output legend   Output legend   Output legend   Output legend   Output legend
+//------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------
 // Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input
 //------------------------------------------------------------------------------------------------------------------
@@ -518,28 +547,6 @@ int main(int argc, char **argv){
         }
     }
 //------------------------------------------------------------------------------------------------------------------
-//  Output legend   Output legend   Output legend   Output legend   Output legend   Output legend   Output legend
-    if(legend == 1){
-        fprintf(fdout, "#");
-        for(i = 0; i < dimension; ++i){
-            fprintf(fdout, "\t deviation[%d]    ", i);
-        }
-    for(m = 0; m < 3; ++m){
-        for(i = 0; i < dimension; ++i){
-            for(j = i+1; j < dimension; ++j){
-                fprintf(fdout, "\t zeta^%d_%d%d       ", m, i, j);
-            }
-        }
-    }
-    for(m = 0; m < 3; ++m){
-        for(n = 0; n < 3; ++n){
-            fprintf(fdout, "\t mu_%d%d           ", m, n);
-        }
-    }
-    fprintf(fdout, "\n");
-    }
-//  Output legend   Output legend   Output legend   Output legend   Output legend   Output legend   Output legend
-//------------------------------------------------------------------------------------------------------------------
 //Output mode deviations Output mode deviations Output mode deviations Output mode deviations Output mode deviations
     for(i = 0; i < dimension; ++i){
         fprintf(fdout, "\t% 16.12le", deviation[i]);
@@ -606,7 +613,7 @@ int main(int argc, char **argv){
 //------------------------------------------------------------------------------------------------------------------
 //Output upper triangle of mu  Output upper triangle of mu  Output upper triangle of mu  Output upper triangle of mu
     for(m = 0; m < 3; ++m){
-        for(n = 0; n < 3; ++n){
+        for(n = m; n < 3; ++n){
             fprintf(fdout, "\t% .12le", gsl_matrix_get(mu, m, n));
         }
     }
@@ -642,6 +649,7 @@ int Help(char *app_name){
     printf("\n\t-h|--help           Print this help dialogue");
     printf("\n\t-a|--append         Append to file instead of overwriting it");
     printf("\n\t-l|--legend         Precede output with a header describing each column");
+    printf("\n\t-l|--legend-only    Like -l|--legend but quit after header output");
     printf("\n\t-v|--verbose        Increase verbosity of program (default to stderr)");
 
     printf("\n\nFlags which require an argument:");
