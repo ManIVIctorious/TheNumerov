@@ -312,20 +312,23 @@ int main(int argc, char **argv){
 
 // output input for control
     fprintf(fdverb, "\nNumber of Atoms:\t%d", n_atoms);
-    fprintf(fdverb, "\nInput coordinates:");
+    fprintf(fdverb, "\nInput coordinates:\n");
+    fprintf(fdverb, "\t  x            ");
+    fprintf(fdverb, "\t  y            ");
+    fprintf(fdverb, "\t  z            ");
+    fprintf(fdverb, "\n");
+    for(i = 0; i < n_atoms; ++i){
+        fprintf(fdverb, "\t% .8le\t% .8le\t% .8le\n", x[i], y[i], z[i]);
+    }
     for(i = 0; i < dimension; ++i){
         fprintf(fdverb, "\n   Mode No: %d", i);
         fprintf(fdverb, "\n   Mode deviation: % 20.14lf\n", deviation[i]);
-        fprintf(fdverb, "\t x             ");
-        fprintf(fdverb, "\t y             ");
-        fprintf(fdverb, "\t z             ");
-        fprintf(fdverb, "\t dx%d          ", i+1);
-        fprintf(fdverb, "\t dy%d          ", i+1);
-        fprintf(fdverb, "\t dz%d          ", i+1);
-        fprintf(fdverb, "\t mass          ");
+        fprintf(fdverb, "\t  dx%d         ", i);
+        fprintf(fdverb, "\t  dy%d         ", i);
+        fprintf(fdverb, "\t  dz%d         ", i);
+        fprintf(fdverb, "\t  masses       ");
         fprintf(fdverb, "\n");
         for(j = 0; j < n_atoms; ++j){
-            fprintf(fdverb, "\t% .8le\t% .8le\t% .8le", x[j], y[j], z[j]);
             fprintf(fdverb, "\t% .8le\t% .8le\t% .8le",
                             modes[j*3     + i*n_atoms*3],
                             modes[j*3 + 1 + i*n_atoms*3],
@@ -525,7 +528,7 @@ int main(int argc, char **argv){
                         fprintf(fdverb, "\tzeta^%d_%d%d ", m, j, i);
                         fprintf(fdverb, "* zeta^%d_%d%d ", n, k, i);
                         fprintf(fdverb, "* Q_%d * Q_%d ", j, k);
-                        fprintf(fdverb, " = % le", entry);
+                        fprintf(fdverb, "= % le", entry);
                         fprintf(fdverb, "\n");
                     }
                     for(k = i+1; k < dimension; ++k){
