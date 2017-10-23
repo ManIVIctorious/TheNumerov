@@ -68,7 +68,7 @@ int main(int argc, char* argv[]){
     // getopt_long stores the option index here.
         int option_index  = 0;
 
-        control = getopt_long(argc, argv, "hm:k:v:n:l:u:s:adi:Po:", long_options, &option_index);
+        control = getopt_long(argc, argv, "hm:k:v:n:l:u:s:adi:Po:t:", long_options, &option_index);
 
     // Detect the end of the options.
         if(control == -1)
@@ -280,7 +280,7 @@ int main(int argc, char* argv[]){
     // spacing between q1[i] and q1[i-1]
         if( (dq1 - (q1[i+nq2] - q1[i]))*(dq1 - (q1[i+nq2] - q1[i])) > spacing_threshold*spacing_threshold ){
             fprintf(stderr, "\n (-) Error in input file.");
-            fprintf(stderr, "\n     Coordinate spacing not equivalent.");
+            fprintf(stderr, "\n     Coordinate spacing not equivalent. (1st test)");
             fprintf(stderr, "\n     Aborting - please check your input...\n\n");
             exit(-1);
         }
@@ -290,7 +290,7 @@ int main(int argc, char* argv[]){
         if( (i+1)%nq2 != 0 ){
             if( (dq2 - (q2[i+1] - q2[i]))*(dq2 - (q2[i+1] - q2[i])) > spacing_threshold*spacing_threshold ){
                 fprintf(stderr, "\n (-) Error in input file.");
-                fprintf(stderr, "\n     Coordinate spacing not equivalent.");
+                fprintf(stderr, "\n     Coordinate spacing not equivalent. (2nd test)");
                 fprintf(stderr, "\n     Aborting - please check your input...\n\n");
                 exit(-1);
             }
@@ -300,7 +300,7 @@ int main(int argc, char* argv[]){
     // spacing between q1[i] and q2[i]
         if( (dq1 - dq2)*(dq1 - dq2) > spacing_threshold*spacing_threshold ){
             fprintf(stderr, "\n (-) Error in input file.");
-            fprintf(stderr, "\n     Coordinate spacing not equivalent.");
+            fprintf(stderr, "\n     Coordinate spacing not equivalent. (3rd test)");
             fprintf(stderr, "\n     Aborting - please check your input...\n\n");
             exit(-1);
         }
