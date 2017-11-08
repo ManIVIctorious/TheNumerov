@@ -9,8 +9,8 @@ CFLAGS = -g -Og -Wall -Wextra -Wstrict-prototypes -Wmissing-prototypes -Werror -
 #LIBDIR = -L/opt/intel/mkl/lib/intel64 -L/opt/intel/compilers_and_libraries_2017.0.098/linux/compiler/lib/intel64_lin
 
 # executable to be generated
-EXE1 = ../bin/watson_correction
-EXE2 = ../bin/coriolis_coefficients
+EXE1 = bin/watson_correction
+EXE2 = bin/coriolis_coefficients
 OBJ1 = main_coriolis_correction.o   InputNormalMode.o InputComFile.o InvertMatrix.o
 OBJ2 = main_coriolis_coefficients.o InputNormalMode.o
 #LIB = `pkg-config --cflags --libs gsl` -lmkl_core -lmkl_intel_ilp64 -lmkl_intel_thread -liomp5 -lpthread -ldl -m64 -DMKL_ILP64
