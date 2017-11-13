@@ -7,8 +7,7 @@
 
 int InputComFile(char *inputfile, double **x, double **y, double **z);
 int InputMasses(char *inputfile, double **m);
-
-
+int InputCoriolisCoefficients(char *inputfile, double ****zeta, int dimension);
 int InvertMatrix(gsl_matrix *Matrix, gsl_matrix *InvMatrix, int dimension);
 int Help(char *app_name);
 
@@ -176,11 +175,12 @@ int main(int argc, char **argv){
     double entry = 0.0;
 
 // coordinates and modes input
-    int n_atoms = 0;
-    double * x  = NULL;      // freed
-    double * y  = NULL;      // freed
-    double * z  = NULL;      // freed
-    double * mass = NULL;  // freed
+    int     n_atoms = 0;
+    double   * x    = NULL;   // freed
+    double   * y    = NULL;   // freed
+    double   * z    = NULL;   // freed
+    double   * mass = NULL;   // freed
+    double *** zeta = NULL;
 
 // center of mass coordinates and moment of inertia tensor
     double x0, y0, z0, tot_mass;
@@ -222,13 +222,13 @@ int main(int argc, char **argv){
         for(m = 0; m < 3; ++m){
             for(i = 0; i < dimension; ++i){
                 for(j = i+1; j < dimension; ++j){
-                    fprintf(fdout, "\t zeta^%d_%d%d       ", m, i, j);
+                    fprintf(fdout, "\t zeta^%c_%d%d       ", "xyz"[m], i, j);
                 }
             }
         }
         for(m = 0; m < 3; ++m){
             for(n = m; n < 3; ++n){
-                fprintf(fdout, "\t mu_%d%d           ", m, n);
+                fprintf(fdout, "\t mu_%c%c           ", "xyz"[m], "xyz"[n]);
             }
         }
         fprintf(fdout, "\n");
@@ -269,9 +269,6 @@ int main(int argc, char **argv){
     }
 
 // input zeta coefficients
-int InputCoriolisCoefficients(char *inputfile, double ****zeta, int ExpectedNumberOfEntries);
-    double     *** zeta = NULL;
-
 // allocate memory for a 3 dimensional double array of the form
 //  dimension*dimension*3 (where dimension is the normal mode's number
 //  and 3 refers to the {x,y,z} coordinates respectively)
@@ -283,7 +280,7 @@ int InputCoriolisCoefficients(char *inputfile, double ****zeta, int ExpectedNumb
         }
     }
 
-    control = InputCoriolisCoefficients(zetafile, &zeta, dimension*dimension*3);
+    control = InputCoriolisCoefficients(zetafile, &zeta, dimension);
     if(control*3 != dimension*dimension*3){
         fprintf(stderr, "\n (-) Error in input file \"%s\"", zetafile);
         fprintf(stderr, "\n     Number of entries (%d) does not match expectations (%d)", control, dimension*dimension*3);
@@ -295,30 +292,35 @@ int InputCoriolisCoefficients(char *inputfile, double ****zeta, int ExpectedNumb
 // output input for control
     fprintf(fdverb, "\nNumber of Atoms:\t%d", n_atoms);
     fprintf(fdverb, "\nInput coordinates:\n");
-    fprintf(fdverb, "\t  x            ");
-    fprintf(fdverb, "\t  y            ");
-    fprintf(fdverb, "\t  z            ");
-    fprintf(fdverb, "\t  atomic mass  ");
+    fprintf(fdverb, "\t         x         ");
+    fprintf(fdverb, "\t         y         ");
+    fprintf(fdverb, "\t         z         ");
+    fprintf(fdverb, "\t    atomic mass    ");
     fprintf(fdverb, "\n");
     for(i = 0; i < n_atoms; ++i){
-        fprintf(fdverb, "\t% .8le\t% .8le\t% .8le\t% .8le\n", x[i], y[i], z[i], mass[i]);
+        fprintf(fdverb, "\t% .12le\t% .12le\t% .12le\t% .12le\n", x[i], y[i], z[i], mass[i]);
     }
 
-    fprintf(fdverb, "\nInput Coriolis coefficients in the form Zeta[ModeA][ModeB][{x,y,z}]\n");
+    fprintf(fdverb, "\nInput Coriolis coefficients\n");
+    fprintf(fdverb, "\tModeA\tModeB");
+    for(m = 0; m < 3; ++m){
+        fprintf(fdverb, "\tzeta[ModeA][ModeB][%c]", "xyz"[m]);
+    }
+    fprintf(fdverb, "\n");
     for(i = 0; i < dimension; ++i){
         for(j = 0; j < dimension; ++j){
+            fprintf(fdverb, "\t  %d\t  %d", i, j);
             for(m = 0; m < 3; ++m){
-                fprintf(fdverb, "\tzeta[%d][%d][%c] = % le\n", i, j, "xyz"[m], zeta[i][j][m]);
+                fprintf(fdverb, "\t% .12le", zeta[i][j][m]);
             }
             fprintf(fdverb, "\n");
         }
     }
 
-return 0;
+
 //------------------------------------------------------------------------------------------------------------------
 // Moment of inertia  Moment of inertia  Moment of inertia  Moment of inertia  Moment of inertia  Moment of inertia
 //------------------------------------------------------------------------------------------------------------------
-
 // calculate center of mass
     x0 = y0 = z0 = tot_mass = 0.0;
     for(i = 0; i < n_atoms; ++i){
@@ -334,9 +336,9 @@ return 0;
 
 // output center of mass
     fprintf(fdverb, "\nCenter of mass\n");
-    fprintf(fdverb, "\t% 15.8lf", x0);
-    fprintf(fdverb, "\t% 15.8lf", y0);
-    fprintf(fdverb, "\t% 15.8lf", z0);
+    fprintf(fdverb, "\t% .12le", x0);
+    fprintf(fdverb, "\t% .12le", y0);
+    fprintf(fdverb, "\t% .12le", z0);
     fprintf(fdverb, "\n");
 
 // translate molecule center of mass to origin
@@ -363,180 +365,171 @@ return 0;
     MomentOfInertia[6] = MomentOfInertia[2];    // 31 zx
     MomentOfInertia[7] = MomentOfInertia[5];    // 32 zy
 
-    free(x); x = NULL;
-    free(y); y = NULL;
-    free(z); z = NULL;
+    free(x);       x = NULL;
+    free(y);       y = NULL;
+    free(z);       z = NULL;
+    free(mass); mass = NULL;
 
 // output moment of inertia tensor
     fprintf(fdverb, "\nMoment of inertia tensor\n");
     for(m = 0; m < 3; ++m){
         for(n = 0; n < 3; ++n){
-            fprintf(fdverb, "\t% 20.14lf", MomentOfInertia[m*3 + n]);
+            fprintf(fdverb, "\t% .12le", MomentOfInertia[m*3 + n]);
         }
         fprintf(fdverb, "\n");
     }
 
 
-////------------------------------------------------------------------------------------------------------------------
-//// Coriolis corrected moment of inertia  Coriolis corrected moment of inertia  Coriolis corrected moment of inertia
-////------------------------------------------------------------------------------------------------------------------
-//    CorrMomentOfInertia = gsl_matrix_calloc(3, 3);
-//    if(CorrMomentOfInertia == NULL){
-//        fprintf(stderr, "\n (-) Error in memory allocation of GSL_Matrix \"CorrMomentOfInertia\"");
-//        fprintf(stderr, "\n     Aborting...\n\n");
-//        exit(2);
-//    }
-//
-//    fprintf(fdverb, "\nCoriolis correction of moment of inertia (a,b in {x,y,z}, i,j,k in mode_{0,...,n})\n");
-//    fprintf(fdverb, "\tab\tik\tjk\tzeta^a_ik * zeta^b_jk * Q_i * Q_j\n");
-//    fprintf(fdverb, "\t-------------------------------------------------------------------------\n");
-//// m,n in {x,y,z}, i,j,k in mode_{0,...,n}
-//    for(m = 0; m < 3; ++m){
-//        for(n = 0; n < 3; ++n){
-//
-//            for(i = 0; i < dimension; ++i){
-//                for(j = i+1; j < dimension; ++j){
-//                    for(k = 0; k < j; ++k){
-//                    // corresponds to zeta[i][j][m] * zeta[k][j][n] * deviation[i] * deviation[k]
-//                        entry = zeta[(i*dimension + j)*3 + m] * zeta[(k*dimension + j)*3 + n] * deviation[i] * deviation[k];
-//                        gsl_matrix_set(CorrMomentOfInertia, m, n, gsl_matrix_get(CorrMomentOfInertia, m, n) + entry);
-//
-//                        fprintf(fdverb, "\t%d%d", m,n);
-//                        fprintf(fdverb, "\t%d%d", i,j);
-//                        fprintf(fdverb, "\t%d%d", k,j);
-//                        fprintf(fdverb, "\tzeta^%d_%d%d ", m, i, j);
-//                        fprintf(fdverb, "* zeta^%d_%d%d ", n, k, j);
-//                        fprintf(fdverb, "* Q_%d * Q_%d ", i, k);
-//                        fprintf(fdverb, "= % le", entry);
-//                        fprintf(fdverb, "\n");
-//                    }
-//
-//                    for(k = j+1; k < dimension; ++k){
-//                    // corresponds to zeta[i][j][m] * zeta[k][j][n] * deviation[i] * deviation[k]
-//                        entry = zeta[(i*dimension + j)*3 + m] * zeta[(k*dimension + j)*3 + n] * deviation[i] * deviation[k];
-//                        gsl_matrix_set(CorrMomentOfInertia, m, n, gsl_matrix_get(CorrMomentOfInertia, m, n) + entry);
-//
-//                        fprintf(fdverb, "\t%d%d", m,n);
-//                        fprintf(fdverb, "\t%d%d", i,j);
-//                        fprintf(fdverb, "\t%d%d", k,j);
-//                        fprintf(fdverb, "\tzeta^%d_%d%d ", m, i, j);
-//                        fprintf(fdverb, "* zeta^%d_%d%d ", n, k, j);
-//                        fprintf(fdverb, "* Q_%d * Q_%d ", i, k);
-//                        fprintf(fdverb, "= % le", entry);
-//                        fprintf(fdverb, "\n");
-//                    }
-//
-//                    for(k = 0; k < i; ++k){
-//                    // corresponds to zeta[j][i][m] * zeta[k][i][n] * deviation[j] * deviation[k]
-//                        entry = zeta[(j*dimension + i)*3 + m] * zeta[(k*dimension + i)*3 + n] * deviation[j] * deviation[k];
-//                        gsl_matrix_set(CorrMomentOfInertia, m, n, gsl_matrix_get(CorrMomentOfInertia, m, n) + entry);
-//
-//                        fprintf(fdverb, "\t%d%d", m,n);
-//                        fprintf(fdverb, "\t%d%d", j,i);
-//                        fprintf(fdverb, "\t%d%d", k,i);
-//                        fprintf(fdverb, "\tzeta^%d_%d%d ", m, j, i);
-//                        fprintf(fdverb, "* zeta^%d_%d%d ", n, k, i);
-//                        fprintf(fdverb, "* Q_%d * Q_%d ", j, k);
-//                        fprintf(fdverb, "= % le", entry);
-//                        fprintf(fdverb, "\n");
-//                    }
-//                    for(k = i+1; k < dimension; ++k){
-//                    // corresponds to zeta[j][i][m] * zeta[k][i][n] * deviation[j] * deviation[k]
-//                        entry = zeta[(j*dimension + i)*3 + m] * zeta[(k*dimension + i)*3 + n] * deviation[j] * deviation[k];
-//                        gsl_matrix_set(CorrMomentOfInertia, m, n, gsl_matrix_get(CorrMomentOfInertia, m, n) + entry);
-//
-//                        fprintf(fdverb, "\t%d%d", m,n);
-//                        fprintf(fdverb, "\t%d%d", j,i);
-//                        fprintf(fdverb, "\t%d%d", k,i);
-//                        fprintf(fdverb, "\tzeta^%d_%d%d ", m, j, i);
-//                        fprintf(fdverb, "* zeta^%d_%d%d ", n, k, i);
-//                        fprintf(fdverb, "* Q_%d * Q_%d ", j, k);
-//                        fprintf(fdverb, "= % le", entry);
-//                        fprintf(fdverb, "\n");
-//                    }
-//                }
-//            }
-//        }
-//    }
-////------------------------------------------------------------------------------------------------------------------
-////Output mode deviations Output mode deviations Output mode deviations Output mode deviations Output mode deviations
-//    for(i = 0; i < dimension; ++i){
-//        fprintf(fdout, "\t% 16.12le", deviation[i]);
-//    }
-////Output mode deviations Output mode deviations Output mode deviations Output mode deviations Output mode deviations
-////------------------------------------------------------------------------------------------------------------------
-////  Output upper triangle of zeta (without main diagonal)    Output upper triangle of zeta (without main diagonal)
-//    for(m = 0; m < 3; ++m){
-//        for(i = 0; i < dimension; ++i){
-//            for(j = i+1; j < dimension; ++j){
-//                fprintf(fdout, "\t% 16.12le", zeta[(i*dimension + j)*3 + m]);
-//            }
-//        }
-//    }
-////  Output upper triangle of zeta (without main diagonal)    Output upper triangle of zeta (without main diagonal)
-////------------------------------------------------------------------------------------------------------------------
-//    free(deviation); deviation = NULL;
-//    free(zeta); zeta = NULL;
-//
-//// output subtrahend for the correction of the moment of inertia
-//    fprintf(fdverb, "\nSubtrahend for correction of the moment of inertia\n");
-//    for(m = 0; m < 3; ++m){
-//        for(n = 0; n < 3; ++n){
-//            fprintf(fdverb, "\t% 20.14lf",gsl_matrix_get(CorrMomentOfInertia, m, n));
-//        }
-//        fprintf(fdverb, "\n");
-//    }
-//
-//
-//// subtract subtrahend from MomentOfInertia and save in gsl_matrix CorrMomentOfInertia
-//    for(m = 0; m < 3; ++m){
-//        for(n = 0; n < 3; ++n){
-//            gsl_matrix_set(CorrMomentOfInertia, m, n, MomentOfInertia[m*3 + n] - gsl_matrix_get(CorrMomentOfInertia, m, n));
-//        }
-//    }
-//
-//// output corrected Moment of Inertia
-//    fprintf(fdverb, "\nCorrected moment of inertia\n");
-//    for(m = 0; m < 3; ++m){
-//        for(n = 0; n < 3; ++n){
-//            fprintf(fdverb, "\t% 20.14lf",gsl_matrix_get(CorrMomentOfInertia, m, n));
-//        }
-//        fprintf(fdverb, "\n");
-//    }
-//
-//
-//    mu = gsl_matrix_calloc(3, 3);
-//    if(mu == NULL){
-//        fprintf(stderr, "\n (-) Error in memory allocation of GSL_Matrix \"mu\"");
-//        fprintf(stderr, "\n     Aborting...\n\n");
-//        exit(2);
-//    }
-//    InvertMatrix(CorrMomentOfInertia, mu, 3);
-//    gsl_matrix_free(CorrMomentOfInertia); CorrMomentOfInertia = NULL;
-//
-//// output inverse of corrected moment of inertia (mu)
-//    fprintf(fdverb, "\nInverse of corrected moment of inertia (mu)\n");
-//    for(m = 0; m < 3; ++m){
-//        for(n = 0; n < 3; ++n){
-//            fprintf(fdverb, "\t% 20.14lf",gsl_matrix_get(mu, m, n));
-//        }
-//        fprintf(fdverb, "\n");
-//    }
-////------------------------------------------------------------------------------------------------------------------
-////Output upper triangle of mu  Output upper triangle of mu  Output upper triangle of mu  Output upper triangle of mu
-//    for(m = 0; m < 3; ++m){
-//        for(n = m; n < 3; ++n){
-//            fprintf(fdout, "\t% .12le", gsl_matrix_get(mu, m, n));
-//        }
-//    }
-////Output upper triangle of mu  Output upper triangle of mu  Output upper triangle of mu  Output upper triangle of mu
-////------------------------------------------------------------------------------------------------------------------
-//    gsl_matrix_free(mu); mu = NULL;
-//
-//
-//    fprintf(fdout, "\n");
-//    fclose(fdout);  fdout  = NULL;
-//    fclose(fdverb); fdverb = NULL;
+//------------------------------------------------------------------------------------------------------------------
+// Coriolis corrected moment of inertia  Coriolis corrected moment of inertia  Coriolis corrected moment of inertia
+//------------------------------------------------------------------------------------------------------------------
+    CorrMomentOfInertia = gsl_matrix_calloc(3, 3);
+    if(CorrMomentOfInertia == NULL){
+        fprintf(stderr, "\n (-) Error in memory allocation of GSL_Matrix \"CorrMomentOfInertia\"");
+        fprintf(stderr, "\n     Aborting...\n\n");
+        exit(2);
+    }
+
+    fprintf(fdverb, "\nCoriolis correction of moment of inertia (a,b in {x,y,z}, i,j,k in mode_{0,...,n})\n");
+    fprintf(fdverb, "\ta|b\ti|k\tj|k\tzeta^a_ik * zeta^b_jk * Q_i * Q_j\n");
+    fprintf(fdverb, "\t-------------------------------------------------------------------------\n");
+
+// m,n in {x,y,z}, i,j,k in mode_{0,...,n}
+    for(m = 0; m < 3; ++m){
+        for(n = 0; n < 3; ++n){
+
+            for(i = 0; i < dimension; ++i){
+                for(j = i+1; j < dimension; ++j){
+
+                    for(k = 0; k < j; ++k){
+                        entry = zeta[i][j][m] * zeta[k][j][n] * deviation[i] * deviation[k];
+                        gsl_matrix_set(CorrMomentOfInertia, m, n, gsl_matrix_get(CorrMomentOfInertia, m, n) + entry);
+
+                        fprintf(fdverb, "\t%c|%c\t%d|%d\t%d|%d", "xyz"[m], "xyz"[n], i, j, k, j);
+                        fprintf(fdverb, "\tzeta^%c_%d,%d * zeta^%c_%d,%d * Q_%d * Q_%d =", "xyz"[m], i, j, "xyz"[n], k, j, i, k);
+                        fprintf(fdverb, "\t% .12le\n", entry);
+                    }
+                    for(k = j+1; k < dimension; ++k){
+                        entry = zeta[i][j][m] * zeta[k][j][n] * deviation[i] * deviation[k];
+                        gsl_matrix_set(CorrMomentOfInertia, m, n, gsl_matrix_get(CorrMomentOfInertia, m, n) + entry);
+
+                        fprintf(fdverb, "\t%c|%c\t%d|%d\t%d|%d", "xyz"[m], "xyz"[n], i, j, k, j);
+                        fprintf(fdverb, "\tzeta^%c_%d,%d * zeta^%c_%d,%d * Q_%d * Q_%d =", "xyz"[m], i, j, "xyz"[n], k, j, i, k);
+                        fprintf(fdverb, "\t% .12le\n", entry);
+                    }
+
+                // switch indices
+                    for(k = 0; k < i; ++k){
+                        entry = zeta[j][i][m] * zeta[k][i][n] * deviation[j] * deviation[k];
+                        gsl_matrix_set(CorrMomentOfInertia, m, n, gsl_matrix_get(CorrMomentOfInertia, m, n) + entry);
+
+                        fprintf(fdverb, "\t%c|%c\t%d|%d\t%d|%d", "xyz"[m], "xyz"[n], j, i, k, i);
+                        fprintf(fdverb, "\tzeta^%c_%d,%d * zeta^%c_%d,%d * Q_%d * Q_%d =", "xyz"[m], j, i, "xyz"[n], k, i, j, k);
+                        fprintf(fdverb, "\t% .12le\n", entry);
+                    }
+                    for(k = i+1; k < dimension; ++k){
+                        entry = zeta[j][i][m] * zeta[k][i][n] * deviation[j] * deviation[k];
+                        gsl_matrix_set(CorrMomentOfInertia, m, n, gsl_matrix_get(CorrMomentOfInertia, m, n) + entry);
+
+                        fprintf(fdverb, "\t%c|%c\t%d|%d\t%d|%d", "xyz"[m], "xyz"[n], j, i, k, i);
+                        fprintf(fdverb, "\tzeta^%c_%d,%d * zeta^%c_%d,%d * Q_%d * Q_%d =", "xyz"[m], j, i, "xyz"[n], k, i, j, k);
+                        fprintf(fdverb, "\t% .12le\n", entry);
+                    }
+
+                }
+            }
+
+        }
+    }
+
+// output subtrahend for the correction of the moment of inertia
+    fprintf(fdverb, "\nSubtrahend for correction of the moment of inertia\n");
+    for(m = 0; m < 3; ++m){
+        for(n = 0; n < 3; ++n){
+            fprintf(fdverb, "\t% .12le", gsl_matrix_get(CorrMomentOfInertia, m, n));
+        }
+        fprintf(fdverb, "\n");
+    }
+
+// subtract subtrahend from MomentOfInertia and save in gsl_matrix CorrMomentOfInertia
+    for(m = 0; m < 3; ++m){
+        for(n = 0; n < 3; ++n){
+            gsl_matrix_set(CorrMomentOfInertia, m, n, MomentOfInertia[m*3 + n] - gsl_matrix_get(CorrMomentOfInertia, m, n));
+        }
+    }
+
+// output corrected Moment of Inertia
+    fprintf(fdverb, "\nCorrected moment of inertia\n");
+    for(m = 0; m < 3; ++m){
+        for(n = 0; n < 3; ++n){
+            fprintf(fdverb, "\t% .12le", gsl_matrix_get(CorrMomentOfInertia, m, n));
+        }
+        fprintf(fdverb, "\n");
+    }
+
+
+//------------------------------------------------------------------------------------------------------------------
+//Output mode deviations Output mode deviations Output mode deviations Output mode deviations Output mode deviations
+    for(i = 0; i < dimension; ++i){
+        fprintf(fdout, "\t% 16.12le", deviation[i]);
+    }
+//Output mode deviations Output mode deviations Output mode deviations Output mode deviations Output mode deviations
+//------------------------------------------------------------------------------------------------------------------
+//  Output upper triangle of zeta (without main diagonal)    Output upper triangle of zeta (without main diagonal)
+    for(m = 0; m < 3; ++m){
+        for(i = 0; i < dimension; ++i){
+            for(j = i+1; j < dimension; ++j){
+                fprintf(fdout, "\t% 16.12le", zeta[i][j][m]);
+            }
+        }
+    }
+//  Output upper triangle of zeta (without main diagonal)    Output upper triangle of zeta (without main diagonal)
+//------------------------------------------------------------------------------------------------------------------
+    free(deviation); deviation = NULL;
+    free(zeta); zeta = NULL;
+
+
+//------------------------------------------------------------------------------------------------------------------
+//  Effective Reciprocal Inertia Tensor   Effective Reciprocal Inertia Tensor   Effective Reciprocal Inertia Tensor
+//------------------------------------------------------------------------------------------------------------------
+// allocate memory for ERIT
+    mu = gsl_matrix_calloc(3, 3);
+    if(mu == NULL){
+        fprintf(stderr, "\n (-) Error in memory allocation of GSL_Matrix \"mu\"");
+        fprintf(stderr, "\n     Aborting...\n\n");
+        exit(2);
+    }
+
+// calculate ERIT by inverting corrected moment of inertia
+    InvertMatrix(CorrMomentOfInertia, mu, 3);
+    gsl_matrix_free(CorrMomentOfInertia); CorrMomentOfInertia = NULL;
+
+// output inverse of corrected moment of inertia (mu)
+    fprintf(fdverb, "\nEffective Reciprocal Inertia Tensor (mu)\n");
+    for(m = 0; m < 3; ++m){
+        for(n = 0; n < 3; ++n){
+            fprintf(fdverb, "\t% .12le",gsl_matrix_get(mu, m, n));
+        }
+        fprintf(fdverb, "\n");
+    }
+
+
+//------------------------------------------------------------------------------------------------------------------
+//Output upper triangle of mu  Output upper triangle of mu  Output upper triangle of mu  Output upper triangle of mu
+    for(m = 0; m < 3; ++m){
+        for(n = m; n < 3; ++n){
+            fprintf(fdout, "\t% .12le", gsl_matrix_get(mu, m, n));
+        }
+    }
+//Output upper triangle of mu  Output upper triangle of mu  Output upper triangle of mu  Output upper triangle of mu
+//------------------------------------------------------------------------------------------------------------------
+    gsl_matrix_free(mu); mu = NULL;
+
+
+    fprintf(fdout,  "\n");
+    fprintf(fdverb, "\n");
+    fclose(fdout);  fdout  = NULL;
+    fclose(fdverb); fdverb = NULL;
     return 0;
 }
 

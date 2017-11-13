@@ -8,9 +8,9 @@
 #include <ctype.h>
 
 // Offered prototypes
-int InputCoriolisCoefficients(char *inputfile, double ****zeta, int ExpectedNumberOfEntries);
+int InputCoriolisCoefficients(char *inputfile, double ****zeta, int dimension);
 
-int InputCoriolisCoefficients(char *inputfile, double ****zeta, int ExpectedNumberOfEntries){
+int InputCoriolisCoefficients(char *inputfile, double ****zeta, int dimension){
 
     int rows, comment_flag, control;
     unsigned int i;
@@ -63,15 +63,23 @@ int InputCoriolisCoefficients(char *inputfile, double ****zeta, int ExpectedNumb
         control = sscanf(line, "%d  %d  %lf  %lf  %lf", &index1, &index2, &aux1, &aux2, &aux3);
         if(control == 5){
 
+            if(index1 > (dimension-1) || index2 > (dimension-1)){
+                fprintf(stderr, "\n (-) Error in input file \"%s\"", inputfile);
+                fprintf(stderr, "\n     Indices in file (%d|%d) exceed maximal value (%d)", index1, index2, dimension-1);
+                fprintf(stderr, "\n     Aborting...\n\n");
+                exit (3);
+            }
+
+
             (*zeta)[index1][index2][0] = aux1;
             (*zeta)[index1][index2][1] = aux2;
             (*zeta)[index1][index2][2] = aux3;
 
             ++rows;
 
-            if(rows*3 > ExpectedNumberOfEntries){
+            if(rows*3 > dimension*dimension*3){
                 fprintf(stderr, "\n (-) Error in input file \"%s\"", inputfile);
-                fprintf(stderr, "\n     Number of entries exceeds expectations (%d)", ExpectedNumberOfEntries);
+                fprintf(stderr, "\n     Number of entries exceeds expectations (%d)", dimension*dimension*3);
                 fprintf(stderr, "\n     Please check your input (e.g. do dimensionalities match?)");
                 fprintf(stderr, "\n     Aborting...\n\n");
                 exit (3);
