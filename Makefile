@@ -2,6 +2,8 @@
 CC = gcc
 CFLAGS = -g -Og -Wall -Wextra -Wstrict-prototypes -Wmissing-prototypes -Werror -Wno-unused-parameter -march=native #-mtune=native
 
+CFLAGS = -g -Og
+
 # additional header and library file directories
 #INCDIR = -I/usr/local/intel/mkl/include/
 #LIBDIR = -L/usr/local/intel/mkl/lib/intel64 -L/usr/local/intel/composer_xe_2015.3.187/compiler/lib/intel64
@@ -11,7 +13,7 @@ CFLAGS = -g -Og -Wall -Wextra -Wstrict-prototypes -Wmissing-prototypes -Werror -
 # executable to be generated
 EXE1 = bin/watson_correction
 EXE2 = bin/coriolis_coefficients
-OBJ1 = main_coriolis_correction.o   InputNormalMode.o InputComFile.o InvertMatrix.o
+OBJ1 = main_coriolis_correction.o   InputNormalMode.o InputComFile.o InvertMatrix.o InputMasses.o
 OBJ2 = main_coriolis_coefficients.o InputNormalMode.o
 #LIB = `pkg-config --cflags --libs gsl` -lmkl_core -lmkl_intel_ilp64 -lmkl_intel_thread -liomp5 -lpthread -ldl -m64 -DMKL_ILP64
 LIB = `pkg-config --cflags --libs gsl`
