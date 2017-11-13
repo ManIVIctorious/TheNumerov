@@ -263,9 +263,33 @@ int main(int argc, char **argv){
     control = InputMasses(massfile, &mass);
     if(control != n_atoms){
         fprintf(stderr, "\n (-) Error in input file \"%s\":", massfile);
-        fprintf(stderr, "\n     Number of atoms (%d) doesn't match number of masses (%d)\n", n_atoms, control);
+        fprintf(stderr, "\n     Number of atoms (%d) doesn't match number of masses (%d)", n_atoms, control);
         fprintf(stderr, "\n     Aborting...\n\n");
         exit(3);
+    }
+
+// input zeta coefficients
+int InputCoriolisCoefficients(char *inputfile, double ****zeta, int ExpectedNumberOfEntries);
+    double     *** zeta = NULL;
+
+// allocate memory for a 3 dimensional double array of the form
+//  dimension*dimension*3 (where dimension is the normal mode's number
+//  and 3 refers to the {x,y,z} coordinates respectively)
+    zeta = malloc(dimension * sizeof(double **));
+    for(i = 0; i < dimension; ++i){
+        zeta[i] = malloc(dimension * sizeof(double *));
+        for(j = 0; j < dimension; ++j){
+            zeta[i][j] = malloc(3 * sizeof(double));
+        }
+    }
+
+    control = InputCoriolisCoefficients(zetafile, &zeta, dimension*dimension*3);
+    if(control*3 != dimension*dimension*3){
+        fprintf(stderr, "\n (-) Error in input file \"%s\"", zetafile);
+        fprintf(stderr, "\n     Number of entries (%d) does not match expectations (%d)", control, dimension*dimension*3);
+        fprintf(stderr, "\n     Please check your input (e.g. do dimensionalities match?)");
+        fprintf(stderr, "\n     Aborting...\n\n");
+        exit (3);
     }
 
 // output input for control
@@ -278,6 +302,16 @@ int main(int argc, char **argv){
     fprintf(fdverb, "\n");
     for(i = 0; i < n_atoms; ++i){
         fprintf(fdverb, "\t% .8le\t% .8le\t% .8le\t% .8le\n", x[i], y[i], z[i], mass[i]);
+    }
+
+    fprintf(fdverb, "\nInput Coriolis coefficients in the form Zeta[ModeA][ModeB][{x,y,z}]\n");
+    for(i = 0; i < dimension; ++i){
+        for(j = 0; j < dimension; ++j){
+            for(m = 0; m < 3; ++m){
+                fprintf(fdverb, "\tzeta[%d][%d][%c] = % le\n", i, j, "xyz"[m], zeta[i][j][m]);
+            }
+            fprintf(fdverb, "\n");
+        }
     }
 
 return 0;
