@@ -577,14 +577,14 @@ int Help(char *app_name){
     printf("\n\t-h|--help                 Print this help dialogue");
     printf("\n\t-a|--append               Append to file instead of overwriting it");
     printf("\n\t-l|--legend               Precede output with a header describing each column");
-    printf("\n\t-l|--legend-only          Like -l|--legend but quit after header output");
+    printf("\n\t-L|--legend-only          Like -l|--legend but quit after header output");
     printf("\n\t-v|--verbose              Increase verbosity of program (default to stderr)");
 
     printf("\n\nFlags which require an argument:");
     printf("\n\t-c|--coordinates          Name of file to get coordinates");
 
     printf("\n\t-z|--zetafile             File containing the Coriolis coefficients.");
-    printf("\n\t-m|-M|--modefile          Masses file containing atomic masses.");
+    printf("\n\t-m|-M|--masses            Masses file containing atomic masses.");
     printf("\n\t-d|--deviation            Actual deviation from coordinates by mode,");
     printf("\n\t                            can be called multiple times, at least twice.");
     printf("\n\t-D|--dimension-override   Set the dimension to the defined value");
