@@ -547,17 +547,16 @@ int Help(char *app_name){
     printf("\n\nFlags which require an argument:");
     printf("\n\t-c|--coordinates    Name of file to get coordinates");
 
-    printf("\n\t-m|--modefile       Name of file to get mode displacement coordinates,");
-    printf("\n\t                      can be called multiple times (at least twice)");
-    printf("\n\t-d|--deviation      Actual deviation from coordinates by mode, can be");
-    printf("\n\t                      called multiple times, same number as coordinates");
+    printf("\n\t-z|--zetafile       File containing the Coriolis coefficients.");
+    printf("\n\t-m|-M|--modefile    Masses file containing atomic masses.");
+    printf("\n\t-d|--deviation      Actual deviation from coordinates by mode,");
+    printf("\n\t                      can be called multiple times, at least twice.");
 
     printf("\n\t-o|--outputfile     Name of outputfile");
     printf("\n\t-t|--threshold      Threshold for number comparison (default 1E-10)");
     printf("\n\t-V|--verb-to-file   Write verbose output to file instead of stderr");
 
     printf("\n\n");
-
 
     return 0;
 }

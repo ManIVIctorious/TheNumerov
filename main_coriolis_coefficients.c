@@ -285,14 +285,15 @@ int main(int argc, char **argv){
     free(auxmode1); auxmode1 = NULL;
     free(auxmode2); auxmode2 = NULL;
 
+    fprintf(fdverb, "\n");
 // output Coriolis coefficient tensor (dimension x dimension x 3)
-    fprintf(fdout, "\n#  Coriolis coefficients zeta^a_ij (a in {x,y,z}, i,j in mode_{0,...,n})");
-    fprintf(fdout, "\n#\tModeA\tModeB\t\tx\t\ty\t\tz\n");
+    fprintf(fdout, "#  Coriolis coefficients zeta^a_ij (a in {x,y,z}, i,j in mode_{0,...,n})\n");
+    fprintf(fdout, "#\tModeA\tModeB\t         x         \t         y         \t         z\n");
     for(i = 0; i < dimension; ++i){
         for(j = 0; j < dimension; ++j){
-            fprintf(fdout, "\t%d\t%d", i, j);
+            fprintf(fdout, "\t  %d\t  %d", i, j);
             for(m = 0; m < 3; ++m){
-                fprintf(fdout, "\t% le", zeta[(i*dimension + j)*3 + m]);
+                fprintf(fdout, "\t% .12le", zeta[(i*dimension + j)*3 + m]);
             }
             fprintf(fdout, "\n");
         }
@@ -302,7 +303,6 @@ int main(int argc, char **argv){
 //------------------------------------------------------------------------------------------------------------------
 //      Close file descriptors    Close file descriptors    Close file descriptors    Close file descriptors
 //------------------------------------------------------------------------------------------------------------------
-    fprintf(fdverb, "\n");
     fclose(fdverb); fdverb = NULL;
     fclose(fdout);  fdout  = NULL;
     return 0;
@@ -340,7 +340,6 @@ int Help(char *app_name){
     printf("\n\t-V|--verb-to-file   Write verbose output to file instead of stderr");
 
     printf("\n\n");
-
 
     return 0;
 }
