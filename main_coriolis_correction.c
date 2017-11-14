@@ -5,11 +5,16 @@
 #include <gsl/gsl_matrix.h>
 #include <getopt.h>
 
+// input functions
 int InputComFile(char *inputfile, double **x, double **y, double **z);
 int InputMasses(char *inputfile, double **m);
 int InputCoriolisCoefficients(char *inputfile, double ****zeta, int dimension);
+
 int InvertMatrix(gsl_matrix *Matrix, gsl_matrix *InvMatrix, int dimension);
+
+// output functions
 int Help(char *app_name);
+int LegendOut(FILE *fdout, int dimension);
 
 
 int main(int argc, char **argv){
@@ -37,34 +42,44 @@ int main(int argc, char **argv){
         exit(2);
     }
 
+// file descriptors
+    FILE * fdout  = NULL;   // output file handler
+    FILE * fdverb = NULL;   // verbosity output file handler
+
+// integers for loops:
+//  most of the time i,j,k are in mode_{0,...,n}
+//  for all m,n: m,n in {x,y,z}
     int i = 0;
     int j = 0;
     int k = 0;
+    int m = 0;
+    int n = 0;
 //------------------------------------------------------------------------------------------------------------------
 //  FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS
 //------------------------------------------------------------------------------------------------------------------
     if(argc == 1){ exit(Help(argv[0])); }
     // optstring contains a list of all short option indices,
     //  indices followed by a colon are options requiring an argument.
-    const char         * optstring = "halLvV:t:c:o:d:m:M:z:";
+    const char         * optstring = "halLvV:t:c:o:d:D:m:M:z:";
     const struct option longopts[] = {
     //  *name:      option name,
     //  has_arg:    if option requires argument,
     //  *flag:      if set to NULL getopt_long() returns val,
     //              else it returns 0 and flag points to a variable set to val
     //  val:        value to return
-        {"help",                  no_argument, NULL, 'h'},
-        {"legend",                no_argument, NULL, 'l'},
-        {"legend-only",           no_argument, NULL, 'L'},
-        {"append",                no_argument, NULL, 'a'},
-        {"verbose",               no_argument, NULL, 'v'},
-        {"verb-to-file",    required_argument, NULL, 'V'},
-        {"threshold",       required_argument, NULL, 't'},
-        {"coordinates",     required_argument, NULL, 'c'},
-        {"zetafile",        required_argument, NULL, 'z'},
-        {"masses",          required_argument, NULL, 'm'},
-        {"deviation",       required_argument, NULL, 'd'},
-        {"outputfile",      required_argument, NULL, 'o'},
+        {"help",                     no_argument, NULL, 'h'},
+        {"legend",                   no_argument, NULL, 'l'},
+        {"legend-only",              no_argument, NULL, 'L'},
+        {"append",                   no_argument, NULL, 'a'},
+        {"verbose",                  no_argument, NULL, 'v'},
+        {"verb-to-file",       required_argument, NULL, 'V'},
+        {"threshold",          required_argument, NULL, 't'},
+        {"coordinates",        required_argument, NULL, 'c'},
+        {"zetafile",           required_argument, NULL, 'z'},
+        {"masses",             required_argument, NULL, 'm'},
+        {"deviation",          required_argument, NULL, 'd'},
+        {"dimension-override", required_argument, NULL, 'D'},
+        {"outputfile",         required_argument, NULL, 'o'},
     };
 
     optind = 1; // option index starting by 1, provided by <getopt.h>
@@ -118,6 +133,10 @@ int main(int argc, char **argv){
                 deviation[dimension-1] = atof(optarg);
                 break;
 
+            case 'D':
+                dimension = atoi(optarg);
+                break;
+
             case 'o':
                 outfile = optarg;
                 break;
@@ -135,6 +154,36 @@ int main(int argc, char **argv){
                 exit(Help(argv[0]));
         }
     }
+
+
+//------------------------------------------------------------------------------------------------------------------
+//  Set output files   Set output files   Set output files   Set output files   Set output files   Set output files  
+//------------------------------------------------------------------------------------------------------------------
+// open output-file
+    if(outfile == NULL){
+        fdout = stdout;
+    }else{
+        fdout = fopen(outfile, operation);
+    }
+
+// set level of verbosity
+    if(verbose == 0){
+        fdverb = fopen("/dev/null", "w");
+    }
+    else if (verbose > 0){
+        if(verbout == NULL){
+            fdverb = stderr;
+        }else{
+            fdverb = fopen(verbout, "w");
+        }
+    }
+
+// case Legend only
+    if(legend == 2){
+        LegendOut(fdout, dimension);
+        exit(0);
+    }
+
 
 //------------------------------------------------------------------------------------------------------------------
 //  Error handling  Error handling  Error handling  Error handling  Error handling  Error handling  Error handling
@@ -170,7 +219,6 @@ int main(int argc, char **argv){
 //------------------------------------------------------------------------------------------------------------------
 //   Deklaration   Deklaration   Deklaration   Deklaration   Deklaration   Deklaration   Deklaration   Deklaration
 //------------------------------------------------------------------------------------------------------------------
-    int m, n;       // for all m,n: m,n in {x,y,z}
     int control  = 0;
     double entry = 0.0;
 
@@ -190,53 +238,14 @@ int main(int argc, char **argv){
     gsl_matrix * CorrMomentOfInertia = NULL;    // freed
     gsl_matrix * mu = NULL;                     // freed
 
-
-    FILE * fdverb = NULL;   // verbosity output file handler
-    FILE * fdout  = NULL;   // output file handler
-
-// set level of verbosity
-    if(verbose == 0){
-        fdverb = fopen("/dev/null", "w");
-    }
-    else if (verbose > 0){
-        if(verbout == NULL){
-            fdverb = stderr;
-        }else{
-            fdverb = fopen(verbout, "w");
-        }
-    }
-
-// open output-file
-    if(outfile == NULL){
-        fdout = stdout;
-    }else{
-        fdout = fopen(outfile, operation);
-    }
-//------------------------------------------------------------------------------------------------------------------
-//  Output legend   Output legend   Output legend   Output legend   Output legend   Output legend   Output legend
+// case legend > 0 and not 2
     if(legend > 0){
-        fprintf(fdout, "#");
-        for(i = 0; i < dimension; ++i){
-            fprintf(fdout, "\t deviation[%d]    ", i);
-        }
-        for(m = 0; m < 3; ++m){
-            for(i = 0; i < dimension; ++i){
-                for(j = i+1; j < dimension; ++j){
-                    fprintf(fdout, "\t zeta^%c_%d%d       ", "xyz"[m], i, j);
-                }
-            }
-        }
-        for(m = 0; m < 3; ++m){
-            for(n = m; n < 3; ++n){
-                fprintf(fdout, "\t mu_%c%c           ", "xyz"[m], "xyz"[n]);
-            }
-        }
-        fprintf(fdout, "\n");
+        LegendOut(fdout, dimension);
     }
 
-    if(legend == 2){ exit(0); }
-//  Output legend   Output legend   Output legend   Output legend   Output legend   Output legend   Output legend
-//------------------------------------------------------------------------------------------------------------------
+
+
+
 //------------------------------------------------------------------------------------------------------------------
 // Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input
 //------------------------------------------------------------------------------------------------------------------
@@ -533,28 +542,57 @@ int main(int argc, char **argv){
     return 0;
 }
 
+
+int LegendOut(FILE *fdout, int dimension){
+
+    int i, j, m, n;
+
+    fprintf(fdout, "#");
+    for(i = 0; i < dimension; ++i){
+        fprintf(fdout, "\t deviation[%d]    ", i);
+    }
+    for(m = 0; m < 3; ++m){
+        for(i = 0; i < dimension; ++i){
+            for(j = i+1; j < dimension; ++j){
+                fprintf(fdout, "\t zeta^%c_%d%d       ", "xyz"[m], i, j);
+            }
+        }
+    }
+    for(m = 0; m < 3; ++m){
+        for(n = m; n < 3; ++n){
+            fprintf(fdout, "\t mu_%c%c           ", "xyz"[m], "xyz"[n]);
+        }
+    }
+    fprintf(fdout, "\n");
+
+    return 0;
+}
+
+
 int Help(char *app_name){
 
     printf("\nAvailable options for %s:", app_name);
 
     printf("\n\nFlags not requiring arguments:");
-    printf("\n\t-h|--help           Print this help dialogue");
-    printf("\n\t-a|--append         Append to file instead of overwriting it");
-    printf("\n\t-l|--legend         Precede output with a header describing each column");
-    printf("\n\t-l|--legend-only    Like -l|--legend but quit after header output");
-    printf("\n\t-v|--verbose        Increase verbosity of program (default to stderr)");
+    printf("\n\t-h|--help                 Print this help dialogue");
+    printf("\n\t-a|--append               Append to file instead of overwriting it");
+    printf("\n\t-l|--legend               Precede output with a header describing each column");
+    printf("\n\t-l|--legend-only          Like -l|--legend but quit after header output");
+    printf("\n\t-v|--verbose              Increase verbosity of program (default to stderr)");
 
     printf("\n\nFlags which require an argument:");
-    printf("\n\t-c|--coordinates    Name of file to get coordinates");
+    printf("\n\t-c|--coordinates          Name of file to get coordinates");
 
-    printf("\n\t-z|--zetafile       File containing the Coriolis coefficients.");
-    printf("\n\t-m|-M|--modefile    Masses file containing atomic masses.");
-    printf("\n\t-d|--deviation      Actual deviation from coordinates by mode,");
-    printf("\n\t                      can be called multiple times, at least twice.");
+    printf("\n\t-z|--zetafile             File containing the Coriolis coefficients.");
+    printf("\n\t-m|-M|--modefile          Masses file containing atomic masses.");
+    printf("\n\t-d|--deviation            Actual deviation from coordinates by mode,");
+    printf("\n\t                            can be called multiple times, at least twice.");
+    printf("\n\t-D|--dimension-override   Set the dimension to the defined value");
+    printf("\n\t                            (useful in combination with -L)");
 
-    printf("\n\t-o|--outputfile     Name of outputfile");
-    printf("\n\t-t|--threshold      Threshold for number comparison (default 1E-10)");
-    printf("\n\t-V|--verb-to-file   Write verbose output to file instead of stderr");
+    printf("\n\t-o|--outputfile           Name of outputfile");
+    printf("\n\t-t|--threshold            Threshold for number comparison (default 1E-10)");
+    printf("\n\t-V|--verb-to-file         Write verbose output to file instead of stderr");
 
     printf("\n\n");
 
