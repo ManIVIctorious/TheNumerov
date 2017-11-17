@@ -3,10 +3,11 @@ CC = gcc
 CFLAGS = -g -Og -Wall -Wextra -Wstrict-prototypes -Wmissing-prototypes -Werror -Wno-sign-compare -march=native #-mtune=native
 
 # additional header and library file directories
-INCDIR = -I/usr/local/intel/mkl/include/
-LIBDIR = -L/usr/local/intel/mkl/lib/intel64 -L/usr/local/intel/composer_xe_2015.3.187/compiler/lib/intel64
-#INCDIR = -I/opt/intel/mkl/include
-#LIBDIR = -L/opt/intel/mkl/lib/intel64 -L/opt/intel/compilers_and_libraries_2017.0.098/linux/compiler/lib/intel64_lin
+INSTALLPATH = /usr/local/intel
+INCDIR := $(INCDIR) -I$(INSTALLPATH)/mkl/include/
+LIBDIR := $(LIBDIR) -L$(INSTALLPATH)/mkl/lib/intel64
+LIBDIR := $(LIBDIR) -L$(INSTALLPATH)/compilers_and_libraries_2018.0.128/linux/compiler/lib/intel64_lin/
+#LIBDIR := $(LIBDIR) -L$(INSTALLPATH)/compilers_and_libraries_2017.0.098/linux/compiler/lib/intel64_lin
 
 # executable to be generated
 EXE = bin/numerov2d
