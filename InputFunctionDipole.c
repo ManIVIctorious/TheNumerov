@@ -94,7 +94,7 @@ int InputFunctionDipole(char *inputfile, double **q1, double **q2, double **V, d
 //    char *inputfile = "testfile";
 //    int nq1, nq2;
 //    double v_min = 1.0E100;
-//    
+//
 //    q1  = malloc(sizeof(double));
 //    q2  = malloc(sizeof(double));
 //    v   = malloc(sizeof(double));

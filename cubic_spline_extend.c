@@ -23,7 +23,7 @@ double seval (int n, double u,
 int EXTRA = 1;
 
 int main(int argc, char* argv[])
-{ 
+{
   int i;
   int count = 0;
   int control;
@@ -48,20 +48,20 @@ int main(int argc, char* argv[])
   //  printf("\n\n\n (+) Entering main...");
 
   // check input argument if the file is not present give a silly statement
-  if (argv[1] == NULL) 
-  { 
+  if (argv[1] == NULL)
+  {
     printf("\n\n (-) Please specify an input file ... \n\n");
     exit (1);
   }
 
   // check if input for threshold is given
-  if (argv[2] != NULL) 
-  { 
+  if (argv[2] != NULL)
+  {
     EXTRA = atoi(argv[2]);
 
-    if (EXTRA < 0)                                                                          
-    {                                                                                                      
-      printf("\n\n (-) Invalid instruction: Interpolation number %d is negative.", EXTRA); 
+    if (EXTRA < 0)
+    {
+      printf("\n\n (-) Invalid instruction: Interpolation number %d is negative.", EXTRA);
       exit (1);
     }
   }
@@ -69,17 +69,17 @@ int main(int argc, char* argv[])
 
   // define string for input filename
   inputfile_name = (char*) calloc(1+(strlen(argv[1])),sizeof(char));
-  strcpy(inputfile_name, argv[1]);   
+  strcpy(inputfile_name, argv[1]);
   strcat(inputfile_name, "\0");
 
-  
+
   if ( (infile = fopen(inputfile_name,"r")) == NULL)
-  {  
+  {
     printf("\n\n\t (-) Error opening input-file: '%s'", inputfile_name);
     printf(  "\n\t     Exiting ... \n\n");
 
     exit(0);
-  } 
+  }
 
 
   x  = (double *) malloc( sizeof(double) );
@@ -90,7 +90,7 @@ int main(int argc, char* argv[])
   {
     x  = (double *) realloc(x, (count + 1) * sizeof(double) );
     y  = (double *) realloc(y, (count + 1) * sizeof(double) );
-     
+
     control=sscanf(line,"%lf  %lf", &x[count], &y[count]);
 
     if (control != 2)
@@ -252,7 +252,7 @@ int    *iflag;
 
   double t;
   double r, y_spline;
-  
+
   FILE* spline_file;
 
 
@@ -268,7 +268,7 @@ int    *iflag;
   ascend = 1;
   for (i = 1; i < n; ++i)
   {
-    if (x[i] <= x[i-1]) 
+    if (x[i] <= x[i-1])
       ascend = 0;
     if (y[i] < y[i-1])
       min_idx = i;
@@ -378,7 +378,7 @@ int    *iflag;
   int n_interval, j;
 
   for (i=0; i < n-1; i++)
-  { 
+  {
     dx = (x[i+1] - x[i])/(double)(1+EXTRA);
 
 
@@ -419,7 +419,7 @@ int    *iflag;
   // find minimum of spline
   // intervall min_idx
   factor = 4.0 * c[min_idx] - 12.0 * b[min_idx] * d[min_idx];
-   
+
   if (factor >= 0.0)
   {
     factor = sqrt(factor);
@@ -428,15 +428,15 @@ int    *iflag;
     r_2 = (-2.0 * c[min_idx] - factor)/6.0/d[min_idx];
 
     if ((x[min_idx] <= r_1) && (r_1 <= x[min_idx+1]) )
-      printf("\n\nValid minimum found at %12.8lf", r_1);  
+      printf("\n\nValid minimum found at %12.8lf", r_1);
 
     if ((x[min_idx] <= r_1) && (r_1 <= x[min_idx+1]) )
-      printf("\n\nValid minimum found at %12.8lf", r_2);  
+      printf("\n\nValid minimum found at %12.8lf", r_2);
   }
 
   // intervall min_idx+1
   factor = 4.0 * c[min_idx+1] - 12.0 * b[min_idx+1] * d[min_idx+1];
-   
+
   if (factor >= 0.0)
   {
     factor = sqrt(factor);
@@ -445,10 +445,10 @@ int    *iflag;
     r_2 = (-2.0 * c[min_idx+1] - factor)/6.0/d[min_idx+1];
 
     if ((x[min_idx+1] <= r_1) && (r_1 <= x[min_idx+2]) )
-      printf("\n\nValid minimum found at %12.8lf", r_1);  
+      printf("\n\nValid minimum found at %12.8lf", r_1);
 
     if ((x[min_idx+1] <= r_1) && (r_1 <= x[min_idx+2]) )
-      printf("\n\nValid minimum found at %12.8lf", r_2); 
+      printf("\n\nValid minimum found at %12.8lf", r_2);
 
   }
   */

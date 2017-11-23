@@ -51,7 +51,7 @@ int spline1d(int n_points, int n_spline, double x[], double y[])
     c[n_points-1] = -c[n_points-1] * d[n_points-2] * d[n_points-2] / (x[n_points-1] - x[n_points-4]);
   }
 
-  // Forward elimination 
+  // Forward elimination
   for (i = 1; i < n_points; i++)
   {
     ratio = d[i-1] / b[i-1];
@@ -84,9 +84,9 @@ int spline1d(int n_points, int n_spline, double x[], double y[])
 
   // Interpolate
   for (i=0; i < n_points - 1; i++)
-  { 
+  {
     dx = (x[i+1] - x[i]) / (double) (1 + n_spline);
- 
+
     for (x_new = x[i]; x_new < x[i+1]-dx/2; x_new = x_new + dx)
     {
       // identfy interval
@@ -98,10 +98,10 @@ int spline1d(int n_points, int n_spline, double x[], double y[])
 	do
 	{
 	  l = (j + k) / 2;
-	      
+
 	  if (x_new < x[l])
 	    k = l;
-	      
+
 	  if (x_new >= x[l])
 	    j = l;
 
@@ -123,10 +123,10 @@ int spline1d(int n_points, int n_spline, double x[], double y[])
   x_new = x[0];
 
   for (i=0; i < n_new; i++)
-  { 
+  {
     //x[i] = x_new + dx * (double) i;
     y[i] = y_new[i];
-    
+
     //printf("%12.8lf   %12.8lf\n", x[i], y[i]);
   }
 

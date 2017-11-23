@@ -37,42 +37,42 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[6]   =  1.0;
             stencil[7]   =  0.0;
             stencil[8]   =  1.0;
-  
+
             return 0;
-  
+
         case 5:
             stencil[0]   =   0.0;
             stencil[1]   =   0.0;
             stencil[2]   =  -0.166666666666667;
             stencil[3]   =   0.0;
             stencil[4]   =   0.0;
-  
+
             stencil[5]   =   0.0;
             stencil[6]   =   0.0;
             stencil[7]   =   2.666666666666667;
             stencil[8]   =   0.0;
             stencil[9]   =   0.0;
-   
+
             stencil[10]  =  -0.166666666666667;
             stencil[11]  =   2.666666666666667;
             stencil[12]  =   -10.0;
             stencil[13]  =   2.666666666666667;
             stencil[14]  =  -0.166666666666667;
-  
+
             stencil[15]  =   0.0;
             stencil[16]  =   0.0;
             stencil[17]  =   2.666666666666667;
             stencil[18]  =   0.0;
             stencil[19]  =   0.0;
-  
+
             stencil[20]  =   0.0;
             stencil[21]  =   0.0;
             stencil[22]  =  -0.166666666666667;
             stencil[23]  =   0.0;
             stencil[24]  =   0.0;
-  
+
             return 0;
-  
+
         case 7:
             stencil[0]   =    0.0;
             stencil[1]   =    0.0;
@@ -81,7 +81,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[4]   =    0.0;
             stencil[5]   =    0.0;
             stencil[6]   =    0.0;
-  
+
             stencil[7]   =  0.0;
             stencil[8]   =  -0.006944444444444;
             stencil[9]   =  0.027777777777778;
@@ -89,7 +89,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[11]  =  0.027777777777778;
             stencil[12]  =  -0.006944444444444;
             stencil[13]  =  0.0;
-  
+
             stencil[14]  =  0.0;
             stencil[15]  =  0.027777777777778;
             stencil[16]  =  -0.111111111111111;
@@ -97,7 +97,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[18]  =  -0.111111111111111;
             stencil[19]  =  0.027777777777778;
             stencil[20]  =  0.0;
-  
+
             stencil[21]  =    0.022222222222222;
             stencil[22]  =   -0.341666666666667;
             stencil[23]  =    3.166666666666666;
@@ -105,7 +105,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[25]  =    3.166666666666666;
             stencil[26]  =   -0.341666666666667;
             stencil[27]  =    0.022222222222222;
-  
+
             stencil[28]  =  0.0;
             stencil[29]  =  0.027777777777778;
             stencil[30]  =  -0.111111111111111;
@@ -113,7 +113,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[32]  =  -0.111111111111111;
             stencil[33]  =  0.027777777777778;
             stencil[34]  =  0.0;
-  
+
             stencil[35]  =  0.0;
             stencil[36]  =  -0.006944444444444;
             stencil[37]  =  0.027777777777778;
@@ -121,7 +121,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[39]  =  0.027777777777778;
             stencil[40]  =  -0.006944444444444;
             stencil[41]  =  0.0;
-  
+
             stencil[42]  =    0.0;
             stencil[43]  =    0.0;
             stencil[44]  =    0.0;
@@ -131,7 +131,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[48]  =    0.0;
 
             return 0;
-  
+
         case 9:
             stencil[0]   =   0.0;
             stencil[1]   =   0.0;
@@ -142,7 +142,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[6]   =   0.0;
             stencil[7]   =   0.0;
             stencil[8]   =   0.0;
-  
+
             stencil[9]   =   0.0;
             stencil[10]  =  -0.000123456790123;
             stencil[11]  =   0.000509259259259;
@@ -152,7 +152,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[15]  =   0.000509259259259;
             stencil[16]  =  -0.000123456790123;
             stencil[17]  =   0.0;
-  
+
             stencil[18]  =   0.0;
             stencil[19]  =   0.000509259259259;
             stencil[20]  =  -0.001666666666667;
@@ -162,7 +162,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[24]  =  -0.001666666666667;
             stencil[25]  =   0.000509259259259;
             stencil[26]  =   0.0;
-  
+
             stencil[27]  =   0.000000000000000;
             stencil[28]  =  -0.000925925925926;
             stencil[29]  =   0.002083333333333;
@@ -172,7 +172,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[33]  =   0.002083333333333;
             stencil[34]  =  -0.000925925925926;
             stencil[35]  =   0.0;
-  
+
             stencil[36]  =  -0.003571428571429;
             stencil[37]  =   0.051873897707231;
             stencil[38]  =  -0.401851851851852;
@@ -182,7 +182,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[42]  =  -0.401851851851852;
             stencil[43]  =   0.051873897707231;
             stencil[44]  =  -0.003571428571429;
-  
+
             stencil[45]  =   0.000000000000000;
             stencil[46]  =  -0.000925925925926;
             stencil[47]  =   0.002083333333333;
@@ -192,7 +192,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[51]  =   0.002083333333333;
             stencil[52]  =  -0.000925925925926;
             stencil[53]  =   0.0;
-   
+
             stencil[54]  =   0.0;
             stencil[55]  =   0.000509259259259;
             stencil[56]  =  -0.001666666666667;
@@ -202,7 +202,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[60]  =  -0.001666666666667;
             stencil[61]  =   0.000509259259259;
             stencil[62]  =   0.0;
-   
+
             stencil[63]  =   0.0;
             stencil[64]  =  -0.000123456790123;
             stencil[65]  =   0.000509259259259;
@@ -212,7 +212,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[69]  =   0.000509259259259;
             stencil[70]  =  -0.000123456790123;
             stencil[71]  =   0.0;
-      
+
             stencil[72]  =   0.0;
             stencil[73]  =   0.0;
             stencil[74]  =   0.0;
@@ -222,9 +222,9 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[78]  =   0.0;
             stencil[79]  =   0.0;
             stencil[80]  =   0.0;
-   
+
             return 0;
-  
+
         case 11:
             stencil[0]   =   0.0;
             stencil[1]   =   0.0;
@@ -237,7 +237,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[8]   =   0.0;
             stencil[9]   =   0.0;
             stencil[10]  =   0.0;
-  
+
             stencil[11]  =   0.0;
             stencil[12]  =  -0.000003188775510;
             stencil[13]  =   0.000018345301083;
@@ -249,7 +249,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[19]  =   0.000018345301083;
             stencil[20]  =  -0.000003188775510;
             stencil[21]  =   0.0;
-  
+
             stencil[22]  =   0.0;
             stencil[23]  =   0.000018345301083;
             stencil[24]  =  -0.000097159234064;
@@ -260,8 +260,8 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[29]  =   0.000249118165785;
             stencil[30]  =  -0.000097159234064;
             stencil[31]  =   0.000018345301083;
-            stencil[32]  =   0.0; 
-  
+            stencil[32]  =   0.0;
+
             stencil[33]  =   0.0;
             stencil[34]  =  -0.000050429894180;
             stencil[35]  =   0.000249118165785;
@@ -273,7 +273,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[41]  =   0.000249118165785;
             stencil[42]  =  -0.000050429894180;
             stencil[43]  =   0.0;
-  
+
             stencil[44]  =   0.0;
             stencil[45]  =   0.000087632275132;
             stencil[46]  =  -0.000415564373898;
@@ -285,7 +285,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[52]  =  -0.000415564373898;
             stencil[53]  =   0.000087632275132;
             stencil[54]  =   0.0;
-  
+
             stencil[55]  =   0.000634920634921;
             stencil[56]  =  -0.010025352733686;
             stencil[57]  =   0.079855599647266;
@@ -297,7 +297,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[63]  =   0.079855599647266;
             stencil[64]  =  -0.010025352733686;
             stencil[65]  =   0.000634920634921;
-  
+
             stencil[66]  =   0.0;
             stencil[67]  =   0.000087632275132;
             stencil[68]  =  -0.000415564373898;
@@ -309,7 +309,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[74]  =  -0.000415564373898;
             stencil[75]  =   0.000087632275132;
             stencil[76]  =   0.0;
-  
+
             stencil[77]  =   0.0;
             stencil[78]  =  -0.000050429894180;
             stencil[79]  =   0.000249118165785;
@@ -321,7 +321,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[85]  =   0.000249118165785;
             stencil[86]  =  -0.000050429894180;
             stencil[87]  =   0.0;
-  
+
             stencil[88]  =   0.0;
             stencil[89]  =   0.000018345301083;
             stencil[90]  =  -0.000097159234064;
@@ -332,8 +332,8 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[95]  =   0.000249118165785;
             stencil[96]  =  -0.000097159234064;
             stencil[97]  =   0.000018345301083;
-            stencil[98]  =   0.0; 
-  
+            stencil[98]  =   0.0;
+
             stencil[99]  =    0.0;
             stencil[100] =  -0.000003188775510;
             stencil[101] =   0.000018345301083;
@@ -345,7 +345,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[107] =   0.000018345301083;
             stencil[108] =  -0.000003188775510;
             stencil[109] =   0.0;
-  
+
             stencil[110] =   0.0;
             stencil[111] =   0.0;
             stencil[112] =   0.0;
@@ -357,9 +357,9 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[118] =   0.0;
             stencil[119] =   0.0;
             stencil[120] =   0.0;
-  
+
             return 0;
-  
+
         case 13:
             stencil[0]   =    0.0;
             stencil[1]   =    0.0;
@@ -374,7 +374,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[10]  =    0.0;
             stencil[11]  =    0.0;
             stencil[12]  =    0.0;
-  
+
             stencil[13]  =    0.0;
             stencil[14]  =   -0.000000100781053;
             stencil[15]  =    0.000000767668178;
@@ -388,7 +388,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[23]  =    0.000000767668178;
             stencil[24]  =   -0.000000100781053;
             stencil[25]  =    0.0;
-  
+
             stencil[26]  =    0.0;
             stencil[27]  =    0.000000767668178;
             stencil[28]  =   -0.000005691078515;
@@ -402,7 +402,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[36]  =   -0.000005691078515;
             stencil[37]  =    0.000000767668178;
             stencil[38]  =    0.0;
-  
+
             stencil[39]  =    0.0;
             stencil[40]  =   -0.000002791600179;
             stencil[41]  =    0.000020298371406;
@@ -416,7 +416,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[49]  =    0.000020298371406;
             stencil[50]  =   -0.000002791600179;
             stencil[51]  =    0.000000000000000;
-  
+
             stencil[52]  =    0.0;
             stencil[53]  =    0.000006389361300;
             stencil[54]  =   -0.000045892778408;
@@ -430,7 +430,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[62]  =   -0.000045892778408;
             stencil[63]  =    0.000006389361300;
             stencil[64]  =    0.0;
-  
+
             stencil[65]  =    0.0;
             stencil[66]  =   -0.000010196208113;
             stencil[67]  =    0.000072751322751;
@@ -444,7 +444,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[75]  =    0.000072751322751;
             stencil[76]  =   -0.000010196208113;
             stencil[77]  =    0.0;
-  
+
             stencil[78]  =   -0.000120250120250;
             stencil[79]  =    0.002094547102417;
             stencil[80]  =   -0.018016014629875;
@@ -458,7 +458,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[88]  =   -0.018016014629875;
             stencil[89]  =    0.002094547102417;
             stencil[90]  =   -0.000120250120250;
-  
+
             stencil[91]  =    0.0;
             stencil[92]  =   -0.000010196208113;
             stencil[93]  =    0.000072751322751;
@@ -472,7 +472,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[101] =    0.000072751322751;
             stencil[102] =   -0.000010196208113;
             stencil[103] =    0.0;
-  
+
             stencil[104] =    0.0;
             stencil[105] =    0.000006389361300;
             stencil[106] =   -0.000045892778408;
@@ -486,7 +486,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[114] =   -0.000045892778408;
             stencil[115] =    0.000006389361300;
             stencil[116] =    0.0;
-  
+
             stencil[117] =    0.0;
             stencil[118] =   -0.000002791600179;
             stencil[119] =    0.000020298371406;
@@ -500,7 +500,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[127] =    0.000020298371406;
             stencil[128] =   -0.000002791600179;
             stencil[129] =    0.000000000000000;
-  
+
             stencil[130] =    0.0;
             stencil[131] =    0.000000767668178;
             stencil[132] =   -0.000005691078515;
@@ -514,7 +514,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[140] =   -0.000005691078515;
             stencil[141] =    0.000000767668178;
             stencil[142] =    0.0;
-  
+
             stencil[143] =    0.0;
             stencil[144] =   -0.000000100781053;
             stencil[145] =    0.000000767668178;
@@ -527,8 +527,8 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[152] =   -0.000002791600179;
             stencil[153] =    0.000000767668178;
             stencil[154] =   -0.000000100781053;
-            stencil[155] =    0.0; 
-  
+            stencil[155] =    0.0;
+
             stencil[156] =    0.0;
             stencil[157] =    0.0;
             stencil[158] =    0.0;
@@ -544,7 +544,7 @@ int get_stencil(double stencil[], int n_stencil){
             stencil[168] =    0.0;
 
             return 0;
-  
+
         default:
         // assignemnt unsuccessful
             return 1;

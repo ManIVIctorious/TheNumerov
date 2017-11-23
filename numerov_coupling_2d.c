@@ -60,8 +60,8 @@ int main(int argc, char* argv[])
   double integral_2d(double * integrand, int nx, int ny, double dx, double dy);
 
   // check input argument if the file is not present give a silly statement
-  if (argv[1] == NULL) 
-  { 
+  if (argv[1] == NULL)
+  {
     printf("\n\n (-) Please specify an input file ... \n\n");
     exit (1);
     // usage
@@ -69,16 +69,16 @@ int main(int argc, char* argv[])
 
   // define string for input filename
   inputfile_name = (char*) calloc(1+(strlen(argv[1])),sizeof(char));
-  strcpy(inputfile_name, argv[1]);   
+  strcpy(inputfile_name, argv[1]);
   strcat(inputfile_name, "\0");
 
   if ( (infile = fopen(inputfile_name,"r")) == NULL)
-  {  
+  {
     printf("\n\n\t (-) Error opening input-file: '%s'", inputfile_name);
     printf(  "\n\t     Exiting ... \n\n");
 
     exit(0);
-  } 
+  }
 
   // first read of infile for initialisation
   while ( (fgets(line, 2048, infile) ) != NULL )
@@ -86,23 +86,23 @@ int main(int argc, char* argv[])
     line_number ++;
 
     // remove leading white space
-    // remove leading blanks and tabs  
+    // remove leading blanks and tabs
     i=0;
-    do 
+    do
     {
       c=line[i];
-      if ((c == ' ') || (c == '\t'))  
-	for (j = i; j < strlen(line) ; j++)        
+      if ((c == ' ') || (c == '\t'))
+	for (j = i; j < strlen(line) ; j++)
 	  line[j] = line[j+1];
-      else 
-	i++;        
+      else
+	i++;
     }
-    while (c == ' '); 
+    while (c == ' ');
 
-    // if line is  blank read next line 
+    // if line is  blank read next line
     if (line[0] == '\n') continue;
 
-    // if line is a comment read next line 
+    // if line is a comment read next line
     if (line[0] == '#') continue;
 
     marker = 0;
@@ -111,15 +111,15 @@ int main(int argc, char* argv[])
     {
        c=line[i];
       if (c == '\n') marker = 1;
-      if (marker == 1) line[i] = 0;  
-    }       
+      if (marker == 1) line[i] = 0;
+    }
 
-   // terminate if no ENTER was found 
+   // terminate if no ENTER was found
     if (marker == 0)
     {
        printf("\n\n (-) Invalid instruction line %d - the line is too long.",line_number);
        printf(  "\n     Exiting - please correct the input file ...\n\n\n\n");
-       exit (1); 
+       exit (1);
     }
 
     // check for keyword-entries
@@ -134,7 +134,7 @@ int main(int argc, char* argv[])
     keyword[i]='\0';
 
     // assign stepcounter
-    if (strcmp(keyword,"n") == 0) 
+    if (strcmp(keyword,"n") == 0)
     {
       control=sscanf(line, "%s   %d   %d", keyword, &nx, &ny);
       continue;
@@ -148,17 +148,17 @@ int main(int argc, char* argv[])
     {
       control=sscanf(line,"%s   %lf   %lf", keyword, &dr_x, &dr_y);
       continue;
-    } 
+    }
     else if (strcmp(keyword, "red_mass") == 0)
     {
       control=sscanf(line,"%s   %lf   %lf", keyword, &dr_x, &dr_y);
       continue;
-    } 
+    }
 
     // read entries
     count = 0;
     while (sscanf(line,"%s", &string) != -1)
-    { 
+    {
       // eliminate recent number from line
       position = 0;
       while( (line[position] != ' ') && (line[position] != '\t') )
@@ -171,24 +171,24 @@ int main(int argc, char* argv[])
 	  j++;
 	}
       line[j] = '\0';
-    
+
       // remove additional leading whitespace characters
       i=0;
-      do 
+      do
       {
         c=line[i];
-        if ((c == ' ') || (c == '\t'))  
-  	  for (j = i; j < strlen(line) ; j++)        
+        if ((c == ' ') || (c == '\t'))
+  	  for (j = i; j < strlen(line) ; j++)
   	    line[j] = line[j+1];
-        else 
-          i++;        
+        else
+          i++;
       }
-      while (c == ' '); 
+      while (c == ' ');
 
       count ++;
 
     }
-    
+
     // check consistency in number of entries
     if (n_points == 0)
     {
@@ -232,23 +232,23 @@ int main(int argc, char* argv[])
     line_number ++;
 
     // remove leading white space
-    // remove leading blanks and tabs  
+    // remove leading blanks and tabs
     i=0;
-    do 
+    do
     {
       c=line[i];
-      if ((c == ' ') || (c == '\t'))  
-	for (j = i; j < strlen(line) ; j++)        
+      if ((c == ' ') || (c == '\t'))
+	for (j = i; j < strlen(line) ; j++)
 	  line[j] = line[j+1];
-      else 
-	i++;        
+      else
+	i++;
     }
-    while (c == ' '); 
+    while (c == ' ');
 
-    // if line is  blank read next line 
+    // if line is  blank read next line
     if (line[0] == '\n') continue;
 
-    // if line is a comment read next line 
+    // if line is a comment read next line
     if (line[0] == '#') continue;
 
     marker = 0;
@@ -257,15 +257,15 @@ int main(int argc, char* argv[])
     {
        c=line[i];
       if (c == '\n') marker = 1;
-      if (marker == 1) line[i] = 0;  
-    }       
+      if (marker == 1) line[i] = 0;
+    }
 
-   // terminate if no ENTER was found 
+   // terminate if no ENTER was found
     if (marker == 0)
     {
        printf("\n\n (-) Invalid instruction line %d - the line is too long.",line_number);
        printf(  "\n     Exiting - please correct the input file ...\n\n\n\n");
-       exit (1); 
+       exit (1);
     }
 
     // check for keyword-entries
@@ -280,7 +280,7 @@ int main(int argc, char* argv[])
     keyword[i]='\0';
 
     // assign stepcounter
-    if (strcmp(keyword,"n") == 0) 
+    if (strcmp(keyword,"n") == 0)
     {
       control=sscanf(line, "%s   %d   %d", keyword, &nx, &ny);
       continue;
@@ -294,17 +294,17 @@ int main(int argc, char* argv[])
     {
       control=sscanf(line,"%s   %lf   %lf", keyword, &dr_x, &dr_y);
       continue;
-    } 
+    }
     else if (strcmp(keyword, "red_mass") == 0)
     {
       control=sscanf(line,"%s   %lf   %lf", keyword, &dr_x, &dr_y);
       continue;
-    } 
+    }
 
     // read entries
     count = 0;
     while (sscanf(line,"%lf", &data[count][n_points]) != -1)
-    { 
+    {
       // eliminate recent number from line
       position = 0;
       while( (line[position] != ' ') && (line[position] != '\t') )
@@ -317,19 +317,19 @@ int main(int argc, char* argv[])
 	  j++;
 	}
       line[j] = '\0';
-    
+
       // remove additional leading whitespace characters
       i=0;
-      do 
+      do
       {
         c=line[i];
-        if ((c == ' ') || (c == '\t'))  
-  	  for (j = i; j < strlen(line) ; j++)        
+        if ((c == ' ') || (c == '\t'))
+  	  for (j = i; j < strlen(line) ; j++)
   	    line[j] = line[j+1];
-        else 
-          i++;        
+        else
+          i++;
       }
-      while (c == ' '); 
+      while (c == ' ');
 
       count ++;
 
@@ -393,7 +393,7 @@ int main(int argc, char* argv[])
       //printf("\n%d  %d  %d", i,idx_x, idx_y);
 
       data[n_entries][i] = data[n_entries-1][i] - pot_x[idx_x] - pot_y[idx_y];
-  
+
       // printf("\n%12.8lf  %12.8lf   %12.8lf   %12.8lf   %12.8lf", data[0][i], data[1][i], data[n_entries-1][i], data[n_entries][i], pot_x[idx_x] + pot_y[idx_y] );
   }
 
@@ -409,15 +409,15 @@ int main(int argc, char* argv[])
     }
 
     integral = integral_2d(integrand, nx, ny, dr_x, dr_y);
-    
+
     // norm is sqrt of integral
     integral = sqrt(integral);
-    
-    
+
+
     // devide by norm
     for (k = 0; k < n_points; k++)
         data[i][k] = data[i][k]/integral;
-    
+
   }
 
 
@@ -443,7 +443,7 @@ int main(int argc, char* argv[])
   printf("   ");
 
   for (i=2; i <= n_entries - 2; i++)
-    printf("%7d   ",i-2);     
+    printf("%7d   ",i-2);
 
   for (i = 2; i <= n_entries - 2; i++)
   {
@@ -497,7 +497,7 @@ for (i=2; i <= n_entries - 2; i++)
 
   printf("   ");
   for (i=2; i <= n_entries - 2; i++)
-    printf("%7d   ",i-2);     
+    printf("%7d   ",i-2);
 
   for (i = 2; i <= n_entries - 2; i++)
   {
@@ -544,7 +544,7 @@ for (i=2; i <= n_entries - 2; i++)
 
   printf("#");
   for (i=2; i <= n_entries - 2; i++)
-    printf("%11d   ",i-2);     
+    printf("%11d   ",i-2);
 
   for (i = 2; i <= n_entries - 2; i++)
   {
@@ -610,16 +610,16 @@ double integral_2d(double * integrand, int nx, int ny, double dx, double dy)
       idx_x = i/ny;
       idx_y = i%ny;
 
-      if ( (idx_x == 0) || (idx_x == nx-1) ) 
+      if ( (idx_x == 0) || (idx_x == nx-1) )
       {
-	if ( (idx_y == 0) || (idx_y == ny-1) ) 
+	if ( (idx_y == 0) || (idx_y == ny-1) )
 	  {
 	  weight = 0.25;
 	  }
 	else
 	  weight = 0.5;
       }
-      else if ( (idx_y == 0) || (idx_y == ny-1) ) 
+      else if ( (idx_y == 0) || (idx_y == ny-1) )
 	{
 	  weight = 0.5;
 	}
