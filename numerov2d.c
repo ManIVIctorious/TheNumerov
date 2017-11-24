@@ -4,13 +4,19 @@
 #include <getopt.h>
 #include "mkl_solvers_ee.h"
 
+
+// input functions
+int InputFunction(char *inputfile, double ***q, int *nq, double **V, int dimension);
+int InputFunctionDipole(char *inputfile, double ***q, int *nq, double **V, double ***mu, int dimension);
+
+// output functions
 int Help(char *filename);
 int get_stencil(double stencil[], int n_stencil);
+
+// other
+int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], double z[]);
 double integrate_1d(int n, double dx, double integrand[]);
 double integrate_2d(int nx, int ny, double dx, double integrand[]);
-int InputFunction(char *inputfile, double **q1, double **q2, double **V, int *nq1, int *nq2);
-int InputFunctionDipole(char *inputfile, double **q1, double **q2, double **V, double **mux, double **muy, double **muz, int *nq1, int *nq2);
-int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], double z[]);
 
 
 int main(int argc, char* argv[]){
@@ -152,17 +158,17 @@ int main(int argc, char* argv[]){
 //------------------------------------------------------------------------------------------------------------------
 
     int i, j, k, l, index;
-    int nq1, nq2, n_points;
+    int n_points;
 
 // Input
-    double * q1 = NULL;
-    double * q2 = NULL;
-    double * v  = NULL;
-    double * dip_x = NULL;
-    double * dip_y = NULL;
-    double * dip_z = NULL;
+    int dimension = 2;
+    int     * nq = NULL;
+    double ** q  = NULL;
+    double  * v  = NULL;
+    double ** mu = NULL;
+    double  * deltaq = NULL;
+    double dq = 0;
     double v_min = 1.0E100;
-    double dq, dq1, dq2;
 
     double * stencil   = NULL;
     double * integrand = NULL;
@@ -194,33 +200,41 @@ int main(int argc, char* argv[]){
         exit (1);
     }
 
-    q1 = malloc(sizeof(double));
-    q2 = malloc(sizeof(double));
+// create 2D array q
+    q  = malloc(dimension * sizeof(double*));
+    for(i = 0; i < dimension; ++i){
+        q[i] = malloc(sizeof(double));
+    }
+    nq = calloc(dimension, sizeof(int));
     v  = malloc(sizeof(double));
-    if(q1 == NULL || q2 == NULL || v  == NULL){
-        fprintf(stderr, "\n (-) Error in memory allocation for q1, q2 or v");
+    if(q == NULL || v  == NULL){
+        fprintf(stderr, "\n (-) Error in memory allocation for q or v");
         fprintf(stderr, "\n     Aborting...\n\n");
         exit(1);
     }
     if(dipole_flag == 1){
-        dip_x = malloc(sizeof(double));
-        dip_y = malloc(sizeof(double));
-        dip_z = malloc(sizeof(double));
-        if(dip_x == NULL || dip_y == NULL || dip_z == NULL){
-            fprintf(stderr, "\n (-) Error in memory allocation for dip_x, dip_y or dip_z");
+        mu = malloc(3 * sizeof(double*));
+        if(mu == NULL){
+            fprintf(stderr, "\n (-) Error in memory allocation for dipole array");
             fprintf(stderr, "\n     Aborting...\n\n");
             exit(1);
         }
-        n_points = InputFunctionDipole(input_file_name, &q1, &q2, &v, &dip_x, &dip_y, &dip_z, &nq1, &nq2);
-    }
-    else{
-        n_points = InputFunction(input_file_name, &q1, &q2, &v, &nq1, &nq2);
+        n_points = InputFunctionDipole(input_file_name, &q, nq, &v, &mu, dimension);
+    }else{
+        n_points = InputFunction(input_file_name, &q, nq, &v, dimension);
     }
 
-// check if the "N nq1 nq2" line in input file matches the number of data points
-    if(n_points != nq1*nq2){
+// check if the "N nq[0] ... nq[dimension-1]" line in input file matches the number of data points
+//  The following line is only needed in case of the 1D Numerov, since the N nq[0]...nq[dimension-1] flag
+//  is not present in this particular case:
+    if(dimension == 1){ nq[0] = n_points; }
+    for(i = 0, control = 1; i < dimension; ++i){
+        control *= nq[i];
+    }
+    if(n_points != control){
         fprintf(stderr, "\n (-) Error reading data from input-file: '%s'", input_file_name);
-        fprintf(stderr, "\n     Number of Data points (\"%d\") doesn't match \"%d*%d\"", n_points, nq1, nq2);
+        fprintf(stderr, "\n     Number of Data points (\"%d\") doesn't match \"%d", n_points, nq[0]);
+        for(i = 1; i < dimension; ++i){ fprintf(stderr, "*%d", nq[i]); }
         fprintf(stderr, "\n     Aborting - please check your input...\n\n");
         exit(1);
     }
@@ -231,6 +245,69 @@ int main(int argc, char* argv[]){
         fprintf(stderr, "\n     Insufficient number of data points %d for stencil size %d.", n_points, n_stencil);
         fprintf(stderr, "\n     Aborting - please check your input...\n\n");
         exit(1);
+    }
+
+
+//------------------------------------------------------------------------------------------------------------------
+//  Check Coordinate Spacing    Check Coordinate Spacing    Check Coordinate Spacing    Check Coordinate Spacing
+//------------------------------------------------------------------------------------------------------------------
+    deltaq = calloc(dimension, sizeof(double));
+
+// The Numerov method needs to be applied to an equispaced grid.
+//  This means that the spacing within the particular coordinate axes (q[0] to q[dimension-1])
+//  has to be constant and must be the same in all directions.
+
+// Get the initial spacing:
+//  for the last coordinate q[dimension-1] the next (different) value is the next one
+//  for the second last coordinate q[dimension-2] the next (different) value is the nq[dimension-1]th, etc.
+    for(i = (dimension - 1), j = 1; i >= 0; --i){
+        deltaq[i] = q[i][j] - q[i][0];
+        j *= nq[i];
+    }
+
+// check spacing within each dimension i
+    for(i = (dimension - 1), k = 1; i >= 0; --i){
+
+    // within dimension i check every subtraction of [j+k]th and [j]th values
+    //  where j denotes the running index and k is the index jump (e.g. 1 for q[dimension-1],
+    //  nq[dimension-1] for q[dimension-2] or nq[dimension-1]*nq[dimension-2] for q[dimension-3])
+        for(j = 0; j < n_points-k; ++j){
+        // don't check spacing on jump positions
+            if( (j+1)%k*nq[i] != 0 ){
+                if( (deltaq[i] - (q[i][j+k]-q[i][j]))*(deltaq[i] - (q[i][j+k]-q[i][j]) ) > spacing_threshold*spacing_threshold){
+                    fprintf(stderr, "\n (-) Error in input file.");
+                    fprintf(stderr, "\n     Coordinate spacing not equivalent. (1st test)");
+                    fprintf(stderr, "\n     Aborting - please check your input...\n\n");
+                    exit(-1);
+                }
+            }
+        }
+        k *= nq[i];
+    }
+
+// check spacing between dimensions
+    for(i = 1; i < dimension; ++i){
+        if( (deltaq[i] - deltaq[i-1])*(deltaq[i] - deltaq[i-1]) > spacing_threshold*spacing_threshold){ 
+            fprintf(stderr, "\n (-) Error in input file.");
+            fprintf(stderr, "\n     Coordinate spacing not equivalent. (3rd test)");
+            fprintf(stderr, "\n     Aborting - please check your input...\n\n");
+            exit(-1);
+        }
+    }
+    dq = deltaq[0];
+    free(deltaq); deltaq = NULL;
+
+
+//------------------------------------------------------------------------------------------------------------------
+//  Shift potential    Shift potential    Shift potential    Shift potential    Shift potential    Shift potential
+//------------------------------------------------------------------------------------------------------------------
+// get potential minimum, subtract it from the potential
+//  and apply potential energy factor to convert to desired energy output
+    for(i = 0; i < n_points; ++i){
+        if(v[i] < v_min){ v_min = v[i]; }
+    }
+    for(i = 0; i < n_points; ++i){
+        v[i] = (v[i] - v_min) * epot_factor;
     }
 
 
@@ -247,7 +324,7 @@ int main(int argc, char* argv[]){
 // get stencil, in two dimensions the size is n_stencil * n_stencil.
     stencil = malloc(n_stencil * n_stencil * sizeof(double));
     if(stencil == NULL){
-        fprintf(stderr, "\n (-) Error in memory allocation for dip_x");
+        fprintf(stderr, "\n (-) Error in memory allocation for stencil");
         fprintf(stderr, "\n     Aborting...\n\n");
         exit(1);
     }
@@ -260,101 +337,53 @@ int main(int argc, char* argv[]){
     }
 
 
-// get potential minimum, subtract it from the potential
-//  and apply potential energy factor to convert to desired energy output
-    for(i = 0; i < n_points; ++i){
-        if(v[i] < v_min)   v_min = v[i];
-    }
-    for(i = 0; i < n_points; ++i){
-        v[i] = (v[i] - v_min) * epot_factor;
-    }
-
-
-//------------------------------------------------------------------------------------------------------------------
-//  Check Coordinate Spacing    Check Coordinate Spacing    Check Coordinate Spacing    Check Coordinate Spacing
-//------------------------------------------------------------------------------------------------------------------
-    dq1 = q1[nq2] - q1[0];
-    dq2 = q2[ 1 ] - q2[0];
-    for(i = 1; i < (n_points-nq2); ++i){
-
-    // spacing between q1[i] and q1[i-1]
-        if( (dq1 - (q1[i+nq2] - q1[i]))*(dq1 - (q1[i+nq2] - q1[i])) > spacing_threshold*spacing_threshold ){
-            fprintf(stderr, "\n (-) Error in input file.");
-            fprintf(stderr, "\n     Coordinate spacing not equivalent. (1st test)");
-            fprintf(stderr, "\n     Aborting - please check your input...\n\n");
-            exit(-1);
-        }
-        dq1 = q1[i+nq2] - q1[i];
-
-    // spacing between q2[i] and q2[i-1]
-        if( (i+1)%nq2 != 0 ){
-            if( (dq2 - (q2[i+1] - q2[i]))*(dq2 - (q2[i+1] - q2[i])) > spacing_threshold*spacing_threshold ){
-                fprintf(stderr, "\n (-) Error in input file.");
-                fprintf(stderr, "\n     Coordinate spacing not equivalent. (2nd test)");
-                fprintf(stderr, "\n     Aborting - please check your input...\n\n");
-                exit(-1);
-            }
-            dq2 = q2[i+1] - q2[i];
-        }
-
-    // spacing between q1[i] and q2[i]
-        if( (dq1 - dq2)*(dq1 - dq2) > spacing_threshold*spacing_threshold ){
-            fprintf(stderr, "\n (-) Error in input file.");
-            fprintf(stderr, "\n     Coordinate spacing not equivalent. (3rd test)");
-            fprintf(stderr, "\n     Aborting - please check your input...\n\n");
-            exit(-1);
-        }
-    }
-    dq = dq1;
-
-
 //------------------------------------------------------------------------------------------------------------------
 //  Spline  Spline  Spline  Spline  Spline  Spline  Spline  Spline  Spline  Spline  Spline  Spline  Spline  Spline
 //------------------------------------------------------------------------------------------------------------------
     if(n_spline > 0){
     // new number of points by splining
-        n_points = ((nq1 - 1) * (n_spline + 1) + 1) * ((nq2 - 1) * (n_spline + 1) + 1);
+        n_points = ((nq[0] - 1) * (n_spline + 1) + 1) * ((nq[1] - 1) * (n_spline + 1) + 1);
 
     // reallocate memory and call spline function
-        q1 = realloc(q1, n_points * sizeof(double));
-        q2 = realloc(q2, n_points * sizeof(double));
+        q[0] = realloc(q[0], n_points * sizeof(double));
+        q[1] = realloc(q[1], n_points * sizeof(double));
         v  = realloc(v,  n_points * sizeof(double));
-        if(q1 == NULL || q2 == NULL || v  == NULL){
+        if(q[0] == NULL || q[1] == NULL || v  == NULL){
             fprintf(stderr, "\n (-) Error in memory reallocation for q1, q2 or v");
             fprintf(stderr, "\n     Aborting...\n\n");
             exit(1);
         }
-        control = spline_interpolate(nq1, nq2, n_spline, q1, q2, v);
+        control = spline_interpolate(nq[0], nq[1], n_spline, q[0], q[1], v);
         if(control != 0){
             fprintf(stderr, "\n (-) Error in execution of spline interpolation function.");
             fprintf(stderr, "\n     Aborting...\n\n");
             exit(1);
         }
         if(dipole_flag == 1){
-            dip_x = realloc(dip_x, n_points * sizeof(double));
-            dip_y = realloc(dip_y, n_points * sizeof(double));
-            dip_z = realloc(dip_z, n_points * sizeof(double));
-            if(dip_x == NULL || dip_y == NULL || dip_z == NULL){
-                fprintf(stderr, "\n (-) Error in memory reallocation for dip_x, dip_y or dip_z");
+            mu[0] = realloc(mu[0], n_points * sizeof(double));
+            mu[1] = realloc(mu[1], n_points * sizeof(double));
+            mu[2] = realloc(mu[2], n_points * sizeof(double));
+            if(mu[0] == NULL || mu[1] == NULL || mu[2] == NULL){
+                fprintf(stderr, "\n (-) Error in memory reallocation for dipole moment");
                 fprintf(stderr, "\n     Aborting...\n\n");
                 exit(1);
             }
-            i = spline_interpolate(nq1, nq2, n_spline, q1, q2, dip_x);
-            j = spline_interpolate(nq1, nq2, n_spline, q1, q2, dip_y);
-            k = spline_interpolate(nq1, nq2, n_spline, q1, q2, dip_z);
+            i = spline_interpolate(nq[0], nq[1], n_spline, q[0], q[1], mu[0]);
+            j = spline_interpolate(nq[0], nq[1], n_spline, q[0], q[1], mu[1]);
+            k = spline_interpolate(nq[0], nq[1], n_spline, q[0], q[1], mu[2]);
         }
 
     // set new values for number of points for q1 and q2 and new dq
-        nq1 = (nq1 - 1) * (n_spline + 1) + 1;
-        nq2 = (nq2 - 1) * (n_spline + 1) + 1;
-        dq  = dq / (double) (n_spline + 1);
+        nq[0] = (nq[0] - 1) * (n_spline + 1) + 1;
+        nq[1] = (nq[1] - 1) * (n_spline + 1) + 1;
+        dq    = dq / (double) (n_spline + 1);
 
     // set new values for q1 and q2:
-    //  add 1 step to q1 all "nq2"th iteration
-    //  add 1 step to q2 every iteration, reset to 0 at every "nq2"th
+    //  add 1 step to q1 all "nq[1]"th iteration
+    //  add 1 step to q2 every iteration, reset to 0 at every "nq[1]"th
         for(i = 0; i < n_points; i++){
-            q1[i] = q1[0] + dq * (double) (i/nq2);
-            q2[i] = q2[0] + dq * (double) (i%nq2);
+            q[0][i] = q[0][0] + dq * (double) (i/nq[1]);
+            q[1][i] = q[1][0] + dq * (double) (i%nq[1]);
         }
     }
 
@@ -374,12 +403,12 @@ int main(int argc, char* argv[]){
 
     // calculate max_entries
     int max_entries   = 0;
-    int sum_q1 = nq1;
-    int sum_q2 = nq2;
+    int sum_q1 = nq[0];
+    int sum_q2 = nq[1];
 
     for(i = 1; i < (n_stencil/2 + 1); i++){
-        sum_q1=sum_q1 + 2*(nq1-i);
-        sum_q2=sum_q2 + 2*(nq2-i);
+        sum_q1=sum_q1 + 2*(nq[0]-i);
+        sum_q2=sum_q2 + 2*(nq[1]-i);
     }
     max_entries = sum_q1*sum_q2; // upper estimation for nnz entries in the matrix, but the easy way to code.
 
@@ -397,15 +426,15 @@ int main(int argc, char* argv[]){
         exit(1);
     }
 
-    for(i = 0; i < nq1; i++){
-        for(j = 0; j < nq2; j++){
+    for(i = 0; i < nq[0]; i++){
+        for(j = 0; j < nq[1]; j++){
             for(xsh = -n_stencil/2; xsh < n_stencil/2 + 1; xsh++){
 
-                if( (i+xsh > -1) && (i+xsh < nq1) ){
+                if( (i+xsh > -1) && (i+xsh < nq[0]) ){
                     for(ysh = -n_stencil/2; ysh < n_stencil/2 + 1; ysh++){
 
-                        if( (j+ysh > -1) && ( j+ysh < nq2) ){
-                            element = (i + xsh)*nq2 + j+ysh;
+                        if( (j+ysh > -1) && ( j+ysh < nq[1]) ){
+                            element = (i + xsh)*nq[1] + j+ysh;
                             cols_A[n_entries] = element+1; // wieso +1? weil intel!!
 
                         // stencil entries have to be divided by 2 to get the right result.
@@ -414,7 +443,7 @@ int main(int argc, char* argv[]){
 
                         // add potential to diagonal element
                             if(xsh == 0 && ysh ==0){
-                                vals_A[n_entries] = vals_A[n_entries] + v[i*nq2+j];
+                                vals_A[n_entries] = vals_A[n_entries] + v[i*nq[1]+j];
                             }
 
                             n_entries ++;
@@ -423,7 +452,7 @@ int main(int argc, char* argv[]){
                 }
             }
       // after inserting all entries in a row the total number of entries is inserted in the CSR format.
-        rows_A[i*nq2+j+1]=n_entries+1;
+        rows_A[i*nq[1]+j+1]=n_entries+1;
         }
     }
     rows_A[0] = 1;
@@ -495,7 +524,7 @@ int main(int argc, char* argv[]){
             integrand[j] = X[j+i*n_points] * X[j+i*n_points];
         }
 
-        integral = integrate_2d(nq1,nq2, dq, integrand);
+        integral = integrate_2d(nq[0], nq[1], dq, integrand);
 
         for (j = 0; j < n_points; j++){
             X[j+i*n_points] = X[j+i*n_points] / sqrt(integral);
@@ -563,7 +592,7 @@ int main(int argc, char* argv[]){
                     integrand[k] = X[k + i*n_points]*X[k + j*n_points];
                 }
 
-                integral = integrate_2d(nq1, nq2, dq, integrand);
+                integral = integrate_2d(nq[0], nq[1], dq, integrand);
                 fprintf(file_ptr, "  %12.5e", integral);
             }
         }
@@ -586,7 +615,7 @@ int main(int argc, char* argv[]){
                     integrand[k] = X[k + i*n_points]*X[k + j*n_points] * v[k];
                 }
 
-                integral = integrate_2d(nq1, nq2, dq, integrand);
+                integral = integrate_2d(nq[0], nq[1], dq, integrand);
                 fprintf(file_ptr, "  %12.5e", integral);
             }
         }
@@ -604,18 +633,18 @@ int main(int argc, char* argv[]){
             fprintf(file_ptr, "\n#%3d",i);
 
             for(j = 0; j < (i+1); j++){
-                for(k = 0; k < nq1; k++){
-                    for(l = 0; l < nq2; l++){
-                        index = k*nq2 + l;
+                for(k = 0; k < nq[0]; k++){
+                    for(l = 0; l < nq[1]; l++){
+                        index = k*nq[1] + l;
                         integrand[index]=0;
 //------------------------------------------------------------------------------------------------------------------
                         for(xsh = -n_stencil/2; xsh < (n_stencil/2 + 1); xsh++){
 
-                            if( (k+xsh > -1) && (k+xsh < nq1) ){
+                            if( (k+xsh > -1) && (k+xsh < nq[0]) ){
                                 for(ysh = -n_stencil/2; ysh < (n_stencil/2 + 1); ysh++){
 
-                                    if( (l+ysh > -1) && (l+ysh < nq2) ){
-                                        element = (k + xsh)*nq2 + l + ysh;
+                                    if( (l+ysh > -1) && (l+ysh < nq[1]) ){
+                                        element = (k + xsh)*nq[1] + l + ysh;
 
                                     // integrand has to be divided by d^2,
                                     //  but the division is already set in the "ekin_param" parameter
@@ -629,7 +658,7 @@ int main(int argc, char* argv[]){
                     }
                 }
 
-                integral = integrate_2d(nq1, nq2, dq, integrand);
+                integral = integrate_2d(nq[0], nq[1], dq, integrand);
                 fprintf(file_ptr, "  %12.5e", integral);
             }
         }
@@ -637,15 +666,15 @@ int main(int argc, char* argv[]){
 
 
     // calculate coupling
-        double *dichtematrix    = calloc(nq1*nq1, sizeof(double));
-        double *dichtematrix_sq = calloc(nq1*nq1, sizeof(double));
+        double *dichtematrix    = calloc(nq[0]*nq[0], sizeof(double));
+        double *dichtematrix_sq = calloc(nq[0]*nq[0], sizeof(double));
         if(dichtematrix == NULL || dichtematrix_sq == NULL){
             fprintf(stderr, "\n (-) Error in memory allocation for dichtematrix or its square.");
             fprintf(stderr, "\n     Aborting...\n\n");
             exit(1);
         }
-        double *dm_integrand    = calloc(nq2,     sizeof(double));
-        double *dm_integrand_sq = calloc(nq1,     sizeof(double));
+        double *dm_integrand    = calloc(nq[1],     sizeof(double));
+        double *dm_integrand_sq = calloc(nq[0],     sizeof(double));
         if(dm_integrand == NULL || dm_integrand_sq == NULL){
             fprintf(stderr, "\n (-) Error in memory allocation for density matrix integrand or its square.");
             fprintf(stderr, "\n     Aborting...\n\n");
@@ -656,43 +685,43 @@ int main(int argc, char* argv[]){
         fprintf(file_ptr, "\n# Coupling:\n#");
         for(i = 0; i < n_out; i++){
         // calculate density-matrix for all wave functions
-            for(r1 = 0; r1 < nq1; r1++){
-                for(r2 = r1; r2 < nq1; r2++){
-                    for(j = 0; j < nq2; j++){
-                        dm_integrand[j] = X[i*n_points + r1*nq2 + j]*X[i*n_points + r2*nq2 + j];
+            for(r1 = 0; r1 < nq[0]; r1++){
+                for(r2 = r1; r2 < nq[0]; r2++){
+                    for(j = 0; j < nq[1]; j++){
+                        dm_integrand[j] = X[i*n_points + r1*nq[1] + j]*X[i*n_points + r2*nq[1] + j];
                     }
 
-                    integral = integrate_1d(nq2, dq, dm_integrand);
-                    dichtematrix[r1*nq1 + r2] = integral;
+                    integral = integrate_1d(nq[1], dq, dm_integrand);
+                    dichtematrix[r1*nq[0] + r2] = integral;
 
                     if(r1 != r2){
-                        dichtematrix[r2*nq1 + r1] = integral;
+                        dichtematrix[r2*nq[0] + r1] = integral;
                     }
                 }
             }
 
         // calculate density-matrix square
-        //  careful: density-matrix has dimension nq1 times nq1!
-            for(r1 = 0; r1 < nq1; r1++){
-                for(r2 = r1; r2 < nq1; r2++){
-                    for(j = 0; j < nq1; j++){
-                        dm_integrand_sq[j] = dichtematrix[r1*nq1 + j]*dichtematrix[j*nq1 + r2];
+        //  careful: density-matrix has dimension nq[0] times nq[0]!
+            for(r1 = 0; r1 < nq[0]; r1++){
+                for(r2 = r1; r2 < nq[0]; r2++){
+                    for(j = 0; j < nq[0]; j++){
+                        dm_integrand_sq[j] = dichtematrix[r1*nq[0] + j]*dichtematrix[j*nq[0] + r2];
                     }
 
-                    integral = integrate_1d(nq1, dq, dm_integrand_sq);
-                    dichtematrix_sq[r1*nq1 + r2] = integral;
+                    integral = integrate_1d(nq[0], dq, dm_integrand_sq);
+                    dichtematrix_sq[r1*nq[0] + r2] = integral;
 
                     if(r1 != r2){
-                       dichtematrix_sq[r2*nq1 + r1] = integral;
+                       dichtematrix_sq[r2*nq[0] + r1] = integral;
                     }
                 }
             }
 
         // calculate the trace of density-matrix square
-            for(j = 0; j < nq1; j++){
-                dm_integrand_sq[j] = dichtematrix_sq[j*nq1 + j];
+            for(j = 0; j < nq[0]; j++){
+                dm_integrand_sq[j] = dichtematrix_sq[j*nq[0] + j];
             }
-            integral = integrate_1d(nq1, dq, dm_integrand_sq);
+            integral = integrate_1d(nq[0], dq, dm_integrand_sq);
 
             fprintf(file_ptr, "\n# state %02d: %2.15lf", i, integral);
         }
@@ -737,10 +766,10 @@ int main(int argc, char* argv[]){
             for(j = 0; j < (i+1); j++){
                 for(k = 0; k < n_points; k++){
                 // generate integrand
-                    integrand[k] = X[k + i*n_points]*X[k + j*n_points] * dip_x[k];
+                    integrand[k] = X[k + i*n_points]*X[k + j*n_points] * mu[0][k];
                 }
 
-                integral = integrate_2d(nq1, nq2, dq, integrand);
+                integral = integrate_2d(nq[0], nq[1], dq, integrand);
                 fprintf(file_ptr, "  %12.5e", integral);
 
                 if(i != j){
@@ -765,10 +794,10 @@ int main(int argc, char* argv[]){
             for(j = 0; j < (i+1); j++){
                 for(k = 0; k < n_points; k++){
                 // generate integrand
-                    integrand[k] = X[k + i*n_points]*X[k + j*n_points] * dip_y[k];
+                    integrand[k] = X[k + i*n_points]*X[k + j*n_points] * mu[1][k];
                 }
 
-                integral = integrate_2d(nq1, nq2, dq, integrand);
+                integral = integrate_2d(nq[0], nq[1], dq, integrand);
                 fprintf(file_ptr, "  %12.5e", integral);
 
                 if(i != j){
@@ -793,10 +822,10 @@ int main(int argc, char* argv[]){
             for(j = 0; j < (i+1); j++){
                 for(k = 0; k < n_points; k++){
                 // generate integrand
-                    integrand[k] = X[k + i*n_points]*X[k + j*n_points] * dip_z[k];
+                    integrand[k] = X[k + i*n_points]*X[k + j*n_points] * mu[2][k];
                 }
 
-                integral = integrate_2d(nq1,nq2, dq, integrand);
+                integral = integrate_2d(nq[0],nq[1], dq, integrand);
                 fprintf(file_ptr, "  %12.5e", integral);
 
                 if(i != j){
@@ -830,9 +859,7 @@ int main(int argc, char* argv[]){
         }
         fprintf(file_ptr, "\n#\n#");
 
-        free(dip_x);    dip_x    = NULL;
-        free(dip_y);    dip_y    = NULL;
-        free(dip_z);    dip_z    = NULL;
+        free(mu);       mu       = NULL;
         free(ts_dip_x); ts_dip_x = NULL;
         free(ts_dip_y); ts_dip_y = NULL;
         free(ts_dip_z); ts_dip_z = NULL;
@@ -846,17 +873,17 @@ int main(int argc, char* argv[]){
 //------------------------------------------------------------------------------------------------------------------
 // output eigenfunctions
     fprintf(file_ptr, "\n# Potential and Eigenfunctions: %d data-points", n_points);
-    fprintf(file_ptr, "\n  N %2d %2d", nq1, nq2);
+    fprintf(file_ptr, "\n  N %2d %2d", nq[0], nq[1]);
     fprintf(file_ptr, "\n");
 
     for(i = 0; i < n_points; i++){
-    // newline every "nq2"th line
-        if(i%nq2 == 0){
+    // newline every "nq[1]"th line
+        if(i%nq[1] == 0){
             fprintf(file_ptr, "\n");
         }
 
     // output coordinates q1 and q2 as well as potential
-        fprintf(file_ptr,"%24.16lf    %24.16lf    %24.16lf", q1[i], q2[i], v[i]);
+        fprintf(file_ptr,"%24.16lf    %24.16lf    %24.16lf", q[0][i], q[1][i], v[i]);
 
     // output wave functions
         for(j = 0; j < n_out; j++){
@@ -867,10 +894,9 @@ int main(int argc, char* argv[]){
     }
 
     fclose(file_ptr);
-    free(q1);   q1 = NULL;
-    free(q2);   q2 = NULL;
-    free(v);    v  = NULL;
-    free(X);    X  = NULL;
+    free(q);   q = NULL;
+    free(v);   v = NULL;
+    free(X);   X = NULL;
 
     return 0;
 }

@@ -8,15 +8,17 @@
 #include <ctype.h>
 
 // Offered prototypes
-int InputFunction(char *inputfile, double **q1, double **q2, double **V, int *nq1, int *nq2);
+int InputFunction(char *inputfile, double ***q, int *nq, double **V, int dimension);
 
-int InputFunction(char *inputfile, double **q1, double **q2, double **V, int *nq1, int *nq2){
+int InputFunction(char *inputfile, double ***q, int *nq, double **V, int dimension){
 
-    int i, rows, comment_flag, control;
+    int rows, comment_flag;
+    unsigned int i;
     char * comment = "#%\n";
     char * line    = NULL;
+    char * token = NULL;
     char   buffer[_MaxLineLength_] = "";
-    FILE *fd;
+    FILE * fd;
 
     fd = fopen(inputfile, "r");
     if(fd == NULL){
@@ -28,8 +30,8 @@ int InputFunction(char *inputfile, double **q1, double **q2, double **V, int *nq
     rows = 0;
     while(fgets(buffer, sizeof(buffer), fd) != NULL){
 
-        // check if the first character in buffer is a comment char,
-        //  if yes jump to next line
+    // check if the first character in buffer is a comment char,
+    //  if yes jump to next line
         comment_flag = 0;
         for(i=0; i<strlen(comment); ++i){
             if(buffer[0] == comment[i]){
@@ -39,42 +41,92 @@ int InputFunction(char *inputfile, double **q1, double **q2, double **V, int *nq
         }
         if(comment_flag == 1) continue;
 
-        // copy "buffer" with stripped comments to new buffer "line"
+    // copy "buffer" with stripped comments to new buffer "line"
         line = strtok(buffer, comment);
         if(line == NULL) continue;
 
-        // remove leading white spaces and tabulators
-        //  and skip empty lines
+    // remove leading white spaces and tabulators
+    //  and skip empty lines
         while(isspace(*line)) line++;
         if(strlen(line) == 0) continue;
 
-        // At this point the requested input line is stripped of
-        //  comments and blank lines. From here on the parsing starts:
-        //printf("%s\n", line);
+    // At this point the requested input line is stripped of
+    //  comments and blank lines. From here on the parsing starts:
+    //    printf("%s\n", line);
 //-----------------------------------------------------------------------------------
 
+    // If the first non-white-space char of a line is either n or N get number of coordinate entries
         if(strcasestr(line, "N") != NULL){
-            control = sscanf(line, "%*s  %d  %d", &(*nq1), &(*nq2));
-            if(control != 2){
-                fprintf(stderr, "\n(-) ERROR reading data from input-file \"%s\".", inputfile);
-                fprintf(stderr, "\n    Aborting - please check your input...\n\n");
-                exit(1);
+        // Tokenize line, get first entry which ain't a white space
+            token = strtok(line, " \t");
+
+        // read the first <dimension> entries after the N flag
+            for(i = 0; i < dimension; ++i){
+                token = strtok(NULL, " \t");
+            // if there are less than <dimension> entries print an error
+                if(token == NULL){
+                    fprintf(stderr, "\n(-) ERROR reading data from input-file \"%s\".", inputfile);
+                    fprintf(stderr, "\n    The N line doesn't contain %d entries.", dimension);
+                    fprintf(stderr, "\n    Aborting - please check your input...\n\n");
+                    exit(1);
+                }
+                nq[i] = atoi(token);
             }
             continue;
         }
 
-        (*q1)  = realloc((*q1),  (rows + 1) * sizeof(double));
-        (*q2)  = realloc((*q2),  (rows + 1) * sizeof(double));
-        (*V)   = realloc((*V),   (rows + 1) * sizeof(double));
 
-        control = sscanf(line, "%lf  %lf  %lf", &(*q1)[rows], &(*q2)[rows], &(*V)[rows]);
-        if(control != 3){
-          fprintf(stderr, "\n(-) ERROR reading data from input-file \"%s\".", inputfile);
-          fprintf(stderr, "\n    Aborting - please check your input...\n\n");
-          exit(1);
+    // Start reading data:
+    //  Break down string array "line" to <dimension + 3> string tokens "token"
+
+    // Get first token, convert it to double and store it in q[0]
+        token = strtok(line, " \t");
+        if(token != NULL){
+        // reallocate memory for q array
+            for(i = 0; i < dimension; ++i){
+                (*q)[i] = realloc((*q)[i], (rows + 1)*sizeof(double));
+                if( (*q)[i] == NULL){
+                    fprintf(stderr, "\n(-) ERROR in reallocation of %s", "coordinate");
+                    fprintf(stderr, "\n    Aborting...\n\n");
+                    exit(2);
+                }
+            }
+            (*q)[0][rows] = atof(token);
         }
 
+    // store the other <dimension - 1> coordinate entries
+        for(i = 1; i < dimension; ++i){
+            token = strtok(NULL, " \t");
+            if(token == NULL){
+                fprintf(stderr, "\n(-) ERROR reading data from input-file \"%s\".", inputfile);
+                fprintf(stderr, "\n    Too few entries in input line number %d", rows);
+                fprintf(stderr, "\n    Aborting - please check your input...\n\n");
+                exit(1);
+            }
+            (*q)[i][rows] = atof(token);
+        }
+
+    // store potential values:
+    //  increase array size:
+        (*V) = realloc((*V), (rows + 1)*sizeof(double));
+        if( (*V) == NULL){
+            fprintf(stderr, "\n(-) ERROR in reallocation of %s", "potential");
+            fprintf(stderr, "\n    Aborting...\n\n");
+            exit(2);
+        }
+    // get token and convert to double
+        token = strtok(NULL, " \t");
+        if(token == NULL){
+            fprintf(stderr, "\n(-) ERROR reading data from input-file \"%s\".", inputfile);
+            fprintf(stderr, "\n    Too few entries in input line number %d", rows);
+            fprintf(stderr, "\n    Aborting - please check your input...\n\n");
+            exit(1);
+        }
+        (*V)[rows] = atof(token);
+
+    // increment number of rows by 1
         ++rows;
+
     }
     fclose(fd); fd = NULL;
 

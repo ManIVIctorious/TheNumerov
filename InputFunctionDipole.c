@@ -8,16 +8,17 @@
 #include <ctype.h>
 
 // Offered prototypes
-int InputFunctionDipole(char *inputfile, double **q1, double **q2, double **V, double **mux, double **muy, double **muz, int *nq1, int *nq2);
+int InputFunctionDipole(char *inputfile, double ***q, int *nq, double **V, double ***mu, int dimension);
 
+int InputFunctionDipole(char *inputfile, double ***q, int *nq, double **V, double ***mu, int dimension){
 
-int InputFunctionDipole(char *inputfile, double **q1, double **q2, double **V, double **mux, double **muy, double **muz, int *nq1, int *nq2){
-
-    int i, rows, comment_flag, control;
+    int rows, comment_flag;
+    unsigned int i;
     char * comment = "#%\n";
     char * line    = NULL;
+    char * token = NULL;
     char   buffer[_MaxLineLength_] = "";
-    FILE *fd;
+    FILE * fd;
 
     fd = fopen(inputfile, "r");
     if(fd == NULL){
@@ -29,8 +30,8 @@ int InputFunctionDipole(char *inputfile, double **q1, double **q2, double **V, d
     rows = 0;
     while(fgets(buffer, sizeof(buffer), fd) != NULL){
 
-        // check if the first character in buffer is a comment char,
-        //  if yes jump to next line
+    // check if the first character in buffer is a comment char,
+    //  if yes jump to next line
         comment_flag = 0;
         for(i=0; i<strlen(comment); ++i){
             if(buffer[0] == comment[i]){
@@ -40,76 +41,116 @@ int InputFunctionDipole(char *inputfile, double **q1, double **q2, double **V, d
         }
         if(comment_flag == 1) continue;
 
-        // copy "buffer" with stripped comments to new buffer "line"
+    // copy "buffer" with stripped comments to new buffer "line"
         line = strtok(buffer, comment);
         if(line == NULL) continue;
 
-        // remove leading white spaces and tabulators
-        //  and skip empty lines
+    // remove leading white spaces and tabulators
+    //  and skip empty lines
         while(isspace(*line)) line++;
         if(strlen(line) == 0) continue;
 
-        // At this point the requested input line is stripped of
-        //  comments and blank lines. From here on the parsing starts:
-        //printf("%s\n", line);
+    // At this point the requested input line is stripped of
+    //  comments and blank lines. From here on the parsing starts:
+    //    printf("%s\n", line);
 //-----------------------------------------------------------------------------------
 
+    // If the first non-white-space char of a line is either n or N get number of coordinate entries
         if(strcasestr(line, "N") != NULL){
-            control = sscanf(line, "%*s  %d  %d", &(*nq1), &(*nq2));
-            if(control != 2){
-                fprintf(stderr, "\n(-) ERROR reading data from input-file \"%s\".", inputfile);
-                fprintf(stderr, "\n    Aborting - please check your input...\n\n");
-                exit(1);
+        // Tokenize line, get first entry which ain't a white space
+            token = strtok(line, " \t");
+
+        // read the first <dimension> entries after the N flag
+            for(i = 0; i < dimension; ++i){
+                token = strtok(NULL, " \t");
+            // if there are less than <dimension> entries print an error
+                if(token == NULL){
+                    fprintf(stderr, "\n(-) ERROR reading data from input-file \"%s\".", inputfile);
+                    fprintf(stderr, "\n    The N line doesn't contain %d entries.", dimension);
+                    fprintf(stderr, "\n    Aborting - please check your input...\n\n");
+                    exit(1);
+                }
+                nq[i] = atoi(token);
             }
             continue;
         }
 
-        (*q1)  = realloc((*q1),  (rows + 1) * sizeof(double));
-        (*q2)  = realloc((*q2),  (rows + 1) * sizeof(double));
-        (*V)   = realloc((*V),   (rows + 1) * sizeof(double));
-        (*mux) = realloc((*mux), (rows + 1) * sizeof(double));
-        (*muy) = realloc((*muy), (rows + 1) * sizeof(double));
-        (*muz) = realloc((*muz), (rows + 1) * sizeof(double));
 
-        control = sscanf(line, "%lf  %lf  %lf  %lf  %lf  %lf", &(*q1)[rows], &(*q2)[rows], &(*V)[rows], &(*mux)[rows], &(*muy)[rows], &(*muz)[rows]);
-        if(control != 6){
-          fprintf(stderr, "\n(-) ERROR reading data from input-file \"%s\".", inputfile);
-          fprintf(stderr, "\n    Aborting - please check your input...\n\n");
-          exit(1);
+    // Start reading data:
+    //  Break down string array "line" to <dimension + 3> string tokens "token"
+
+    // Get first token, convert it to double and store it in q[0]
+        token = strtok(line, " \t");
+        if(token != NULL){
+        // reallocate memory for q array
+            for(i = 0; i < dimension; ++i){
+                (*q)[i] = realloc((*q)[i], (rows + 1)*sizeof(double));
+                if( (*q)[i] == NULL){
+                    fprintf(stderr, "\n(-) ERROR in reallocation of %s", "coordinate");
+                    fprintf(stderr, "\n    Aborting...\n\n");
+                    exit(2);
+                }
+            }
+            (*q)[0][rows] = atof(token);
         }
 
+    // store the other <dimension - 1> coordinate entries
+        for(i = 1; i < dimension; ++i){
+            token = strtok(NULL, " \t");
+            if(token == NULL){
+                fprintf(stderr, "\n(-) ERROR reading data from input-file \"%s\".", inputfile);
+                fprintf(stderr, "\n    Too few entries in input line number %d", rows);
+                fprintf(stderr, "\n    Aborting - please check your input...\n\n");
+                exit(1);
+            }
+            (*q)[i][rows] = atof(token);
+        }
+
+    // store potential values:
+    //  increase array size:
+        (*V) = realloc((*V), (rows + 1)*sizeof(double));
+        if( (*V) == NULL){
+            fprintf(stderr, "\n(-) ERROR in reallocation of %s", "potential");
+            fprintf(stderr, "\n    Aborting...\n\n");
+            exit(2);
+        }
+    // get token and convert to double
+        token = strtok(NULL, " \t");
+        if(token == NULL){
+            fprintf(stderr, "\n(-) ERROR reading data from input-file \"%s\".", inputfile);
+            fprintf(stderr, "\n    Too few entries in input line number %d", rows);
+            fprintf(stderr, "\n    Aborting - please check your input...\n\n");
+            exit(1);
+        }
+        (*V)[rows] = atof(token);
+
+    // store dipole moment values
+    //  reallocate memory for mu[0] to mu[2]
+        for(i = 0; i < 3; ++i){
+            (*mu)[i] = realloc((*mu)[i], (rows + 1)*sizeof(double));
+            if( (*mu)[i] == NULL){
+                fprintf(stderr, "\n(-) ERROR in reallocation of %s", "dipole moment");
+                fprintf(stderr, "\n    Aborting...\n\n");
+                exit(2);
+            }
+        }
+    // get tokens and convert to double
+        for(i = 0; i < 3; ++i){
+            token = strtok(NULL, " \t");
+            if(token == NULL){
+                fprintf(stderr, "\n(-) ERROR reading data from input-file \"%s\".", inputfile);
+                fprintf(stderr, "\n    Too few entries in input line number %d", rows);
+                fprintf(stderr, "\n    Aborting - please check your input...\n\n");
+                exit(1);
+            }
+            (*mu)[i][rows] = atof(token);
+        }
+
+    // increment number of rows by 1
         ++rows;
+
     }
     fclose(fd); fd = NULL;
 
     return rows;
 }
-
-
-//int main(int argc, char **argv){
-//
-//    double *q1, *q2, *v, *mux, *muy, *muz;
-//    int n_pot;
-//    int i;
-//    char *inputfile = "testfile";
-//    int nq1, nq2;
-//    double v_min = 1.0E100;
-//
-//    q1  = malloc(sizeof(double));
-//    q2  = malloc(sizeof(double));
-//    v   = malloc(sizeof(double));
-//    mux = malloc(sizeof(double));
-//    muy = malloc(sizeof(double));
-//    muz = malloc(sizeof(double));
-//
-//    n_pot = InputFunctionDipole(inputfile, &q1, &q2, &v, &mux, &muy, &muz, &nq1, &nq2, &v_min);
-//
-//    printf("Number of Lines:\t%d\n", n_pot);
-//    printf("%d\t%d\n", nq1, nq2);
-//    printf("%lf\n", v_min);
-//    for(i = 0; i < 1; ++i){
-//        printf("%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n", q1[i], q2[i], v[i], mux[i], muy[i], muz[i]);
-//    }
-//
-//    return 0;
-//}
