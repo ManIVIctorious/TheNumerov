@@ -8,12 +8,12 @@
 #include <ctype.h>
 
 // Offered prototypes
-int InputFunctionDipole(char *inputfile, double ***q, int *nq, double **V, double ***mu, int dimension);
+int InputCoriolisCoefficients(char *inputfile, double ***q, double ****zeta, double ****mu, int dimension);
 
-int InputFunctionDipole(char *inputfile, double ***q, int *nq, double **V, double ***mu, int dimension){
+int InputCoriolisCoefficients(char *inputfile, double ***q, double ****zeta, double ****mu, int dimension){
 
     int rows, comment_flag;
-    int n;
+    int m, n;
     unsigned int i;
     char * comment = "#%\n";
     char * line    = NULL;
@@ -34,7 +34,7 @@ int InputFunctionDipole(char *inputfile, double ***q, int *nq, double **V, doubl
     // check if the first character in buffer is a comment char,
     //  if yes jump to next line
         comment_flag = 0;
-        for(i=0; i<strlen(comment); ++i){
+        for(i = 0; i < strlen(comment); ++i){
             if(buffer[0] == comment[i]){
                 comment_flag = 1;
                 break;
@@ -56,27 +56,6 @@ int InputFunctionDipole(char *inputfile, double ***q, int *nq, double **V, doubl
     //    printf("%s\n", line);
 //-----------------------------------------------------------------------------------
 
-    // If the first non-white-space char of a line is either n or N get number of coordinate entries
-        if(strcasestr(line, "N") != NULL){
-        // Tokenize line, get first entry which ain't a white space
-            token = strtok(line, " \t");
-
-        // read the first <dimension> entries after the N flag
-            for(n = 0; n < dimension; ++n){
-                token = strtok(NULL, " \t");
-            // if there are less than <dimension> entries print an error
-                if(token == NULL){
-                    fprintf(stderr, "\n(-) ERROR reading data from input-file \"%s\".", inputfile);
-                    fprintf(stderr, "\n    The N line doesn't contain %d entries.", dimension);
-                    fprintf(stderr, "\n    Aborting - please check your input...\n\n");
-                    exit(1);
-                }
-                nq[n] = atoi(token);
-            }
-            continue;
-        }
-
-
     // Start reading data:
     //  Break down string array "line" to <dimension + 3> string tokens "token"
 
@@ -96,7 +75,7 @@ int InputFunctionDipole(char *inputfile, double ***q, int *nq, double **V, doubl
         }
 
     // store the other <dimension - 1> coordinate entries
-        for(n = 1; n < dimension; ++n){
+        for(m = 1; m < dimension; ++m){
             token = strtok(NULL, " \t");
             if(token == NULL){
                 fprintf(stderr, "\n(-) ERROR reading data from input-file \"%s\".", inputfile);
@@ -104,47 +83,62 @@ int InputFunctionDipole(char *inputfile, double ***q, int *nq, double **V, doubl
                 fprintf(stderr, "\n    Aborting - please check your input...\n\n");
                 exit(1);
             }
-            (*q)[n][rows] = atof(token);
+            (*q)[m][rows] = atof(token);
         }
 
     // store potential values:
     //  increase array size:
-        (*V) = realloc((*V), (rows + 1)*sizeof(double));
-        if( (*V) == NULL){
-            fprintf(stderr, "\n(-) ERROR in reallocation of %s", "potential");
-            fprintf(stderr, "\n    Aborting...\n\n");
-            exit(2);
+        for(m = 0; m < 3; ++m){
+            for(n = 0; n < ((dimension*(dimension - 1))/2); ++n){
+                (*zeta)[m][n] = realloc((*zeta)[m][n], (rows + 1) * sizeof(double));
+
+                if( (*zeta)[m][n] == NULL){
+                    fprintf(stderr, "\n(-) ERROR in reallocation of %s", "Coriolis coefficient");
+                    fprintf(stderr, "\n    Aborting...\n\n");
+                    exit(2);
+                }
+            }
         }
     // get token and convert to double
-        token = strtok(NULL, " \t");
-        if(token == NULL){
-            fprintf(stderr, "\n(-) ERROR reading data from input-file \"%s\".", inputfile);
-            fprintf(stderr, "\n    Too few entries in input line number %d", rows);
-            fprintf(stderr, "\n    Aborting - please check your input...\n\n");
-            exit(1);
+        for(m = 0; m < 3; ++m){
+            for(n = 0; n < ((dimension*(dimension - 1))/2); ++n){
+                token = strtok(NULL, " \t");
+                if(token == NULL){
+                    fprintf(stderr, "\n(-) ERROR reading data from input-file \"%s\".", inputfile);
+                    fprintf(stderr, "\n    Too few entries in input line number %d", rows);
+                    fprintf(stderr, "\n    Aborting - please check your input...\n\n");
+                    exit(1);
+                }
+                (*zeta)[m][n][rows] = atof(token);
+            }
         }
-        (*V)[rows] = atof(token);
 
-    // store dipole moment values
-    //  reallocate memory for mu[0] to mu[2]
-        for(n = 0; n < 3; ++n){
-            (*mu)[n] = realloc((*mu)[n], (rows + 1)*sizeof(double));
-            if( (*mu)[n] == NULL){
-                fprintf(stderr, "\n(-) ERROR in reallocation of %s", "dipole moment");
-                fprintf(stderr, "\n    Aborting...\n\n");
-                exit(2);
+    // store the "effective reciprocal inertia tensor" mu
+    //  increase array size:
+        for(m = 0; m < 3; ++m){
+            for(n = 0; n < 3; ++n){
+                (*mu)[m][n] = realloc((*mu)[m][n], (rows + 1) * sizeof(double));
+
+                if( (*mu)[m][n] == NULL){
+                    fprintf(stderr, "\n(-) ERROR in reallocation of %s", "effective reciprocal inertia tensor");
+                    fprintf(stderr, "\n    Aborting...\n\n");
+                    exit(2);
+                }
             }
         }
-    // get tokens and convert to double
-        for(n = 0; n < 3; ++n){
-            token = strtok(NULL, " \t");
-            if(token == NULL){
-                fprintf(stderr, "\n(-) ERROR reading data from input-file \"%s\".", inputfile);
-                fprintf(stderr, "\n    Too few entries in input line number %d", rows);
-                fprintf(stderr, "\n    Aborting - please check your input...\n\n");
-                exit(1);
+    // get token and convert to double
+        for(m = 0; m < 3; ++m){
+            for(n = m; n < 3; ++n){
+                token = strtok(NULL, " \t");
+                if(token == NULL){
+                    fprintf(stderr, "\n(-) ERROR reading data from input-file \"%s\".", inputfile);
+                    fprintf(stderr, "\n    Too few entries in input line number %d", rows);
+                    fprintf(stderr, "\n    Aborting - please check your input...\n\n");
+                    exit(1);
+                }
+                (*mu)[m][n][rows] = atof(token);
+                (*mu)[n][m][rows] = atof(token);
             }
-            (*mu)[n][rows] = atof(token);
         }
 
     // increment number of rows by 1

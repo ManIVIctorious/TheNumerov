@@ -39,10 +39,11 @@
 
 # List of resulting object files
   OBJ += numerov2d.o
-  OBJ += stencils.o
-  OBJ += cubic_spline.o
   OBJ += InputFunction.o
   OBJ += InputFunctionDipole.o
+  OBJ += InputCoriolisCoefficients.o
+  OBJ += stencils.o
+  OBJ += cubic_spline.o
   OBJ += spline_interpolate.o
   OBJ += Help.o
 

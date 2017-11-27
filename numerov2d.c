@@ -8,12 +8,13 @@
 // input functions
 int InputFunction(char *inputfile, double ***q, int *nq, double **V, int dimension);
 int InputFunctionDipole(char *inputfile, double ***q, int *nq, double **V, double ***mu, int dimension);
+int InputCoriolisCoefficients(char *inputfile, double ***q, double ****zeta, double ****mu, int dimension);
 
 // output functions
 int Help(char *filename);
-int get_stencil(double stencil[], int n_stencil);
 
 // other
+int get_stencil(double stencil[], int n_stencil);
 int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], double z[]);
 double integrate_1d(int n, double dx, double integrand[]);
 double integrate_2d(int nx, int ny, double dx, double integrand[]);
@@ -34,8 +35,10 @@ int main(int argc, char* argv[]){
     int n_spline    = 0;
     int analyse     = 0;
 
-    char *input_file_name  = NULL;
-    char *output_file_name = "/dev/stdout";
+// file names
+    char * input_file_name      = NULL;
+    char * coriolis_input_file  = NULL;
+    char * output_file_name     = "/dev/stdout";
 
     double ekin_factor = 1.0/4.184;     // (kcal/mol) / (kJ/mol)
     double epot_factor = 1.0;           // (output unit) / (input unit)
@@ -46,51 +49,47 @@ int main(int argc, char* argv[]){
 
 
     int control;
-    if(argc == 1){
-       control = Help(argv[0]);
-       exit(control);
-    }
+    int i, j, k, l;     // integers for loops
 //------------------------------------------------------------------------------------------------------------------
 //  FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS
 //------------------------------------------------------------------------------------------------------------------
-    while(1){
-        static struct option long_options[] = {
-            {"help",               no_argument, 0, 'h'},
-            {"mass",         required_argument, 0, 'm'},
-            {"fkin",         required_argument, 0, 'k'},
-            {"fpot",         required_argument, 0, 'v'},
-            {"n-stencil",    required_argument, 0, 'n'},
-            {"lower-bound",  required_argument, 0, 'l'},
-            {"upper-bound",  required_argument, 0, 'u'},
-            {"dq-threshold", required_argument, 0, 't'},
-            {"spline",       required_argument, 0, 's'},
-            {"analyze",            no_argument, 0, 'a'},
-            {"dipole",             no_argument, 0, 'd'},
-            {"pipe",               no_argument, 0, 'P'},
-            {"input-file",   required_argument, 0, 'i'},
-            {"output-file",  required_argument, 0, 'o'},
-            { 0, 0, 0, 0 }
-        };
-    // getopt_long stores the option index here.
-        int option_index  = 0;
+    if(argc == 1){ exit(Help(argv[0])); }
+    // optstring contains a list of all short option indices,
+    //  indices followed by a colon are options requiring an argument.
+    const char         * optstring = "hm:k:v:n:l:u:s:ac:i:dPo:t:";
+    const struct option longopts[] = {
+    //  *name:      option name,
+    //  has_arg:    if option requires argument,
+    //  *flag:      if set to NULL getopt_long() returns val,
+    //              else it returns 0 and flag points to a variable set to val
+    //  val:        value to return
+        {"help",                  no_argument, 0, 'h'},
+        {"mass",            required_argument, 0, 'm'},
+        {"fkin",            required_argument, 0, 'k'},
+        {"fpot",            required_argument, 0, 'v'},
+        {"n-stencil",       required_argument, 0, 'n'},
+        {"lower-bound",     required_argument, 0, 'l'},
+        {"upper-bound",     required_argument, 0, 'u'},
+        {"dq-threshold",    required_argument, 0, 't'},
+        {"spline",          required_argument, 0, 's'},
+        {"analyze",               no_argument, 0, 'a'},
+        {"dipole",                no_argument, 0, 'd'},
+        {"pipe",                  no_argument, 0, 'P'},
+        {"input-file",      required_argument, 0, 'i'},
+        {"coriolis-input",  required_argument, 0, 'c'},
+        {"output-file",     required_argument, 0, 'o'},
+        { 0, 0, 0, 0 }
+    };
 
-        control = getopt_long(argc, argv, "hm:k:v:n:l:u:s:adi:Po:t:", long_options, &option_index);
+    optind = 1; // option index starting by 1, provided by <getopt.h>
+    while(optind < argc){
 
-    // Detect the end of the options.
-        if(control == -1)
-            break;
+    // control is the integer representation of the corresponding option, e.g. x = 120
+    //  control = -1 corresponds to the end of the options
+        control = getopt_long(argc, argv, optstring, longopts, &j);
 
+    // iterate over options control
         switch(control){
-            case 0:
-                /* If this option set a flag, do nothing else now. */
-                if(long_options[option_index].flag != 0)    break;
-
-                printf("option %s", long_options[option_index].name);
-                if(optarg)  printf(" with arg %s", optarg);
-
-                printf("\n");
-                break;
-
             case 'h':
                 control = Help(argv[0]);
                 exit(control);
@@ -143,6 +142,10 @@ int main(int argc, char* argv[]){
                 input_file_name = optarg;
                 break;
 
+            case 'c':
+                coriolis_input_file = optarg;
+                break;
+
             case 'o':
                 output_file_name = optarg;
                 break;
@@ -156,28 +159,36 @@ int main(int argc, char* argv[]){
 //------------------------------------------------------------------------------------------------------------------
 //   Declaration Declaration Declaration Declaration Declaration Declaration Declaration Declaration Declaration
 //------------------------------------------------------------------------------------------------------------------
-
-    int i, j, k, l, index;
-    int n_points;
-
 // Input
+  // standard file
     int dimension = 2;
-    int     * nq = NULL;
-    double ** q  = NULL;
-    double  * v  = NULL;
-    double ** mu = NULL;
-    double  * deltaq = NULL;
-    double dq = 0;
+    int n_points  = 0;          // total number of entries per dimension
+    int     * nq  = NULL;       // number of unique entries per dimension
+    double ** q   = NULL;       // coordinate entries of all dimensions
+    double  * v   = NULL;       // potential entries for each coordinate
+    double ** dip = NULL;       // dipole moment for each coordinate
+    double  * deltaq = NULL;    // delta q for each individual dimension (for check)
+    double dq = 0;              // delta q after coordinate spacing check
     double v_min = 1.0E100;
 
-    double * stencil   = NULL;
-    double * integrand = NULL;
-    double integral;
+  // Coriolis coefficients
+    double **  q_coriolis = NULL;
+    double *** zeta       = NULL;
+    double *** mu         = NULL;
 
 // kinetic energy factor:   - hbar^2/2 * 10^20          * 1000 * avogadro^2 / 1000 = -10^20 * hbar^2/2 * avogadro^2
 //                            J kg m^2 * angstrom^2/m^2 * g/kg * (1/mol)^2  / kJ/J =  kJ/mol * g * angstrom^2 / mol
     double ekin_param = -1.0E20 * avogadro*avogadro * planck*planck/(8.0*M_PI*M_PI); // kJ/mol / (mol/g/angstrom^2)
     double kJmolToWavenumber = 10.0 / (avogadro*planck*lightspeed);              // cm^-1 / (kJ/mol)
+
+// Output
+    int index;
+    double freq;
+    FILE * file_ptr = NULL;
+
+    double * stencil   = NULL;
+    double * integrand = NULL;
+    double integral;
 
 // dipole integration
     int n_ts_dip = 0;
@@ -185,10 +196,6 @@ int main(int argc, char* argv[]){
     double * ts_dip_x = NULL;
     double * ts_dip_y = NULL;
     double * ts_dip_z = NULL;
-
-// Output
-    double freq;
-    FILE * file_ptr = NULL;
 
 
 //------------------------------------------------------------------------------------------------------------------
@@ -213,13 +220,17 @@ int main(int argc, char* argv[]){
         exit(1);
     }
     if(dipole_flag == 1){
-        mu = malloc(3 * sizeof(double*));
-        if(mu == NULL){
-            fprintf(stderr, "\n (-) Error in memory allocation for dipole array");
-            fprintf(stderr, "\n     Aborting...\n\n");
-            exit(1);
+        dip = malloc(3 * sizeof(double*));
+        for(i = 0; i < 3; ++i){
+            dip[i] = malloc(sizeof(double));
+
+            if(dip[i] == NULL){
+                fprintf(stderr, "\n (-) Error in memory allocation for dipole array");
+                fprintf(stderr, "\n     Aborting...\n\n");
+                exit(1);
+            }
         }
-        n_points = InputFunctionDipole(input_file_name, &q, nq, &v, &mu, dimension);
+        n_points = InputFunctionDipole(input_file_name, &q, nq, &v, &dip, dimension);
     }else{
         n_points = InputFunction(input_file_name, &q, nq, &v, dimension);
     }
@@ -234,7 +245,7 @@ int main(int argc, char* argv[]){
     if(n_points != control){
         fprintf(stderr, "\n (-) Error reading data from input-file: '%s'", input_file_name);
         fprintf(stderr, "\n     Number of Data points (\"%d\") doesn't match \"%d", n_points, nq[0]);
-        for(i = 1; i < dimension; ++i){ fprintf(stderr, "*%d", nq[i]); }
+        for(i = 1; i < dimension; ++i){ fprintf(stderr, "*%d", nq[i]); } fprintf(stderr, "\"");
         fprintf(stderr, "\n     Aborting - please check your input...\n\n");
         exit(1);
     }
@@ -245,6 +256,67 @@ int main(int argc, char* argv[]){
         fprintf(stderr, "\n     Insufficient number of data points %d for stencil size %d.", n_points, n_stencil);
         fprintf(stderr, "\n     Aborting - please check your input...\n\n");
         exit(1);
+    }
+
+// input Coriolis coefficients file
+    if(coriolis_input_file != NULL){
+
+    // initialize q_coriolis 2D [D][data] double array
+        q_coriolis = malloc(dimension * sizeof(double*));
+        for(i = 0; i < dimension; ++i){
+            q_coriolis[i] = malloc(sizeof(double));
+        }
+
+    // initialize zeta 3D [3][(D*D-D)/2][data] double array
+        zeta = malloc(3 * sizeof(double**));
+        for(i = 0; i < 3; ++i){
+            zeta[i] = malloc((dimension*(dimension - 1))/2 * sizeof(double*));
+            for(j = 0; j < ((dimension*(dimension - 1))/2); ++j){
+                zeta[i][j] = malloc(sizeof(double));
+            }
+        }
+
+    // initialize mu 3D [3][3][data] double array
+        mu = malloc(3 * sizeof(double**));
+        for(i = 0; i < 3; ++i){
+            mu[i] = malloc(sizeof(double*));
+            for(j = 0; j < 3; ++j){
+                mu[i][j] = malloc(sizeof(double));
+            }
+        }
+
+    // actual file input
+        control = InputCoriolisCoefficients(coriolis_input_file, &q_coriolis, &zeta, &mu, dimension);
+
+    // for every entry in Coriolis input file there must be exact one in the input file
+        if(control != n_points){
+            fprintf(stderr, "\n (-) Error reading data from input-file: '%s'", coriolis_input_file);
+            fprintf(stderr, "\n     Number of Data points (%d) doesn't match number in '%s' (%d)", control, input_file_name, n_points);
+            fprintf(stderr, "\n     Aborting - please check your input...\n\n");
+            exit(1);
+        }
+
+    // check if coordinates are the same
+        for(i = 0; i < n_points; ++i){
+            for(j = 0; j < dimension; ++j){
+                if( (q[j][i] - q_coriolis[j][i])*(q[j][i] - q_coriolis[j][i]) > spacing_threshold*spacing_threshold ){
+                    fprintf(stderr, "\n (-) Error in Coriolis input file \"%s\".", coriolis_input_file);
+                    fprintf(stderr, "\n     The coordinates do not match the ones in the");
+                    fprintf(stderr, "\n     standard input file \"%s\"", input_file_name);
+                    fprintf(stderr, "\n     Aborting - please check your input...\n\n");
+                    exit(-1);
+
+                }
+            }
+        }
+
+    // free memory of q_coriolis
+        for(i = 0; i < dimension; ++i){
+            free(q_coriolis[i]);
+            q_coriolis[i] = NULL;
+        }
+        free(q_coriolis); q_coriolis = NULL;
+
     }
 
 
@@ -287,7 +359,7 @@ int main(int argc, char* argv[]){
 
 // check spacing between dimensions
     for(i = 1; i < dimension; ++i){
-        if( (deltaq[i] - deltaq[i-1])*(deltaq[i] - deltaq[i-1]) > spacing_threshold*spacing_threshold){ 
+        if( (deltaq[i] - deltaq[i-1])*(deltaq[i] - deltaq[i-1]) > spacing_threshold*spacing_threshold){
             fprintf(stderr, "\n (-) Error in input file.");
             fprintf(stderr, "\n     Coordinate spacing not equivalent. (3rd test)");
             fprintf(stderr, "\n     Aborting - please check your input...\n\n");
@@ -360,17 +432,17 @@ int main(int argc, char* argv[]){
             exit(1);
         }
         if(dipole_flag == 1){
-            mu[0] = realloc(mu[0], n_points * sizeof(double));
-            mu[1] = realloc(mu[1], n_points * sizeof(double));
-            mu[2] = realloc(mu[2], n_points * sizeof(double));
-            if(mu[0] == NULL || mu[1] == NULL || mu[2] == NULL){
+            dip[0] = realloc(dip[0], n_points * sizeof(double));
+            dip[1] = realloc(dip[1], n_points * sizeof(double));
+            dip[2] = realloc(dip[2], n_points * sizeof(double));
+            if(dip[0] == NULL || dip[1] == NULL || dip[2] == NULL){
                 fprintf(stderr, "\n (-) Error in memory reallocation for dipole moment");
                 fprintf(stderr, "\n     Aborting...\n\n");
                 exit(1);
             }
-            i = spline_interpolate(nq[0], nq[1], n_spline, q[0], q[1], mu[0]);
-            j = spline_interpolate(nq[0], nq[1], n_spline, q[0], q[1], mu[1]);
-            k = spline_interpolate(nq[0], nq[1], n_spline, q[0], q[1], mu[2]);
+            i = spline_interpolate(nq[0], nq[1], n_spline, q[0], q[1], dip[0]);
+            j = spline_interpolate(nq[0], nq[1], n_spline, q[0], q[1], dip[1]);
+            k = spline_interpolate(nq[0], nq[1], n_spline, q[0], q[1], dip[2]);
         }
 
     // set new values for number of points for q1 and q2 and new dq
@@ -766,7 +838,7 @@ int main(int argc, char* argv[]){
             for(j = 0; j < (i+1); j++){
                 for(k = 0; k < n_points; k++){
                 // generate integrand
-                    integrand[k] = X[k + i*n_points]*X[k + j*n_points] * mu[0][k];
+                    integrand[k] = X[k + i*n_points]*X[k + j*n_points] * dip[0][k];
                 }
 
                 integral = integrate_2d(nq[0], nq[1], dq, integrand);
@@ -794,7 +866,7 @@ int main(int argc, char* argv[]){
             for(j = 0; j < (i+1); j++){
                 for(k = 0; k < n_points; k++){
                 // generate integrand
-                    integrand[k] = X[k + i*n_points]*X[k + j*n_points] * mu[1][k];
+                    integrand[k] = X[k + i*n_points]*X[k + j*n_points] * dip[1][k];
                 }
 
                 integral = integrate_2d(nq[0], nq[1], dq, integrand);
@@ -822,7 +894,7 @@ int main(int argc, char* argv[]){
             for(j = 0; j < (i+1); j++){
                 for(k = 0; k < n_points; k++){
                 // generate integrand
-                    integrand[k] = X[k + i*n_points]*X[k + j*n_points] * mu[2][k];
+                    integrand[k] = X[k + i*n_points]*X[k + j*n_points] * dip[2][k];
                 }
 
                 integral = integrate_2d(nq[0],nq[1], dq, integrand);
@@ -859,7 +931,11 @@ int main(int argc, char* argv[]){
         }
         fprintf(file_ptr, "\n#\n#");
 
-        free(mu);       mu       = NULL;
+    // free dipole 2D array:
+        for(i = 0; i < 3; ++i){
+            free(dip[i]); dip[i] = NULL;
+        }
+        free(dip);      dip      = NULL;
         free(ts_dip_x); ts_dip_x = NULL;
         free(ts_dip_y); ts_dip_y = NULL;
         free(ts_dip_z); ts_dip_z = NULL;
@@ -893,7 +969,10 @@ int main(int argc, char* argv[]){
         fprintf(file_ptr,"\n");
     }
 
-    fclose(file_ptr);
+    fclose(file_ptr); file_ptr = NULL;
+    for(i = 0; i < dimension; ++i){
+        free(q[i]); q[i] = NULL;
+    }
     free(q);   q = NULL;
     free(v);   v = NULL;
     free(X);   X = NULL;

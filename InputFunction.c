@@ -13,6 +13,7 @@ int InputFunction(char *inputfile, double ***q, int *nq, double **V, int dimensi
 int InputFunction(char *inputfile, double ***q, int *nq, double **V, int dimension){
 
     int rows, comment_flag;
+    int n;
     unsigned int i;
     char * comment = "#%\n";
     char * line    = NULL;
@@ -61,7 +62,7 @@ int InputFunction(char *inputfile, double ***q, int *nq, double **V, int dimensi
             token = strtok(line, " \t");
 
         // read the first <dimension> entries after the N flag
-            for(i = 0; i < dimension; ++i){
+            for(n = 0; n < dimension; ++n){
                 token = strtok(NULL, " \t");
             // if there are less than <dimension> entries print an error
                 if(token == NULL){
@@ -70,7 +71,7 @@ int InputFunction(char *inputfile, double ***q, int *nq, double **V, int dimensi
                     fprintf(stderr, "\n    Aborting - please check your input...\n\n");
                     exit(1);
                 }
-                nq[i] = atoi(token);
+                nq[n] = atoi(token);
             }
             continue;
         }
@@ -83,9 +84,9 @@ int InputFunction(char *inputfile, double ***q, int *nq, double **V, int dimensi
         token = strtok(line, " \t");
         if(token != NULL){
         // reallocate memory for q array
-            for(i = 0; i < dimension; ++i){
-                (*q)[i] = realloc((*q)[i], (rows + 1)*sizeof(double));
-                if( (*q)[i] == NULL){
+            for(n = 0; n < dimension; ++n){
+                (*q)[n] = realloc((*q)[n], (rows + 1)*sizeof(double));
+                if( (*q)[n] == NULL){
                     fprintf(stderr, "\n(-) ERROR in reallocation of %s", "coordinate");
                     fprintf(stderr, "\n    Aborting...\n\n");
                     exit(2);
@@ -95,7 +96,7 @@ int InputFunction(char *inputfile, double ***q, int *nq, double **V, int dimensi
         }
 
     // store the other <dimension - 1> coordinate entries
-        for(i = 1; i < dimension; ++i){
+        for(n = 1; n < dimension; ++n){
             token = strtok(NULL, " \t");
             if(token == NULL){
                 fprintf(stderr, "\n(-) ERROR reading data from input-file \"%s\".", inputfile);
@@ -103,7 +104,7 @@ int InputFunction(char *inputfile, double ***q, int *nq, double **V, int dimensi
                 fprintf(stderr, "\n    Aborting - please check your input...\n\n");
                 exit(1);
             }
-            (*q)[i][rows] = atof(token);
+            (*q)[n][rows] = atof(token);
         }
 
     // store potential values:

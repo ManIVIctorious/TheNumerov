@@ -33,6 +33,7 @@ int Help(char *filename){
     printf("\n\t"); printf("-d, --dipole            Expect 6 columns of input (q1, q2, potential, dipolemoment{x,y,z})");
     printf("\n\t"); printf("-P, --pipe              Read input from pipe instead of input file");
     printf("\n\t"); printf("-i, --input-file        Set name of input file");
+    printf("\n\t"); printf("-c, --coriolis-input    Set name of Coriolis coefficient input file");
     printf("\n\t"); printf("-o, --output-file       Set name of output file");
 
     printf("\n\n");
