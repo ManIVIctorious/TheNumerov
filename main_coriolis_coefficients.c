@@ -2,10 +2,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <getopt.h>
 
+// input functions
 int InputNormalMode(char *inputfile, int start, double **modedisplacement, double **mass);
 int CoriolisCoefficients(int n_atoms, double *mode1, double *mode2, double *zeta_x, double *zeta_y, double *zeta_z);
+
+// output functions
 int Help(char *app_name);
 
 
@@ -28,9 +32,17 @@ int main(int argc, char **argv){
         exit(2);
     }
 
+// file descriptors
+    FILE * fdverb = NULL;   // verbosity output file handler
+    FILE * fdout  = NULL;   // output file handler
+
+// integers for loops:
+//  most of the time i,j,k are in mode_{0,...,n}
+//  for all m: m in {x,y,z}
     int i = 0;
     int j = 0;
     int k = 0;
+    int m = 0;
 //------------------------------------------------------------------------------------------------------------------
 //  FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS
 //------------------------------------------------------------------------------------------------------------------
@@ -135,8 +147,8 @@ int main(int argc, char **argv){
 //------------------------------------------------------------------------------------------------------------------
 //   Deklaration   Deklaration   Deklaration   Deklaration   Deklaration   Deklaration   Deklaration   Deklaration
 //------------------------------------------------------------------------------------------------------------------
-    int m;       // for all m: m in {x,y,z}
-    int control  = 0;
+    int control = 0;
+    double norm = 0;
 
 // coordinates and modes input
     int n_atoms = 0;
@@ -150,9 +162,6 @@ int main(int argc, char **argv){
     double * auxmode1 = NULL;   // freed
     double * auxmode2 = NULL;   // freed
 
-
-    FILE * fdverb = NULL;   // verbosity output file handler
-    FILE * fdout  = NULL;   // output file handler
 
 // set level of verbosity
     if(verbose == 0){
@@ -178,6 +187,9 @@ int main(int argc, char **argv){
 // Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input
 //------------------------------------------------------------------------------------------------------------------
 // input of modes
+//  modes[3*rows    ] = modes[x]
+//  modes[3*rows + 1] = modes[y]
+//  modes[3*rows + 2] = modes[z]
     modes  = malloc(sizeof(double));
     masses = malloc(sizeof(double));
     if(modes == NULL || masses == NULL){
@@ -229,6 +241,28 @@ int main(int argc, char **argv){
                    );
             fprintf(fdverb, "\t% .8le", masses[j]);
             fprintf(fdverb, "\n");
+        }
+    }
+
+
+//------------------------------------------------------------------------------------------------------------------
+// Norm displacement vectors    Norm displacement vectors    Norm displacement vectors    Norm displacement vectors
+//------------------------------------------------------------------------------------------------------------------
+    fprintf(fdverb, "\nNorm of modes:\n");
+    for(i = 0; i < dimension; ++i){
+        norm = 0;
+        for(j = 0; j < n_atoms; ++j){
+            norm += modes[3*j     + i*n_atoms*3] * modes[3*j     + i*n_atoms*3];    // x*x
+            norm += modes[3*j + 1 + i*n_atoms*3] * modes[3*j + 1 + i*n_atoms*3];    // y*y
+            norm += modes[3*j + 2 + i*n_atoms*3] * modes[3*j + 2 + i*n_atoms*3];    // z*z
+        }
+        norm = sqrt(norm);
+        fprintf(fdverb, "\t||mode[%d]|| = % lf\n", i, norm);
+
+        for(j = 0; j < n_atoms; ++j){
+            modes[3*j     + i*n_atoms*3] /= norm;
+            modes[3*j + 1 + i*n_atoms*3] /= norm;
+            modes[3*j + 2 + i*n_atoms*3] /= norm;
         }
     }
 
