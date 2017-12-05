@@ -226,7 +226,7 @@ int main(int argc, char **argv){
 
 // center of mass coordinates and moment of inertia tensor
     double x0, y0, z0, tot_mass;
-    double MomentOfInertia[9];
+    double MomentOfInertia[9] = { 0 };
 
 // correction of the moment of inertia
     gsl_matrix * CorrMomentOfInertia = NULL;    // freed
