@@ -24,7 +24,6 @@ int main(int argc, char **argv){
     int    verbose   = 0;       // set level of verbosity
     int    legend    = 0;       // whether to output header with column description
     int    dimension = 0;       // number of included modes
-    double threshold = 1E-10;   // threshold for number comparison
 
 // files
     char * operation = "w";     // whether to write or append to output-file
@@ -60,7 +59,7 @@ int main(int argc, char **argv){
     if(argc == 1){ exit(Help(argv[0])); }
     // optstring contains a list of all short option indices,
     //  indices followed by a colon are options requiring an argument.
-    const char         * optstring = "halLvV:t:c:o:d:D:m:M:z:";
+    const char         * optstring = "halLvV:c:o:d:D:m:M:z:";
     const struct option longopts[] = {
     //  *name:      option name,
     //  has_arg:    if option requires argument,
@@ -73,7 +72,6 @@ int main(int argc, char **argv){
         {"append",                   no_argument, NULL, 'a'},
         {"verbose",                  no_argument, NULL, 'v'},
         {"verb-to-file",       required_argument, NULL, 'V'},
-        {"threshold",          required_argument, NULL, 't'},
         {"coordinates",        required_argument, NULL, 'c'},
         {"zetafile",           required_argument, NULL, 'z'},
         {"masses",             required_argument, NULL, 'm'},
@@ -143,10 +141,6 @@ int main(int argc, char **argv){
 
             case 'a':
                 operation = "a";
-                break;
-
-            case 't':
-                threshold = atof(optarg);
                 break;
 
 
@@ -591,7 +585,6 @@ int Help(char *app_name){
     printf("\n\t                            (useful in combination with -L)");
 
     printf("\n\t-o|--outputfile           Name of outputfile");
-    printf("\n\t-t|--threshold            Threshold for number comparison (default 1E-10)");
     printf("\n\t-V|--verb-to-file         Write verbose output to file instead of stderr");
 
     printf("\n\n");
