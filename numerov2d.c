@@ -13,9 +13,13 @@ int InputCoriolisCoefficients(char *inputfile, double ***q, double ****zeta, dou
 // output functions
 int Help(char *filename);
 
+// meta functions
+int MetaGetStencil(double *stencil, int n_stencil, int dimension);
+
 // other
-int get_stencil(double stencil[], int n_stencil);
+#ifdef HAVE_OPT_SPLINE
 int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], double z[]);
+#endif
 double integrate_1d(int n, double dx, double integrand[]);
 double integrate_2d(int nx, int ny, double dx, double integrand[]);
 
@@ -157,6 +161,17 @@ int main(int argc, char* argv[]){
     }
 
 //------------------------------------------------------------------------------------------------------------------
+//       Check for usage of not compiled functionalities      Check for usage of not compiled functionalities
+//------------------------------------------------------------------------------------------------------------------
+#ifndef HAVE_OPT_SPLINE
+    if(n_spline != 0){
+        fprintf(stderr, "\n (-) This version has been compiled without spline support");
+        fprintf(stderr, "\n     The setting will be ignored\n\n");
+    }
+#endif
+
+
+//------------------------------------------------------------------------------------------------------------------
 //   Declaration Declaration Declaration Declaration Declaration Declaration Declaration Declaration Declaration
 //------------------------------------------------------------------------------------------------------------------
 // Input
@@ -250,10 +265,13 @@ int main(int argc, char* argv[]){
         exit(1);
     }
 
-// there must be at least as many data points as the stencil size
-    if(n_points < n_stencil){
+// there must be at least as many data points as stencil points (n_stencil ** dimension)
+    control = 1;
+    for(i = 0; i < dimension; ++i){ control *= n_stencil; }
+    if(n_points < control){
         fprintf(stderr, "\n (-) Error reading data from input-file: '%s'", input_file_name);
-        fprintf(stderr, "\n     Insufficient number of data points %d for stencil size %d.", n_points, n_stencil);
+        fprintf(stderr, "\n     Insufficient number of data points (%d) ", n_points);
+        fprintf(stderr,        "for stencil size %d (%d points).", n_stencil, control);
         fprintf(stderr, "\n     Aborting - please check your input...\n\n");
         exit(1);
     }
@@ -348,7 +366,7 @@ int main(int argc, char* argv[]){
             if( (j+1)%k*nq[i] != 0 ){
                 if( (deltaq[i] - (q[i][j+k]-q[i][j]))*(deltaq[i] - (q[i][j+k]-q[i][j]) ) > spacing_threshold*spacing_threshold){
                     fprintf(stderr, "\n (-) Error in input file.");
-                    fprintf(stderr, "\n     Coordinate spacing not equivalent. (1st test)");
+                    fprintf(stderr, "\n     Coordinate spacing not equivalent.");
                     fprintf(stderr, "\n     Aborting - please check your input...\n\n");
                     exit(-1);
                 }
@@ -371,6 +389,28 @@ int main(int argc, char* argv[]){
 
 
 //------------------------------------------------------------------------------------------------------------------
+//   Stencils  Stencils  Stencils  Stencils  Stencils  Stencils  Stencils  Stencils  Stencils  Stencils  Stencils
+//------------------------------------------------------------------------------------------------------------------
+// Allocate memory of n_stencil ** dimension for stencil
+    control = 1;
+    for(i = 0; i < dimension; ++i){ control *= n_stencil; }
+    stencil = calloc(control, sizeof(double));
+    if(stencil == NULL){
+        fprintf(stderr, "\n (-) Error in memory allocation for stencil");
+        fprintf(stderr, "\n     Aborting...\n\n");
+        exit(1);
+    }
+
+// Get stencil through meta function
+    control = MetaGetStencil(stencil, n_stencil, dimension);
+    if(control != 0 ){
+        fprintf(stderr, "\n (-) Error initialising stencil parameters.");
+        fprintf(stderr, "\n     Aborting - please check your input...\n\n");
+        exit(1);
+    }
+
+
+//------------------------------------------------------------------------------------------------------------------
 //  Shift potential    Shift potential    Shift potential    Shift potential    Shift potential    Shift potential
 //------------------------------------------------------------------------------------------------------------------
 // get potential minimum, subtract it from the potential
@@ -383,32 +423,7 @@ int main(int argc, char* argv[]){
     }
 
 
-//------------------------------------------------------------------------------------------------------------------
-//   Stencils  Stencils  Stencils  Stencils  Stencils  Stencils  Stencils  Stencils  Stencils  Stencils  Stencils
-//------------------------------------------------------------------------------------------------------------------
-// stencil has to have an odd number of entries
-    if(n_stencil%2 == 0){
-        fprintf(stderr, "\n (-) Stencil size is given as even (%d), but must be an odd number.", n_stencil);
-        fprintf(stderr, "\n     Aborting - please check your input...\n\n");
-        exit(1);
-    }
-
-// get stencil, in two dimensions the size is n_stencil * n_stencil.
-    stencil = malloc(n_stencil * n_stencil * sizeof(double));
-    if(stencil == NULL){
-        fprintf(stderr, "\n (-) Error in memory allocation for stencil");
-        fprintf(stderr, "\n     Aborting...\n\n");
-        exit(1);
-    }
-    control = get_stencil(stencil, n_stencil);
-
-    if(control != 0 ){
-        fprintf(stderr, "\n (-) Error initialising stencil parameters.");
-        fprintf(stderr, "\n     Aborting - please check your input...\n\n");
-        exit(1);
-    }
-
-
+#ifdef HAVE_OPT_SPLINE
 //------------------------------------------------------------------------------------------------------------------
 //  Spline  Spline  Spline  Spline  Spline  Spline  Spline  Spline  Spline  Spline  Spline  Spline  Spline  Spline
 //------------------------------------------------------------------------------------------------------------------
@@ -458,7 +473,12 @@ int main(int argc, char* argv[]){
             q[1][i] = q[1][0] + dq * (double) (i%nq[1]);
         }
     }
+#endif
 
+
+//------------------------------------------------------------------------------------------------------------------
+//   Update kinetic energy pre-factor     Update kinetic energy pre-factor     Update kinetic energy pre-factor
+//------------------------------------------------------------------------------------------------------------------
 // apply kinetic energy factor and spacing to ekin_param
     ekin_param = ekin_param / dq / dq / mass;
     ekin_param *= ekin_factor;

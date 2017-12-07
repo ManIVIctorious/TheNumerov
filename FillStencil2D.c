@@ -3,21 +3,21 @@
 #include <stdlib.h>
 
 // Offered prototypes
-int get_stencil(double stencil[], int n_stencil);
+int FillStencil2D(double *stencil, int n_stencil);
 
-int get_stencil(double stencil[], int n_stencil){
+int FillStencil2D(double *stencil, int n_stencil){
 
     int i, control = -1;
 
 // check for implementation of requested stencil
 //  for now only the stecils from 3 to 13 are implemented
-    for(i = 3; i <= 13; i+=2){
+    for(i = 3; i <= 13; i += 2){
         if(n_stencil == i){
             control = 0;
             break;
         }
     }
-    if(control == -1){
+    if(control != 0){
         fprintf(stderr, "\n (-) Error no data for %d-point stencil available.", n_stencil);
         fprintf(stderr, "\n     Aborting - please check your input...\n\n");
         exit(-1);
