@@ -2,26 +2,30 @@
 #include <stdlib.h>
 #include <math.h>
 #include <getopt.h>
-#include "mkl_solvers_ee.h"
 
-
-// input functions
+// input/output functions
 int InputFunction(char *inputfile, double ***q, int *nq, double **V, int dimension);
 int InputFunctionDipole(char *inputfile, double ***q, int *nq, double **V, double ***mu, int dimension);
 int InputCoriolisCoefficients(char *inputfile, double ***q, double ****zeta, double ****mu, int dimension);
-
-// output functions
 int Help(char *filename);
 
 // meta functions
 int MetaGetStencil(double *stencil, int n_stencil, int dimension);
 
 // other
-#ifdef HAVE_OPT_SPLINE
-int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], double z[]);
-#endif
 double integrate_1d(int n, double dx, double integrand[]);
 double integrate_2d(int nx, int ny, double dx, double integrand[]);
+
+// functions requiring compile time flags
+#ifdef HAVE_GSL_INSTALLED
+#ifdef HAVE_OPT_SPLINE
+    int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], double z[]);
+#endif
+#endif
+
+#ifdef HAVE_MKL_INSTALLED
+    int EigensolverFEAST_MKL_2D(double *v, int n_points, int *nq, double *stencil, int n_stencil, double e_min, double e_max, double *E, double *X);
+#endif
 
 
 int main(int argc, char* argv[]){
@@ -39,18 +43,18 @@ int main(int argc, char* argv[]){
     int n_spline    = 0;
     int analyse     = 0;
 
-// file names
-    char * input_file_name      = NULL;
-    char * coriolis_input_file  = NULL;
-    char * output_file_name     = "/dev/stdout";
-
     double ekin_factor = 1.0/4.184;     // (kcal/mol) / (kJ/mol)
     double epot_factor = 1.0;           // (output unit) / (input unit)
     double mass        = 1.0;           // g/mol
     double e_min       = 0.0;           // output energy unit
     double e_max       = 400.0;         // output energy unit
     double spacing_threshold = 1.0E-12; // abs(q[i] - q[i+1])
+    double mu_factor = 1.0E20 * avogadro*avogadro * planck*planck/(4.0*M_PI*M_PI); // kJ/mol / (mol/g/angstrom^2)
 
+// file names
+    char * input_file_name      = NULL;
+    char * coriolis_input_file  = NULL;
+    char * output_file_name     = "/dev/stdout";
 
     int control;
     int i, j, k, l;     // integers for loops
@@ -60,7 +64,7 @@ int main(int argc, char* argv[]){
     if(argc == 1){ exit(Help(argv[0])); }
     // optstring contains a list of all short option indices,
     //  indices followed by a colon are options requiring an argument.
-    const char         * optstring = "hm:k:v:n:l:u:s:ac:i:dPo:t:";
+    const char         * optstring = "hm:k:v:n:l:u:s:ac:i:dPo:t:M:";
     const struct option longopts[] = {
     //  *name:      option name,
     //  has_arg:    if option requires argument,
@@ -70,6 +74,7 @@ int main(int argc, char* argv[]){
         {"help",                  no_argument, 0, 'h'},
         {"mass",            required_argument, 0, 'm'},
         {"fkin",            required_argument, 0, 'k'},
+        {"fmu",             required_argument, 0, 'M'},
         {"fpot",            required_argument, 0, 'v'},
         {"n-stencil",       required_argument, 0, 'n'},
         {"lower-bound",     required_argument, 0, 'l'},
@@ -104,6 +109,10 @@ int main(int argc, char* argv[]){
 
             case 'k':
                 ekin_factor = atof(optarg);
+                break;
+
+            case 'M':
+                mu_factor = atof(optarg);
                 break;
 
             case 'v':
@@ -163,11 +172,24 @@ int main(int argc, char* argv[]){
 //------------------------------------------------------------------------------------------------------------------
 //       Check for usage of not compiled functionalities      Check for usage of not compiled functionalities
 //------------------------------------------------------------------------------------------------------------------
+#ifndef HAVE_GSL_INSTALLED
+
 #ifndef HAVE_OPT_SPLINE
     if(n_spline != 0){
         fprintf(stderr, "\n (-) This version has been compiled without spline support");
         fprintf(stderr, "\n     The setting will be ignored\n\n");
     }
+#endif
+
+#endif
+
+#ifndef HAVE_MKL_INSTALLED
+    fprintf(stderr, "\n (-) The availability of a matrix eigensolver is a key requirement");
+    fprintf(stderr, "\n     of the Numerov procedure. Please make sure to compile the");
+    fprintf(stderr, "\n     program with at least one of the following defines:");
+    fprintf(stderr, "\n         -D HAVE_MKL_INSTALLED");
+    fprintf(stderr, "\n\n");
+    exit(-1);
 #endif
 
 
@@ -195,6 +217,13 @@ int main(int argc, char* argv[]){
 //                            J kg m^2 * angstrom^2/m^2 * g/kg * (1/mol)^2  / kJ/J =  kJ/mol * g * angstrom^2 / mol
     double ekin_param = -1.0E20 * avogadro*avogadro * planck*planck/(8.0*M_PI*M_PI); // kJ/mol / (mol/g/angstrom^2)
     double kJmolToWavenumber = 10.0 / (avogadro*planck*lightspeed);              // cm^-1 / (kJ/mol)
+
+// Eigenvalues and Eigenvectors
+    double *E = NULL;   // eigenvalues
+    double *X = NULL;   // eigenvectors
+    int n_out = 0;      // number of eigenstates
+    int xsh, ysh;       // integers for applying stencil functions
+    int element;
 
 // Output
     int index;
@@ -392,9 +421,8 @@ int main(int argc, char* argv[]){
 //   Stencils  Stencils  Stencils  Stencils  Stencils  Stencils  Stencils  Stencils  Stencils  Stencils  Stencils
 //------------------------------------------------------------------------------------------------------------------
 // Allocate memory of n_stencil ** dimension for stencil
-    control = 1;
-    for(i = 0; i < dimension; ++i){ control *= n_stencil; }
-    stencil = calloc(control, sizeof(double));
+    for(i = 0, j = 1; i < dimension; ++i){ j *= n_stencil; }
+    stencil = calloc(j, sizeof(double));
     if(stencil == NULL){
         fprintf(stderr, "\n (-) Error in memory allocation for stencil");
         fprintf(stderr, "\n     Aborting...\n\n");
@@ -409,17 +437,39 @@ int main(int argc, char* argv[]){
         exit(1);
     }
 
+// update kinetic energy pre-factor and apply it onto stencil
+    ekin_param *= (ekin_factor / dq / dq / mass);
+
+    for(i = 0; i < j; ++i){
+        stencil[i] *= ekin_param;
+    }
+
 
 //------------------------------------------------------------------------------------------------------------------
 //  Shift potential    Shift potential    Shift potential    Shift potential    Shift potential    Shift potential
 //------------------------------------------------------------------------------------------------------------------
-// get potential minimum, subtract it from the potential
-//  and apply potential energy factor to convert to desired energy output
+// convert potential to output unit of energy
+    for(i = 0; i < n_points; ++i){
+        v[i] *= epot_factor;
+    }
+
+// if a Coriolis file has been provided as input:
+//  add the second term of the Watson molecular Hamiltonian to the potential
+    if(coriolis_input_file != NULL){
+    // conversion of mu_factor from kJ/mol to desired output unit of energy
+        mu_factor *= ekin_factor;
+    // add -1/8 * hbar^2 * (mu_xx + mu_yy + mu_zz) to potential
+        for(i = 0; i < n_points; ++i){
+            v[i] -= (mu[0][0][i] + mu[1][1][i] + mu[2][2][i])*mu_factor/8.0;
+        }
+    }
+
+// shift potential minimum to zero
     for(i = 0; i < n_points; ++i){
         if(v[i] < v_min){ v_min = v[i]; }
     }
     for(i = 0; i < n_points; ++i){
-        v[i] = (v[i] - v_min) * epot_factor;
+        v[i] -= v_min;
     }
 
 
@@ -477,138 +527,23 @@ int main(int argc, char* argv[]){
 
 
 //------------------------------------------------------------------------------------------------------------------
-//   Update kinetic energy pre-factor     Update kinetic energy pre-factor     Update kinetic energy pre-factor
+// eigenvalue solver  eigenvalue solver  eigenvalue solver  eigenvalue solver  eigenvalue solver  eigenvalue solver
 //------------------------------------------------------------------------------------------------------------------
-// apply kinetic energy factor and spacing to ekin_param
-    ekin_param = ekin_param / dq / dq / mass;
-    ekin_param *= ekin_factor;
-
-
-//------------------------------------------------------------------------------------------------------------------
-// MKL FEAST eigenvalue solver  MKL FEAST eigenvalue solver  MKL FEAST eigenvalue solver MKL FEAST eigenvalue solver
-//------------------------------------------------------------------------------------------------------------------
-    char  UPLO = 'F';
-    const MKL_INT N = n_points;
-    int   n_entries = 0;
-    int   xsh, ysh;
-    int   element;
-
-    // calculate max_entries
-    int max_entries   = 0;
-    int sum_q1 = nq[0];
-    int sum_q2 = nq[1];
-
-    for(i = 1; i < (n_stencil/2 + 1); i++){
-        sum_q1=sum_q1 + 2*(nq[0]-i);
-        sum_q2=sum_q2 + 2*(nq[1]-i);
-    }
-    max_entries = sum_q1*sum_q2; // upper estimation for nnz entries in the matrix, but the easy way to code.
-
-    MKL_INT   rows_A[n_points+1];
-    MKL_INT * cols_A = malloc(max_entries * sizeof(MKL_INT));
-    if(cols_A == NULL){
-        fprintf(stderr, "\n (-) Error in memory allocation for cols_A");
-        fprintf(stderr, "\n     Aborting...\n\n");
-        exit(1);
-    }
-    double  * vals_A = malloc(max_entries * sizeof(double));
-    if(vals_A == NULL){
-        fprintf(stderr, "\n (-) Error in memory allocation for vals_A");
+// allocate memory for eigenvector and eigenvalue arrays
+    E  = calloc(n_points,          sizeof(double));   // Eigenvalues
+    X  = calloc(n_points*n_points, sizeof(double));   // Eigenvectors
+    if(E == NULL || X == NULL){
+        fprintf(stderr, "\n (-) Error in memory allocation for eigenvalues E and/or eigenvectors X");
         fprintf(stderr, "\n     Aborting...\n\n");
         exit(1);
     }
 
-    for(i = 0; i < nq[0]; i++){
-        for(j = 0; j < nq[1]; j++){
-            for(xsh = -n_stencil/2; xsh < n_stencil/2 + 1; xsh++){
+// Eigensolver routines
+#ifdef HAVE_MKL_INSTALLED
+    n_out = EigensolverFEAST_MKL_2D(v, n_points, nq, stencil, n_stencil, e_min, e_max, E, X);
+#endif
 
-                if( (i+xsh > -1) && (i+xsh < nq[0]) ){
-                    for(ysh = -n_stencil/2; ysh < n_stencil/2 + 1; ysh++){
-
-                        if( (j+ysh > -1) && ( j+ysh < nq[1]) ){
-                            element = (i + xsh)*nq[1] + j+ysh;
-                            cols_A[n_entries] = element+1; // wieso +1? weil intel!!
-
-                        // stencil entries have to be divided by 2 to get the right result.
-                        //  in three dimensions it should be a division by 4
-                            vals_A[n_entries] = ekin_param * stencil[(xsh+n_stencil/2)*n_stencil+ysh+n_stencil/2]/2;
-
-                        // add potential to diagonal element
-                            if(xsh == 0 && ysh ==0){
-                                vals_A[n_entries] = vals_A[n_entries] + v[i*nq[1]+j];
-                            }
-
-                            n_entries ++;
-                        }
-                    }
-                }
-            }
-      // after inserting all entries in a row the total number of entries is inserted in the CSR format.
-        rows_A[i*nq[1]+j+1]=n_entries+1;
-        }
-    }
-    rows_A[0] = 1;
-
-
-///// START EIGENVALUE CALCULATION
-
-    MKL_INT      fpm[128];      /* Array to pass parameters to Intel MKL Extended Eigensolvers */
-
-    double       epsout;        /* Relative error on the trace */
-    MKL_INT      loop;          /* Number of refinement loop */
-    MKL_INT      L = n_points/2;
-    MKL_INT      M0;            /* Initial guess for subspace dimension to be used */
-    MKL_INT      n_out = 5;
-
-
-    double       E[n_points];         /* Eigenvalues */
-
-    double * X = calloc (n_points*n_points, sizeof (double));
-    if(X == NULL){
-        fprintf(stderr, "\n (-) Error in memory allocation for Eigenvectors X");
-        fprintf(stderr, "\n     Aborting...\n\n");
-        exit(1);
-    }
-
-    double       res[n_points];       /* Residual */
-
-    MKL_INT      info;          /* Errors */
-    M0    = L;
-    n_out = L;
-    loop  = 0;
-    info  = 0;
-    epsout = 0.0;
-
-    feastinit(fpm); /* OUT: Array is used to pass parameters to Intel MKL Extended Eigensolvers */
-
-    dfeast_scsrev(
-        &UPLO,      // IN: UPLO = 'F', stores the full matrix
-        &N,         // IN: Size of the problem
-        vals_A,     // IN: CSR matrix A, values of non-zero elements
-        rows_A,     // IN: CSR matrix A, index of the first non-zero element in row
-        cols_A,     // IN: CSR matrix A, columns indices for each non-zero element
-        fpm,        // IN/OUT: Array is used to pass parameters to Intel MKL Extended Eigensolvers
-        &epsout,    // OUT: Relative error of on the trace
-        &loop,      // OUT: Contains the number of refinement loop executed
-        &e_min,     // IN: Lower bound of search interval
-        &e_max,     // IN: Upper bound of search interval
-        &M0,        // IN: The initial guess for subspace dimension to be used.
-        E,          // OUT: The first M entries of Eigenvalues
-        X,          // IN/OUT: The first M entries of Eigenvectors
-        &n_out,     // OUT: The total number of eigenvalues found in the interval
-        res,        // OUT: The first n_out components contain the relative residual vector
-        &info       // OUT: Error code
-        );
-
-    // Error output
-    if ( info != 0 ){
-        printf("\n(-) Routine sfeast_scsrev returns code of ERROR: %i\n\n", (int)info);
-        exit((int)info);
-    }
-//'#################################################################################################################
-//'#################################################################################################################
-//'#################################################################################################################
-    // get norm  <-------------- sollte nun auch 2d lafn
+// calculate norm
     integrand = calloc(n_points, sizeof(double));
 
     for(i = 0; i < n_out; i++){
@@ -623,8 +558,6 @@ int main(int argc, char* argv[]){
         }
     }
 
-    free(cols_A);   cols_A  = NULL;
-    free(vals_A);   vals_A  = NULL;
 
 //------------------------------------------------------------------------------------------------------------------
 //  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output
@@ -746,7 +679,7 @@ int main(int argc, char* argv[]){
                             }
                         }
 //------------------------------------------------------------------------------------------------------------------
-                        integrand[index]=integrand[index]*ekin_param*X[index + j*n_points];
+                        integrand[index] *= X[index + j*n_points];
                     }
                 }
 
@@ -996,6 +929,7 @@ int main(int argc, char* argv[]){
     free(q);   q = NULL;
     free(v);   v = NULL;
     free(X);   X = NULL;
+    free(E);   E = NULL;
 
     return 0;
 }
