@@ -4,13 +4,14 @@
 #include <mkl_solvers_ee.h>
 
 // provided prototypes
-int EigensolverFEAST_MKL_2D(double *v, int n_points, int *nq, double *stencil, int n_stencil, double e_min, double e_max, double *E, double *X);
+int EigensolverFEAST_MKL_2D(double *v, int *nq, double ekin_param, double *stencil, int n_stencil, double e_min, double e_max, double *E, double *X);
 
 
-int EigensolverFEAST_MKL_2D(double *v, int n_points, int *nq, double *stencil, int n_stencil, double e_min, double e_max, double *E, double *X){
+int EigensolverFEAST_MKL_2D(double *v, int *nq, double ekin_param, double *stencil, int n_stencil, double e_min, double e_max, double *E, double *X){
 
     int i, j;
     int n_entries = 0;
+    int n_points = nq[0] * nq[1];
     int xsh, ysh;
     int element;
 
@@ -42,12 +43,12 @@ int EigensolverFEAST_MKL_2D(double *v, int n_points, int *nq, double *stencil, i
 // fill Numerov's A matrix
 //  determine the non zero elements and store their positions in rows_A and cols_A
 //  and their values in vals_A
-    for(i = 0; i < nq[0]; i++){
-        for(j = 0; j < nq[1]; j++){
-            for(xsh = -n_stencil/2; xsh < n_stencil/2 + 1; xsh++){
+    for(i = 0; i < nq[0]; ++i){
+        for(j = 0; j < nq[1]; ++j){
+            for(xsh = -n_stencil/2; xsh < n_stencil/2 + 1; ++xsh){
 
                 if( (i+xsh > -1) && (i+xsh < nq[0]) ){
-                    for(ysh = -n_stencil/2; ysh < n_stencil/2 + 1; ysh++){
+                    for(ysh = -n_stencil/2; ysh < n_stencil/2 + 1; ++ysh){
 
                         if( (j+ysh > -1) && ( j+ysh < nq[1]) ){
                             element = (i + xsh)*nq[1] + j+ysh;
@@ -55,14 +56,14 @@ int EigensolverFEAST_MKL_2D(double *v, int n_points, int *nq, double *stencil, i
 
                         // stencil entries have to be divided by 2 to get the right result.
                         //  in three dimensions it should be a division by 4
-                            vals_A[n_entries] = stencil[(xsh+n_stencil/2)*n_stencil+ysh+n_stencil/2]/2;
+                            vals_A[n_entries] = ekin_param * stencil[(xsh+n_stencil/2)*n_stencil+ysh+n_stencil/2]/2;
 
                         // add potential to diagonal element
                             if(xsh == 0 && ysh ==0){
                                 vals_A[n_entries] = vals_A[n_entries] + v[i*nq[1]+j];
                             }
 
-                            n_entries ++;
+                            n_entries++;
                         }
                     }
                 }

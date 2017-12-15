@@ -24,7 +24,7 @@ double integrate_2d(int nx, int ny, double dx, double integrand[]);
 #endif
 
 #ifdef HAVE_MKL_INSTALLED
-    int EigensolverFEAST_MKL_2D(double *v, int n_points, int *nq, double *stencil, int n_stencil, double e_min, double e_max, double *E, double *X);
+    int EigensolverFEAST_MKL_2D(double *v, int *nq, double ekin_param, double *stencil, int n_stencil, double e_min, double e_max, double *E, double *X);
 #endif
 
 
@@ -184,12 +184,15 @@ int main(int argc, char* argv[]){
 #endif
 
 #ifndef HAVE_MKL_INSTALLED
+#ifndef HAVE_ARMA_INSTALLED
     fprintf(stderr, "\n (-) The availability of a matrix eigensolver is a key requirement");
     fprintf(stderr, "\n     of the Numerov procedure. Please make sure to compile the");
     fprintf(stderr, "\n     program with at least one of the following defines:");
     fprintf(stderr, "\n         -D HAVE_MKL_INSTALLED");
+    fprintf(stderr, "\n         -D HAVE_ARMA_INSTALLED");
     fprintf(stderr, "\n\n");
     exit(-1);
+#endif
 #endif
 
 
@@ -437,12 +440,8 @@ int main(int argc, char* argv[]){
         exit(1);
     }
 
-// update kinetic energy pre-factor and apply it onto stencil
+// update kinetic energy pre-factor
     ekin_param *= (ekin_factor / dq / dq / mass);
-
-    for(i = 0; i < j; ++i){
-        stencil[i] *= ekin_param;
-    }
 
 
 //------------------------------------------------------------------------------------------------------------------
@@ -540,8 +539,21 @@ int main(int argc, char* argv[]){
 
 // Eigensolver routines
 #ifdef HAVE_MKL_INSTALLED
-    n_out = EigensolverFEAST_MKL_2D(v, n_points, nq, stencil, n_stencil, e_min, e_max, E, X);
+    n_out = EigensolverFEAST_MKL_2D(v, nq, ekin_param, stencil, n_stencil, e_min, e_max, E, X);
 #endif
+
+
+
+#ifdef HAVE_ARMA_INSTALLED
+int EigensolverArmadillo_2D(double *v, int *nq, double ekin_param, double *stencil, int n_stencil, int n_out, double *E, double *X);
+
+n_out = 8;
+
+
+EigensolverArmadillo_2D(v, nq, ekin_param, stencil, n_stencil, n_out, E, X);
+
+#endif
+
 
 // calculate norm
     integrand = calloc(n_points, sizeof(double));
@@ -673,7 +685,7 @@ int main(int argc, char* argv[]){
 
                                     // integrand has to be divided by d^2,
                                     //  but the division is already set in the "ekin_param" parameter
-                                        integrand[index] = integrand[index] + X[element + i*n_points] * stencil[(xsh + n_stencil/2)*n_stencil + ysh + n_stencil/2]/2;
+                                        integrand[index] = integrand[index] + X[element + i*n_points] * ekin_param * stencil[(xsh + n_stencil/2)*n_stencil + ysh + n_stencil/2]/2;
                                     }
                                 }
                             }
