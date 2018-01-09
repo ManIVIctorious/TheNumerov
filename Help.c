@@ -96,13 +96,32 @@ int Help(char *filename){
     printf("\n\t"); printf("    Set the path to the output file.");
 
 // Matrix solver
-#ifdef HAVE_MKL_INSTALLED
+    printf("\n\n");
+    printf("    Matrix Eigensolvers:");
     printf("\n");
-    printf("\n"); printf("    Options for the Intel Math Kernel Library FEAST eigensolver:");
+    printf("\n\t"); printf("This program includes multiple implementations for the calculation");
+    printf("\n\t"); printf("of the matrix eigenstates. These implementations require different");
+    printf("\n\t"); printf("types of information and therefore different flags apply for their");
+    printf("\n\t"); printf("settings. The following lines show these individual flags for the");
+    printf("\n\t"); printf("respective calculation methods");
+
+#ifdef HAVE_MKL_INSTALLED
+    printf("\n\n");
+    printf("\tOptions for the Intel Math Kernel Library FEAST eigensolver:");
 
     printf("\n");
-    printf("\n\t"); printf("-l, --lower-bound       Set lower energy bound of calculated eigenstates");
-    printf("\n\t"); printf("-u, --upper-bound       Set upper energy bound of calculated eigenstates");
+    printf("\n\t"); printf("    --mkl               Use the Intel Math Kernel Library FEAST eigensolver");
+    printf("\n\t"); printf("    -l, --lower-bound   Set lower energy bound of calculated eigenstates");
+    printf("\n\t"); printf("    -u, --upper-bound   Set upper energy bound of calculated eigenstates");
+#endif
+
+#ifdef HAVE_ARMA_INSTALLED
+    printf("\n\n");
+    printf("\tOptions for the Armadillo ARPACK eigensolver:");
+
+    printf("\n");
+    printf("\n\t"); printf("    --armadillo         Use the Armadillo ARPACK eigensolver");
+    printf("\n\t"); printf("    -N, --nout          Set number of eigenstates to be calculated");
 #endif
 
     printf("\n\n");

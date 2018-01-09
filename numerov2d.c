@@ -27,6 +27,10 @@ double integrate_2d(int nx, int ny, double dx, double integrand[]);
     int EigensolverFEAST_MKL_2D(double *v, int *nq, double ekin_param, double *stencil, int n_stencil, double e_min, double e_max, double *E, double *X);
 #endif
 
+#ifdef HAVE_ARMA_INSTALLED
+    int EigensolverArmadillo_2D(double *v, int *nq, double ekin_param, double *stencil, int n_stencil, int n_out, double *E, double *X);
+#endif
+
 
 int main(int argc, char* argv[]){
 
@@ -42,6 +46,7 @@ int main(int argc, char* argv[]){
     int n_stencil   = 9;
     int n_spline    = 0;
     int analyse     = 0;
+    int n_out       = 8;      // number of eigenstates (ARPACK)
 
     double ekin_factor = 1.0/4.184;     // (kcal/mol) / (kJ/mol)
     double epot_factor = 1.0;           // (output unit) / (input unit)
@@ -50,6 +55,11 @@ int main(int argc, char* argv[]){
     double e_max       = 400.0;         // output energy unit
     double spacing_threshold = 1.0E-12; // abs(q[i] - q[i+1])
     double mu_factor = 1.0E20 * avogadro*avogadro * planck*planck/(4.0*M_PI*M_PI); // kJ/mol / (mol/g/angstrom^2)
+
+// Which eigensolver to use
+//  1 matches MKL FEAST
+//  2 matches ARMADILLO ARPACK
+    int Eigensolver = 1;
 
 // file names
     char * input_file_name      = NULL;
@@ -64,7 +74,7 @@ int main(int argc, char* argv[]){
     if(argc == 1){ exit(Help(argv[0])); }
     // optstring contains a list of all short option indices,
     //  indices followed by a colon are options requiring an argument.
-    const char         * optstring = "hm:k:v:n:l:u:s:ac:i:dPo:t:M:";
+    const char         * optstring = "hm:k:v:n:l:u:N:s:ac:i:dPo:t:M:";
     const struct option longopts[] = {
     //  *name:      option name,
     //  has_arg:    if option requires argument,
@@ -79,6 +89,7 @@ int main(int argc, char* argv[]){
         {"n-stencil",       required_argument, 0, 'n'},
         {"lower-bound",     required_argument, 0, 'l'},
         {"upper-bound",     required_argument, 0, 'u'},
+        {"nout",            required_argument, 0, 'N'},
         {"dq-threshold",    required_argument, 0, 't'},
         {"spline",          required_argument, 0, 's'},
         {"analyze",               no_argument, 0, 'a'},
@@ -87,6 +98,8 @@ int main(int argc, char* argv[]){
         {"input-file",      required_argument, 0, 'i'},
         {"coriolis-input",  required_argument, 0, 'c'},
         {"output-file",     required_argument, 0, 'o'},
+        {"mkl",                   no_argument, &Eigensolver, 1},
+        {"armadillo",             no_argument, &Eigensolver, 2},
         { 0, 0, 0, 0 }
     };
 
@@ -131,6 +144,10 @@ int main(int argc, char* argv[]){
                 e_max = atof(optarg);
                 break;
 
+            case 'N':
+                n_out = atoi(optarg);
+                break;
+
             case 'P':
                 input_file_name = "/dev/stdin";
                 break;
@@ -163,9 +180,6 @@ int main(int argc, char* argv[]){
                 output_file_name = optarg;
                 break;
 
-            default:
-                control = Help(argv[0]);
-                exit(control);
         }
     }
 
@@ -195,6 +209,25 @@ int main(int argc, char* argv[]){
 #endif
 #endif
 
+#ifndef HAVE_MKL_INSTALLED
+    if(Eigensolver == 1){
+        fprintf(stderr, "\n (-) MKL FEAST eigensolver not available.");
+        fprintf(stderr, "\n     Please make sure to compile the -D HAVE_MKL_INSTALLED define");
+        fprintf(stderr, "\n     Trying next eigensolver of the list...");
+        fprintf(stderr, "\n\n");
+        Eigensolver++;
+    }
+#endif
+
+#ifndef HAVE_ARMA_INSTALLED
+    if(Eigensolver == 2){
+        fprintf(stderr, "\n (-) Armadillo ARPACK eigensolver not available.");
+        fprintf(stderr, "\n     Please make sure to compile the -D HAVE_ARMA_INSTALLED define");
+        fprintf(stderr, "\n     Trying next eigensolver of the list...");
+        fprintf(stderr, "\n\n");
+        Eigensolver++;
+    }
+#endif
 
 //------------------------------------------------------------------------------------------------------------------
 //   Declaration Declaration Declaration Declaration Declaration Declaration Declaration Declaration Declaration
@@ -224,7 +257,6 @@ int main(int argc, char* argv[]){
 // Eigenvalues and Eigenvectors
     double *E = NULL;   // eigenvalues
     double *X = NULL;   // eigenvectors
-    int n_out = 0;      // number of eigenstates
     int xsh, ysh;       // integers for applying stencil functions
     int element;
 
@@ -538,21 +570,31 @@ int main(int argc, char* argv[]){
     }
 
 // Eigensolver routines
-#ifdef HAVE_MKL_INSTALLED
-    n_out = EigensolverFEAST_MKL_2D(v, nq, ekin_param, stencil, n_stencil, e_min, e_max, E, X);
-#endif
+    if(Eigensolver == 1){
+        #ifdef HAVE_MKL_INSTALLED
+            n_out = EigensolverFEAST_MKL_2D(v, nq, ekin_param, stencil, n_stencil, e_min, e_max, E, X);
+        #endif
+        #ifndef HAVE_MKL_INSTALLED
+            n_out = -1;
+        #endif
+    }else if(Eigensolver == 2){
+        #ifdef HAVE_ARMA_INSTALLED
+            n_out = EigensolverArmadillo_2D(v, nq, ekin_param, stencil, n_stencil, n_out, E, X);
+        #endif
+        #ifndef HAVE_ARMA_INSTALLED
+            n_out = -1;
+        #endif
+    }else{
+        fprintf(stderr, "\n (-) Error in eigensolver execution: undefined eigensolver requested");
+        fprintf(stderr, "\n     Aborting...\n\n");
+        exit(1);
+    }
 
-
-
-#ifdef HAVE_ARMA_INSTALLED
-int EigensolverArmadillo_2D(double *v, int *nq, double ekin_param, double *stencil, int n_stencil, int n_out, double *E, double *X);
-
-n_out = 8;
-
-
-EigensolverArmadillo_2D(v, nq, ekin_param, stencil, n_stencil, n_out, E, X);
-
-#endif
+    if(n_out <= 0){
+        fprintf(stderr, "\n (-) Error in matrix diagonalisation, no eigenvalue found");
+        fprintf(stderr, "\n     Aborting...\n\n");
+        exit(1);
+    }
 
 
 // calculate norm
@@ -580,6 +622,13 @@ EigensolverArmadillo_2D(v, nq, ekin_param, stencil, n_stencil, n_out, E, X);
         printf("\n\n (-) Error opening output-file: '%s'", output_file_name);
         printf(  "\n     Exiting ... \n\n");
         exit(0);
+    }
+
+// output type of eigensolver
+    if(Eigensolver == 1){
+        fprintf(file_ptr, "# Eigensolver: MKL FEAST\n#\n");
+    }else if(Eigensolver == 2){
+        fprintf(file_ptr, "# Eigensolver: Armadillo ARPACK\n#\n");
     }
 
 // output eigenvalues

@@ -1,25 +1,15 @@
 
 #define ARMA_64BIT_WORD
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <ctype.h>
-#include <string.h>
-#include <getopt.h>
 #include <armadillo>
-#include <SymEigsSolver.h>  // Also includes <MatOp/DenseGenMatProd.h>
-//#include <GenEigsSolver.h>  // Also includes <MatOp/DenseGenMatProd.h>
-#include <MatOp/SparseGenMatProd.h>
 
-using namespace arma; // prefix
 
 extern "C" int EigensolverArmadillo_2D(double *v, int *nq, double ekin_param, double *stencil, int n_stencil, int n_out, double *E, double *X);
 
 extern "C"{
     int EigensolverArmadillo_2D(double *v, int *nq, double ekin_param, double *stencil, int n_stencil, int n_out, double *E, double *X){
 
-        int i, j, k;
+        int i, j;
         int xsh,ysh;
         int n_points = nq[0] * nq[1];
         int max_entries = 0;
@@ -28,9 +18,9 @@ extern "C"{
         double stencil_entry;
         double threshold = 1.0E-7;
     
-        mat evec;
-        vec eval;
-        vec values;
+        arma::mat evec;
+        arma::vec eval;
+        arma::vec values;
     
     // determine maximum number of entries
         for(i = 0; i < nq[0]; i++){
@@ -55,8 +45,8 @@ extern "C"{
         }// end i 
     
     
-        umat locations(2, max_entries);
-        values = zeros(max_entries);
+        arma::umat locations(2, max_entries);
+        values = arma::zeros(max_entries);
         
         unsigned int  indexz, indexs;
         unsigned int  filled = 0;
@@ -94,36 +84,43 @@ extern "C"{
             } // end for j
         }// end for i
     
-        sp_mat A(locations, values, n_points, n_points, true, true);
+        arma::sp_mat A(locations, values, n_points, n_points, true, true);
         
         for(i = 0; i < n_points; ++i){
             A(i,i) = A(i,i) + v[i];
         }
 
     
-    // Use Armadillo ARPACK for the eigen decomposition of A
+    
+    // In recent versions of armadillo the ARPACK is directly included
+    //  The eigendecomposition can either be invoked by the armadillo "high-level" eigs routine
+    //  or by using the underlying ARPACK implementation directly
+    //  To use the underlying ARPACK implementation some objects/classes have to be put into scope:
+        using arma::newarp::SparseGenMatProd;
+        using arma::newarp::SymEigsSolver;
+        using arma::newarp::EigsSelect;
+
+    // Use Armadillo ARPACK for the eigen decomposition of symmetric A
         SparseGenMatProd<double> op(A);
-     
-    // SYMMETRIC
-        SymEigsSolver< double, SMALLEST_MAGN, SparseGenMatProd<double> > eigs(&op, n_out, 5*n_out);
+        SymEigsSolver< double, EigsSelect::SMALLEST_MAGN, SparseGenMatProd<double> > eigs(op, n_out, 5*n_out);
     
     // Initialize and compute
         eigs.init();
-    
         n_conv = eigs.compute(10000, 1.0e-14);
     
         if(n_conv > 0){
             eval = eigs.eigenvalues();
             evec = eigs.eigenvectors();
+        }else{
+            return -1;
         }
 
-
     // fill eigenvalue E and eigenvector arrays X
-        for(i = n_conv - 1, k = 0; i >= 0; --i, ++k){
-            E[k] = eval[i];
+        for(i = 0; i < n_conv; ++i){
+            E[i] = eval[i];
 
             for(j = 0; j < n_points; ++j){
-                X[k*n_points + j] = evec(j,i);
+                X[i*n_points + j] = evec(j,i);
             }
         }
 
