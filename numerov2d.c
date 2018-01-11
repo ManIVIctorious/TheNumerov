@@ -190,8 +190,11 @@ int main(int argc, char* argv[]){
 
 #ifndef HAVE_OPT_SPLINE
     if(n_spline != 0){
-        fprintf(stderr, "\n (-) This version has been compiled without spline support");
-        fprintf(stderr, "\n     The setting will be ignored\n\n");
+        fprintf(stderr,
+            "\n (-) This version has been compiled without spline support"
+            "\n     The setting will be ignored"
+            "\n\n"
+        );
     }
 #endif
 
@@ -199,32 +202,38 @@ int main(int argc, char* argv[]){
 
 #ifndef HAVE_MKL_INSTALLED
 #ifndef HAVE_ARMA_INSTALLED
-    fprintf(stderr, "\n (-) The availability of a matrix eigensolver is a key requirement");
-    fprintf(stderr, "\n     of the Numerov procedure. Please make sure to compile the");
-    fprintf(stderr, "\n     program with at least one of the following defines:");
-    fprintf(stderr, "\n         -D HAVE_MKL_INSTALLED");
-    fprintf(stderr, "\n         -D HAVE_ARMA_INSTALLED");
-    fprintf(stderr, "\n\n");
+    fprintf(stderr,
+        "\n (-) The availability of a matrix eigensolver is a key requirement"
+        "\n     of the Numerov procedure. Please make sure to compile the"
+        "\n     program with at least one of the following defines:"
+        "\n         -D HAVE_MKL_INSTALLED"
+        "\n         -D HAVE_ARMA_INSTALLED"
+        "\n\n"
+    );
     exit(-1);
 #endif
 #endif
 
 #ifndef HAVE_MKL_INSTALLED
     if(Eigensolver == 1){
-        fprintf(stderr, "\n (-) MKL FEAST eigensolver not available.");
-        fprintf(stderr, "\n     Please make sure to compile the -D HAVE_MKL_INSTALLED define");
-        fprintf(stderr, "\n     Trying next eigensolver of the list...");
-        fprintf(stderr, "\n\n");
+        fprintf(stderr,
+            "\n (-) MKL FEAST eigensolver not available."
+            "\n     Please make sure to compile the -D HAVE_MKL_INSTALLED define"
+            "\n     Trying next eigensolver of the list..."
+            "\n\n"
+        );
         Eigensolver++;
     }
 #endif
 
 #ifndef HAVE_ARMA_INSTALLED
     if(Eigensolver == 2){
-        fprintf(stderr, "\n (-) Armadillo ARPACK eigensolver not available.");
-        fprintf(stderr, "\n     Please make sure to compile the -D HAVE_ARMA_INSTALLED define");
-        fprintf(stderr, "\n     Trying next eigensolver of the list...");
-        fprintf(stderr, "\n\n");
+        fprintf(stderr,
+            "\n (-) Armadillo ARPACK eigensolver not available."
+            "\n     Please make sure to compile the -D HAVE_ARMA_INSTALLED define"
+            "\n     Trying next eigensolver of the list..."
+            "\n\n"
+        );
         Eigensolver++;
     }
 #endif
@@ -294,8 +303,10 @@ int main(int argc, char* argv[]){
     nq = calloc(dimension, sizeof(int));
     v  = malloc(sizeof(double));
     if(q == NULL || v  == NULL){
-        fprintf(stderr, "\n (-) Error in memory allocation for q or v");
-        fprintf(stderr, "\n     Aborting...\n\n");
+        fprintf(stderr,
+            "\n (-) Error in memory allocation for q or v"
+            "\n     Aborting...\n\n"
+        );
         exit(1);
     }
     if(dipole_flag == 1){
@@ -304,8 +315,10 @@ int main(int argc, char* argv[]){
             dip[i] = malloc(sizeof(double));
 
             if(dip[i] == NULL){
-                fprintf(stderr, "\n (-) Error in memory allocation for dipole array");
-                fprintf(stderr, "\n     Aborting...\n\n");
+                fprintf(stderr,
+                    "\n (-) Error in memory allocation for dipole array"
+                    "\n     Aborting...\n\n"
+                );
                 exit(1);
             }
         }
@@ -333,10 +346,14 @@ int main(int argc, char* argv[]){
     control = 1;
     for(i = 0; i < dimension; ++i){ control *= n_stencil; }
     if(n_points < control){
-        fprintf(stderr, "\n (-) Error reading data from input-file: '%s'", input_file_name);
-        fprintf(stderr, "\n     Insufficient number of data points (%d) ", n_points);
-        fprintf(stderr,        "for stencil size %d (%d points).", n_stencil, control);
-        fprintf(stderr, "\n     Aborting - please check your input...\n\n");
+        fprintf(stderr,
+            "\n (-) Error reading data from input-file: '%s'"
+            "\n     Insufficient number of data points (%d) "
+                   "for stencil size %d (%d points)."
+            "\n     Aborting - please check your input..."
+            "\n\n"
+            , input_file_name, n_points, n_stencil, control
+        );
         exit(1);
     }
 
@@ -372,9 +389,13 @@ int main(int argc, char* argv[]){
 
     // for every entry in Coriolis input file there must be exact one in the input file
         if(control != n_points){
-            fprintf(stderr, "\n (-) Error reading data from input-file: '%s'", coriolis_input_file);
-            fprintf(stderr, "\n     Number of Data points (%d) doesn't match number in '%s' (%d)", control, input_file_name, n_points);
-            fprintf(stderr, "\n     Aborting - please check your input...\n\n");
+            fprintf(stderr,
+                "\n (-) Error reading data from input-file: '%s'"
+                "\n     Number of Data points (%d) doesn't match number in '%s' (%d)"
+                "\n     Aborting - please check your input..."
+                "\n\n"
+                , coriolis_input_file, control, input_file_name, n_points
+            );
             exit(1);
         }
 
@@ -382,10 +403,14 @@ int main(int argc, char* argv[]){
         for(i = 0; i < n_points; ++i){
             for(j = 0; j < dimension; ++j){
                 if( (q[j][i] - q_coriolis[j][i])*(q[j][i] - q_coriolis[j][i]) > spacing_threshold*spacing_threshold ){
-                    fprintf(stderr, "\n (-) Error in Coriolis input file \"%s\".", coriolis_input_file);
-                    fprintf(stderr, "\n     The coordinates do not match the ones in the");
-                    fprintf(stderr, "\n     standard input file \"%s\"", input_file_name);
-                    fprintf(stderr, "\n     Aborting - please check your input...\n\n");
+                    fprintf(stderr,
+                        "\n (-) Error in Coriolis input file \"%s\"."
+                        "\n     The coordinates do not match the ones in the"
+                        "\n     standard input file \"%s\""
+                        "\n     Aborting - please check your input..."
+                        "\n\n"
+                        , coriolis_input_file, input_file_name
+                    );
                     exit(-1);
 
                 }
@@ -429,9 +454,12 @@ int main(int argc, char* argv[]){
         // don't check spacing on jump positions
             if( (j+1)%k*nq[i] != 0 ){
                 if( (deltaq[i] - (q[i][j+k]-q[i][j]))*(deltaq[i] - (q[i][j+k]-q[i][j]) ) > spacing_threshold*spacing_threshold){
-                    fprintf(stderr, "\n (-) Error in input file.");
-                    fprintf(stderr, "\n     Coordinate spacing not equivalent.");
-                    fprintf(stderr, "\n     Aborting - please check your input...\n\n");
+                    fprintf(stderr,
+                        "\n (-) Error in input file."
+                        "\n     Coordinate spacing not equivalent."
+                        "\n     Aborting - please check your input..."
+                        "\n\n"
+                    );
                     exit(-1);
                 }
             }
@@ -442,9 +470,12 @@ int main(int argc, char* argv[]){
 // check spacing between dimensions
     for(i = 1; i < dimension; ++i){
         if( (deltaq[i] - deltaq[i-1])*(deltaq[i] - deltaq[i-1]) > spacing_threshold*spacing_threshold){
-            fprintf(stderr, "\n (-) Error in input file.");
-            fprintf(stderr, "\n     Coordinate spacing not equivalent. (3rd test)");
-            fprintf(stderr, "\n     Aborting - please check your input...\n\n");
+            fprintf(stderr,
+                "\n (-) Error in input file."
+                "\n     Coordinate spacing not equivalent."
+                "\n     Aborting - please check your input..."
+                "\n\n"
+            );
             exit(-1);
         }
     }
@@ -459,16 +490,22 @@ int main(int argc, char* argv[]){
     for(i = 0, j = 1; i < dimension; ++i){ j *= n_stencil; }
     stencil = calloc(j, sizeof(double));
     if(stencil == NULL){
-        fprintf(stderr, "\n (-) Error in memory allocation for stencil");
-        fprintf(stderr, "\n     Aborting...\n\n");
+        fprintf(stderr,
+            "\n (-) Error in memory allocation for stencil"
+            "\n     Aborting..."
+            "\n\n"
+        );
         exit(1);
     }
 
 // Get stencil through meta function
     control = MetaGetStencil(stencil, n_stencil, dimension);
     if(control != 0 ){
-        fprintf(stderr, "\n (-) Error initialising stencil parameters.");
-        fprintf(stderr, "\n     Aborting - please check your input...\n\n");
+        fprintf(stderr,
+            "\n (-) Error initialising stencil parameters."
+            "\n     Aborting - please check your input..."
+            "\n\n"
+        );
         exit(1);
     }
 
@@ -517,14 +554,20 @@ int main(int argc, char* argv[]){
         q[1] = realloc(q[1], n_points * sizeof(double));
         v  = realloc(v,  n_points * sizeof(double));
         if(q[0] == NULL || q[1] == NULL || v  == NULL){
-            fprintf(stderr, "\n (-) Error in memory reallocation for q1, q2 or v");
-            fprintf(stderr, "\n     Aborting...\n\n");
+            fprintf(stderr,
+                "\n (-) Error in memory reallocation for q1, q2 or v"
+                "\n     Aborting..."
+                "\n\n"
+            );
             exit(1);
         }
         control = spline_interpolate(nq[0], nq[1], n_spline, q[0], q[1], v);
         if(control != 0){
-            fprintf(stderr, "\n (-) Error in execution of spline interpolation function.");
-            fprintf(stderr, "\n     Aborting...\n\n");
+            fprintf(stderr,
+                "\n (-) Error in execution of spline interpolation function."
+                "\n     Aborting..."
+                "\n\n"
+            );
             exit(1);
         }
         if(dipole_flag == 1){
@@ -532,8 +575,11 @@ int main(int argc, char* argv[]){
             dip[1] = realloc(dip[1], n_points * sizeof(double));
             dip[2] = realloc(dip[2], n_points * sizeof(double));
             if(dip[0] == NULL || dip[1] == NULL || dip[2] == NULL){
-                fprintf(stderr, "\n (-) Error in memory reallocation for dipole moment");
-                fprintf(stderr, "\n     Aborting...\n\n");
+                fprintf(stderr,
+                    "\n (-) Error in memory reallocation for dipole moment"
+                    "\n     Aborting..."
+                    "\n\n"
+                );
                 exit(1);
             }
             i = spline_interpolate(nq[0], nq[1], n_spline, q[0], q[1], dip[0]);
@@ -564,8 +610,11 @@ int main(int argc, char* argv[]){
     E  = calloc(n_points,          sizeof(double));   // Eigenvalues
     X  = calloc(n_points*n_points, sizeof(double));   // Eigenvectors
     if(E == NULL || X == NULL){
-        fprintf(stderr, "\n (-) Error in memory allocation for eigenvalues E and/or eigenvectors X");
-        fprintf(stderr, "\n     Aborting...\n\n");
+        fprintf(stderr,
+            "\n (-) Error in memory allocation for eigenvalues E and/or eigenvectors X"
+            "\n     Aborting...\n\n"
+            "\n\n"
+        );
         exit(1);
     }
 
@@ -585,14 +634,20 @@ int main(int argc, char* argv[]){
             n_out = -1;
         #endif
     }else{
-        fprintf(stderr, "\n (-) Error in eigensolver execution: undefined eigensolver requested");
-        fprintf(stderr, "\n     Aborting...\n\n");
+        fprintf(stderr,
+            "\n (-) Error in eigensolver execution: undefined eigensolver requested"
+            "\n     Aborting..."
+            "\n\n"
+        );
         exit(1);
     }
 
     if(n_out <= 0){
-        fprintf(stderr, "\n (-) Error in matrix diagonalisation, no eigenvalue found");
-        fprintf(stderr, "\n     Aborting...\n\n");
+        fprintf(stderr,
+            "\n (-) Error in matrix diagonalisation, no eigenvalue found"
+            "\n     Aborting..."
+            "\n\n"
+        );
         exit(1);
     }
 

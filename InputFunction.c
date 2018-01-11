@@ -23,8 +23,12 @@ int InputFunction(char *inputfile, double ***q, int *nq, double **V, int dimensi
 
     fd = fopen(inputfile, "r");
     if(fd == NULL){
-        fprintf(stderr, "\n(-) ERROR opening input-file: \"%s\"", inputfile);
-        fprintf(stderr, "\n    Exiting...\n\n");
+        fprintf(stderr,
+            "\n(-) ERROR opening input-file: \"%s\""
+            "\n    Exiting..."
+            "\n\n"
+            , inputfile
+        );
         exit(1);
     }
 
@@ -66,9 +70,13 @@ int InputFunction(char *inputfile, double ***q, int *nq, double **V, int dimensi
                 token = strtok(NULL, " \t");
             // if there are less than <dimension> entries print an error
                 if(token == NULL){
-                    fprintf(stderr, "\n(-) ERROR reading data from input-file \"%s\".", inputfile);
-                    fprintf(stderr, "\n    The N line doesn't contain %d entries.", dimension);
-                    fprintf(stderr, "\n    Aborting - please check your input...\n\n");
+                    fprintf(stderr,
+                        "\n(-) ERROR reading data from input-file \"%s\"."
+                        "\n    The N line doesn't contain %d entries."
+                        "\n    Aborting - please check your input..."
+                        "\n\n"
+                        , inputfile, dimension
+                    );
                     exit(1);
                 }
                 nq[n] = atoi(token);
@@ -87,8 +95,12 @@ int InputFunction(char *inputfile, double ***q, int *nq, double **V, int dimensi
             for(n = 0; n < dimension; ++n){
                 (*q)[n] = realloc((*q)[n], (rows + 1)*sizeof(double));
                 if( (*q)[n] == NULL){
-                    fprintf(stderr, "\n(-) ERROR in reallocation of %s", "coordinate");
-                    fprintf(stderr, "\n    Aborting...\n\n");
+                    fprintf(stderr,
+                        "\n(-) ERROR in reallocation of %s"
+                        "\n    Aborting...\n\n"
+                        "\n\n"
+                        , "coordinate"
+                    );
                     exit(2);
                 }
             }
@@ -99,9 +111,13 @@ int InputFunction(char *inputfile, double ***q, int *nq, double **V, int dimensi
         for(n = 1; n < dimension; ++n){
             token = strtok(NULL, " \t");
             if(token == NULL){
-                fprintf(stderr, "\n(-) ERROR reading data from input-file \"%s\".", inputfile);
-                fprintf(stderr, "\n    Too few entries in input line number %d", rows);
-                fprintf(stderr, "\n    Aborting - please check your input...\n\n");
+                fprintf(stderr,
+                    "\n(-) ERROR reading data from input-file \"%s\"."
+                    "\n    Too few entries in input line number %d"
+                    "\n    Aborting - please check your input..."
+                    "\n\n"
+                    , inputfile, rows
+                );
                 exit(1);
             }
             (*q)[n][rows] = atof(token);
@@ -111,16 +127,24 @@ int InputFunction(char *inputfile, double ***q, int *nq, double **V, int dimensi
     //  increase array size:
         (*V) = realloc((*V), (rows + 1)*sizeof(double));
         if( (*V) == NULL){
-            fprintf(stderr, "\n(-) ERROR in reallocation of %s", "potential");
-            fprintf(stderr, "\n    Aborting...\n\n");
+            fprintf(stderr,
+                "\n(-) ERROR in reallocation of %s"
+                "\n    Aborting..."
+                "\n\n"
+                , "potential"
+            );
             exit(2);
         }
     // get token and convert to double
         token = strtok(NULL, " \t");
         if(token == NULL){
-            fprintf(stderr, "\n(-) ERROR reading data from input-file \"%s\".", inputfile);
-            fprintf(stderr, "\n    Too few entries in input line number %d", rows);
-            fprintf(stderr, "\n    Aborting - please check your input...\n\n");
+            fprintf(stderr,
+                "\n(-) ERROR reading data from input-file \"%s\"."
+                "\n    Too few entries in input line number %d"
+                "\n    Aborting - please check your input..."
+                "\n\n"
+                , inputfile, rows
+            );
             exit(1);
         }
         (*V)[rows] = atof(token);

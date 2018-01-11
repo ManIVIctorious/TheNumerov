@@ -23,8 +23,12 @@ int InputCoriolisCoefficients(char *inputfile, double ***q, double ****zeta, dou
 
     fd = fopen(inputfile, "r");
     if(fd == NULL){
-        fprintf(stderr, "\n(-) ERROR opening input-file: \"%s\"", inputfile);
-        fprintf(stderr, "\n    Exiting...\n\n");
+        fprintf(stderr,
+            "\n(-) ERROR opening input-file: \"%s\""
+            "\n    Exiting..."
+            "\n\n"
+            , inputfile
+        );
         exit(1);
     }
 
@@ -66,8 +70,12 @@ int InputCoriolisCoefficients(char *inputfile, double ***q, double ****zeta, dou
             for(n = 0; n < dimension; ++n){
                 (*q)[n] = realloc((*q)[n], (rows + 1)*sizeof(double));
                 if( (*q)[n] == NULL){
-                    fprintf(stderr, "\n(-) ERROR in reallocation of %s", "coordinate");
-                    fprintf(stderr, "\n    Aborting...\n\n");
+                    fprintf(stderr,
+                        "\n(-) ERROR in reallocation of %s"
+                        "\n    Aborting..."
+                        "\n\n"
+                        , "coordinate"
+                    );
                     exit(2);
                 }
             }
@@ -78,9 +86,13 @@ int InputCoriolisCoefficients(char *inputfile, double ***q, double ****zeta, dou
         for(m = 1; m < dimension; ++m){
             token = strtok(NULL, " \t");
             if(token == NULL){
-                fprintf(stderr, "\n(-) ERROR reading data from input-file \"%s\".", inputfile);
-                fprintf(stderr, "\n    Too few entries in input line number %d", rows);
-                fprintf(stderr, "\n    Aborting - please check your input...\n\n");
+                fprintf(stderr,
+                    "\n(-) ERROR reading data from input-file \"%s\"."
+                    "\n    Too few entries in input line number %d"
+                    "\n    Aborting - please check your input..."
+                    "\n\n"
+                    , inputfile, rows
+                );
                 exit(1);
             }
             (*q)[m][rows] = atof(token);
@@ -93,8 +105,12 @@ int InputCoriolisCoefficients(char *inputfile, double ***q, double ****zeta, dou
                 (*zeta)[m][n] = realloc((*zeta)[m][n], (rows + 1) * sizeof(double));
 
                 if( (*zeta)[m][n] == NULL){
-                    fprintf(stderr, "\n(-) ERROR in reallocation of %s", "Coriolis coefficient");
-                    fprintf(stderr, "\n    Aborting...\n\n");
+                    fprintf(stderr,
+                        "\n(-) ERROR in reallocation of %s"
+                        "\n    Aborting..."
+                        "\n\n"
+                        , "Coriolis coefficient"
+                    );
                     exit(2);
                 }
             }
@@ -104,9 +120,12 @@ int InputCoriolisCoefficients(char *inputfile, double ***q, double ****zeta, dou
             for(n = 0; n < ((dimension*(dimension - 1))/2); ++n){
                 token = strtok(NULL, " \t");
                 if(token == NULL){
-                    fprintf(stderr, "\n(-) ERROR reading data from input-file \"%s\".", inputfile);
-                    fprintf(stderr, "\n    Too few entries in input line number %d", rows);
-                    fprintf(stderr, "\n    Aborting - please check your input...\n\n");
+                    fprintf(stderr,
+                        "\n(-) ERROR reading data from input-file \"%s\"."
+                        "\n    Too few entries in input line number %d"
+                        "\n    Aborting - please check your input..."
+                        "\n\n", inputfile, rows
+                    );
                     exit(1);
                 }
                 (*zeta)[m][n][rows] = atof(token);
@@ -120,8 +139,12 @@ int InputCoriolisCoefficients(char *inputfile, double ***q, double ****zeta, dou
                 (*mu)[m][n] = realloc((*mu)[m][n], (rows + 1) * sizeof(double));
 
                 if( (*mu)[m][n] == NULL){
-                    fprintf(stderr, "\n(-) ERROR in reallocation of %s", "effective reciprocal inertia tensor");
-                    fprintf(stderr, "\n    Aborting...\n\n");
+                    fprintf(stderr,
+                        "\n(-) ERROR in reallocation of %s"
+                        "\n    Aborting..."
+                        "\n\n"
+                        , "effective reciprocal inertia tensor"
+                    );
                     exit(2);
                 }
             }
@@ -131,9 +154,12 @@ int InputCoriolisCoefficients(char *inputfile, double ***q, double ****zeta, dou
             for(n = m; n < 3; ++n){
                 token = strtok(NULL, " \t");
                 if(token == NULL){
-                    fprintf(stderr, "\n(-) ERROR reading data from input-file \"%s\".", inputfile);
-                    fprintf(stderr, "\n    Too few entries in input line number %d", rows);
-                    fprintf(stderr, "\n    Aborting - please check your input...\n\n");
+                    fprintf(stderr,
+                        "\n(-) ERROR reading data from input-file \"%s\"."
+                        "\n    Too few entries in input line number %d"
+                        "\n    Aborting - please check your input..."
+                        "\n\n", inputfile, rows
+                    );
                     exit(1);
                 }
                 (*mu)[m][n][rows] = atof(token);

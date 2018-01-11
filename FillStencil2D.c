@@ -18,8 +18,12 @@ int FillStencil2D(double *stencil, int n_stencil){
         }
     }
     if(control != 0){
-        fprintf(stderr, "\n (-) Error no data for %d-point stencil available.", n_stencil);
-        fprintf(stderr, "\n     Aborting - please check your input...\n\n");
+        fprintf(stderr,
+            "\n (-) Error no data for %d-point stencil available."
+            "\n     Aborting - please check your input..."
+            "\n\n"
+            , n_stencil
+        );
         exit(-1);
     }
 

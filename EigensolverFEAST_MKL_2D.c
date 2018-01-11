@@ -35,8 +35,11 @@ int EigensolverFEAST_MKL_2D(double *v, int *nq, double ekin_param, double *stenc
     MKL_INT * cols_A = calloc(max_entries,  sizeof(MKL_INT));
     double  * vals_A = calloc(max_entries,  sizeof(double));
     if(rows_A == NULL || cols_A == NULL || vals_A == NULL){
-        fprintf(stderr, "\n (-) Error in memory allocation for row, column and/or value arrays");
-        fprintf(stderr, "\n     Aborting...\n\n");
+        fprintf(stderr,
+            "\n (-) Error in memory allocation for row, column and/or value arrays"
+            "\n     Aborting..."
+            "\n\n"
+        );
         exit(1);
     }
 
@@ -78,8 +81,11 @@ int EigensolverFEAST_MKL_2D(double *v, int *nq, double ekin_param, double *stenc
 // Start eigenstate calculation
     double * res = calloc(n_points, sizeof(double));    // Residual
     if(res == NULL){
-        fprintf(stderr, "\n (-) Error in memory allocation of residual array");
-        fprintf(stderr, "\n     Aborting...\n\n");
+        fprintf(stderr,
+            "\n (-) Error in memory allocation of residual array"
+            "\n     Aborting..."
+            "\n\n"
+        );
         exit(1);
     }
 
@@ -115,9 +121,13 @@ int EigensolverFEAST_MKL_2D(double *v, int *nq, double ekin_param, double *stenc
 
     // Error output
     if( info != 0 ){
-        fprintf(stderr, "\n (-) Error in routine sfeast_scsrev");
-        fprintf(stderr, "\n     Return code of ERROR: %d", (int)info);
-        fprintf(stderr, "\n     Aborting...\n\n");
+        fprintf(stderr,
+            "\n (-) Error in routine sfeast_scsrev"
+            "\n     Return code of ERROR: %d"
+            "\n     Aborting..."
+            "\n\n"
+            , (int)info
+        );
         exit((int)info);
     }
 
