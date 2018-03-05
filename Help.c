@@ -46,14 +46,12 @@ int Help(char *filename){
     printf("\n\t"); printf("    Set the one dimensional stencil size, e.g. \"-n 11\" gives a");
     printf("\n\t"); printf("    11x11 stencil in the two dimensional Numerov.");
 
-#ifdef HAVE_OPT_SPLINE
     printf("\n");
     printf("\n\t"); printf("-s, --spline");
     printf("\n\t"); printf("    Enable spline interpolation of potential points and set the Number");
     printf("\n\t"); printf("    of points interpolated between each point-pair.");
     printf("\n\t"); printf("    A spline of 1 doubles the number of data points for each dimension,");
     printf("\n\t"); printf("    n_points times (spline_points + 1)**dimension.");
-#endif
 
 // I/O
     printf("\n");

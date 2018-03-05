@@ -11,18 +11,13 @@ int Help(char *filename);
 
 // meta functions
 int MetaGetStencil(double *stencil, int n_stencil, int dimension);
+int MetaInterpolation(double ** v, int * nq, double dq, int dimension, int n_spline);
 
 // other
 double integrate_1d(int n, double dx, double integrand[]);
 double integrate_2d(int nx, int ny, double dx, double integrand[]);
 
 // functions requiring compile time flags
-#ifdef HAVE_GSL_INSTALLED
-#ifdef HAVE_OPT_SPLINE
-    int spline_interpolate(int n_x, int n_y, int n_spline, double x[], double y[], double z[]);
-#endif
-#endif
-
 #ifdef HAVE_MKL_INSTALLED
     int EigensolverFEAST_MKL_2D(double *v, int *nq, double ekin_param, double *stencil, int n_stencil, double e_min, double e_max, double *E, double *X);
 #endif
@@ -56,7 +51,7 @@ int main(int argc, char* argv[]){
     double spacing_threshold = 1.0E-12; // abs(q[i] - q[i+1])
     double mu_factor = 1.0E20 * avogadro*avogadro * planck*planck/(4.0*M_PI*M_PI); // kJ/mol / (mol/g/angstrom^2)
 
-// Which eigensolver to use
+// Which eigen-solver to use
 //  1 matches MKL FEAST
 //  2 matches ARMADILLO ARPACK
     int Eigensolver = 1;
@@ -68,9 +63,9 @@ int main(int argc, char* argv[]){
 
     int control;
     int i, j, k, l;     // integers for loops
-//------------------------------------------------------------------------------------------------------------------
-//  FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS
-//------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+//   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS
+//------------------------------------------------------------------------------------------------------------
     if(argc == 1){ exit(Help(argv[0])); }
     // optstring contains a list of all short option indices,
     //  indices followed by a colon are options requiring an argument.
@@ -183,23 +178,9 @@ int main(int argc, char* argv[]){
         }
     }
 
-//------------------------------------------------------------------------------------------------------------------
-//       Check for usage of not compiled functionalities      Check for usage of not compiled functionalities
-//------------------------------------------------------------------------------------------------------------------
-#ifndef HAVE_GSL_INSTALLED
-
-#ifndef HAVE_OPT_SPLINE
-    if(n_spline != 0){
-        fprintf(stderr,
-            "\n (-) This version has been compiled without spline support"
-            "\n     The setting will be ignored"
-            "\n\n"
-        );
-    }
-#endif
-
-#endif
-
+//------------------------------------------------------------------------------------------------------------
+//    Check for usage of not compiled functionalities      Check for usage of not compiled functionalities
+//------------------------------------------------------------------------------------------------------------
 #ifndef HAVE_MKL_INSTALLED
 #ifndef HAVE_ARMA_INSTALLED
     fprintf(stderr,
@@ -238,9 +219,9 @@ int main(int argc, char* argv[]){
     }
 #endif
 
-//------------------------------------------------------------------------------------------------------------------
-//   Declaration Declaration Declaration Declaration Declaration Declaration Declaration Declaration Declaration
-//------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+//   Declaration  Declaration  Declaration  Declaration  Declaration  Declaration  Declaration  Declaration
+//------------------------------------------------------------------------------------------------------------
 // Input
   // standard file
     int dimension = 2;
@@ -285,10 +266,14 @@ int main(int argc, char* argv[]){
     double * ts_dip_y = NULL;
     double * ts_dip_z = NULL;
 
+// jump parameter for generation of dimension-generalized
+//  checks and sets
+    int jump;
 
-//------------------------------------------------------------------------------------------------------------------
-// Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input
-//------------------------------------------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------------------------------------
+//  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input
+//------------------------------------------------------------------------------------------------------------
 // check input argument if the file is not present give a silly statement
     if(input_file_name == NULL){
         fprintf(stderr, "\n (-) Please specify input file...\n\n");
@@ -427,9 +412,9 @@ int main(int argc, char* argv[]){
     }
 
 
-//------------------------------------------------------------------------------------------------------------------
-//  Check Coordinate Spacing    Check Coordinate Spacing    Check Coordinate Spacing    Check Coordinate Spacing
-//------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+//  Check Coordinate Spacing   Check Coordinate Spacing   Check Coordinate Spacing   Check Coordinate Spacing
+//------------------------------------------------------------------------------------------------------------
     deltaq = calloc(dimension, sizeof(double));
 
 // The Numerov method needs to be applied to an equispaced grid.
@@ -445,15 +430,15 @@ int main(int argc, char* argv[]){
     }
 
 // check spacing within each dimension i
-    for(i = (dimension - 1), k = 1; i >= 0; --i){
+    for(i = (dimension - 1), jump = 1; i >= 0; --i){
 
-    // within dimension i check every subtraction of [j+k]th and [j]th values
-    //  where j denotes the running index and k is the index jump (e.g. 1 for q[dimension-1],
+    // within dimension i check every subtraction of [j+jump]th and [j]th values
+    //  where j denotes the running index and jump is the index jump (e.g. 1 for q[dimension-1],
     //  nq[dimension-1] for q[dimension-2] or nq[dimension-1]*nq[dimension-2] for q[dimension-3])
-        for(j = 0; j < n_points-k; ++j){
+        for(j = 0; j < n_points-jump; ++j){
         // don't check spacing on jump positions
-            if( (j+1)%k*nq[i] != 0 ){
-                if( (deltaq[i] - (q[i][j+k]-q[i][j]))*(deltaq[i] - (q[i][j+k]-q[i][j]) ) > spacing_threshold*spacing_threshold){
+            if( (j+1)%jump*nq[i] != 0 ){
+                if( (deltaq[i] - (q[i][j+jump]-q[i][j]))*(deltaq[i] - (q[i][j+jump]-q[i][j]) ) > spacing_threshold*spacing_threshold){
                     fprintf(stderr,
                         "\n (-) Error in input file."
                         "\n     Coordinate spacing not equivalent."
@@ -464,7 +449,7 @@ int main(int argc, char* argv[]){
                 }
             }
         }
-        k *= nq[i];
+        jump *= nq[i];
     }
 
 // check spacing between dimensions
@@ -483,9 +468,9 @@ int main(int argc, char* argv[]){
     free(deltaq); deltaq = NULL;
 
 
-//------------------------------------------------------------------------------------------------------------------
-//   Stencils  Stencils  Stencils  Stencils  Stencils  Stencils  Stencils  Stencils  Stencils  Stencils  Stencils
-//------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+//  Stencils    Stencils    Stencils    Stencils    Stencils    Stencils    Stencils    Stencils    Stencils
+//------------------------------------------------------------------------------------------------------------
 // Allocate memory of n_stencil ** dimension for stencil
     for(i = 0, j = 1; i < dimension; ++i){ j *= n_stencil; }
     stencil = calloc(j, sizeof(double));
@@ -513,9 +498,9 @@ int main(int argc, char* argv[]){
     ekin_param *= (ekin_factor / dq / dq / mass);
 
 
-//------------------------------------------------------------------------------------------------------------------
-//  Shift potential    Shift potential    Shift potential    Shift potential    Shift potential    Shift potential
-//------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+//  Shift potential   Shift potential   Shift potential   Shift potential   Shift potential   Shift potential
+//------------------------------------------------------------------------------------------------------------
 // convert potential to output unit of energy
     for(i = 0; i < n_points; ++i){
         v[i] *= epot_factor;
@@ -541,71 +526,87 @@ int main(int argc, char* argv[]){
     }
 
 
-#ifdef HAVE_OPT_SPLINE
-//------------------------------------------------------------------------------------------------------------------
-//  Spline  Spline  Spline  Spline  Spline  Spline  Spline  Spline  Spline  Spline  Spline  Spline  Spline  Spline
-//------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+//  Interpolation  Interpolation  Interpolation  Interpolation  Interpolation  Interpolation  Interpolation
+//------------------------------------------------------------------------------------------------------------
     if(n_spline > 0){
-    // new number of points by splining
-        n_points = ((nq[0] - 1) * (n_spline + 1) + 1) * ((nq[1] - 1) * (n_spline + 1) + 1);
 
-    // reallocate memory and call spline function
-        q[0] = realloc(q[0], n_points * sizeof(double));
-        q[1] = realloc(q[1], n_points * sizeof(double));
-        v  = realloc(v,  n_points * sizeof(double));
-        if(q[0] == NULL || q[1] == NULL || v  == NULL){
+    // Interpolation
+        n_points = MetaInterpolation(&v, nq, dq, dimension, n_spline);
+
+    // Calculate expected return value and check it against n_points
+        for(i = 0, control = 1; i < dimension; ++i){
+            control *= ((nq[i] - 1) * (n_spline + 1) + 1);
+        }
+        if(n_points != control){
             fprintf(stderr,
-                "\n (-) Error in memory reallocation for q1, q2 or v"
+                "\n (-) Error in execution of interpolation function."
                 "\n     Aborting..."
                 "\n\n"
             );
             exit(1);
         }
-        control = spline_interpolate(nq[0], nq[1], n_spline, q[0], q[1], v);
-        if(control != 0){
-            fprintf(stderr,
-                "\n (-) Error in execution of spline interpolation function."
-                "\n     Aborting..."
-                "\n\n"
-            );
-            exit(1);
-        }
-        if(dipole_flag == 1){
-            dip[0] = realloc(dip[0], n_points * sizeof(double));
-            dip[1] = realloc(dip[1], n_points * sizeof(double));
-            dip[2] = realloc(dip[2], n_points * sizeof(double));
-            if(dip[0] == NULL || dip[1] == NULL || dip[2] == NULL){
+
+    // update memory allocation to new n_points for all coordinates
+        for(i = 0; i < dimension; ++i){
+            q[i] = realloc(q[i], n_points * sizeof(double));
+
+            if(q[i] == NULL){
                 fprintf(stderr,
-                    "\n (-) Error in memory reallocation for dipole moment"
+                    "\n (-) Error in memory reallocation of q%d"
+                    "\n     Aborting..."
+                    "\n\n"
+                    , i
+                );
+                exit(1);
+            }
+        }
+
+
+    // if dipole_flag is set also interpolate dipole moments
+        if(dipole_flag == 1){
+            i = MetaInterpolation(&(dip[0]), nq, dq, dimension, n_spline);
+            j = MetaInterpolation(&(dip[1]), nq, dq, dimension, n_spline);
+            k = MetaInterpolation(&(dip[2]), nq, dq, dimension, n_spline);
+
+        // check return values
+            if(i != n_points || j != n_points || k != n_points){
+                fprintf(stderr,
+                    "\n (-) Error in execution of interpolation function."
                     "\n     Aborting..."
                     "\n\n"
                 );
                 exit(1);
             }
-            i = spline_interpolate(nq[0], nq[1], n_spline, q[0], q[1], dip[0]);
-            j = spline_interpolate(nq[0], nq[1], n_spline, q[0], q[1], dip[1]);
-            k = spline_interpolate(nq[0], nq[1], n_spline, q[0], q[1], dip[2]);
         }
 
-    // set new values for number of points for q1 and q2 and new dq
-        nq[0] = (nq[0] - 1) * (n_spline + 1) + 1;
-        nq[1] = (nq[1] - 1) * (n_spline + 1) + 1;
-        dq    = dq / (double) (n_spline + 1);
 
-    // set new values for q1 and q2:
-    //  add 1 step to q1 all "nq[1]"th iteration
-    //  add 1 step to q2 every iteration, reset to 0 at every "nq[1]"th
-        for(i = 0; i < n_points; i++){
-            q[0][i] = q[0][0] + dq * (double) (i/nq[1]);
-            q[1][i] = q[1][0] + dq * (double) (i%nq[1]);
+    // set new values for number of points for all dimensions and dq
+        for(i = 0; i < dimension; ++i){
+            nq[i] = ((nq[i] - 1) * (n_spline + 1) + 1);
+        }
+        dq = dq / (double) (n_spline + 1);
+
+
+    // set new values for all q entries
+        for(i = dimension-1, jump = 1; i >= 0; --i){
+
+            for(j = 0; j < n_points/jump/nq[i]; ++j){
+                for(k = 0; k < nq[i]; ++k){
+                    for(l = 0; l < jump; ++l){
+
+                        q[i][l + k*jump + j*nq[i]*jump] = q[i][0] + (double)k * dq;
+
+                    }
+                }
+            }
+            jump *= nq[i];
         }
     }
-#endif
 
-
-//------------------------------------------------------------------------------------------------------------------
-// eigenvalue solver  eigenvalue solver  eigenvalue solver  eigenvalue solver  eigenvalue solver  eigenvalue solver
-//------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+//   eigen-value solver   eigen-value solver   eigen-value solver   eigen-value solver   eigen-value solver
+//------------------------------------------------------------------------------------------------------------
 // allocate memory for eigenvector and eigenvalue arrays
     E  = calloc(n_points,          sizeof(double));   // Eigenvalues
     X  = calloc(n_points*n_points, sizeof(double));   // Eigenvectors

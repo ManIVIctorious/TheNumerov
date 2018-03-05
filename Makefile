@@ -18,10 +18,8 @@
  #CFLAGS = -g -w#                   # Disable all warnings
 
 # Preprocessor flags (compile time flags)
-  PPF += -D HAVE_OPT_SPLINE#        # add splining ability, requires HAVE_GSL_INSTALLED
-  PPF += -D HAVE_GSL_INSTALLED#     # GNU Scientific Library support
   PPF += -D HAVE_MKL_INSTALLED#     # intel math kernel library support
-  PPF += -D HAVE_ARMA_INSTALLED#    # Armadillo C++ linear algebra library
+ #PPF += -D HAVE_ARMA_INSTALLED#    # Armadillo C++ linear algebra library
 
 
 # Resulting executable
@@ -40,13 +38,8 @@
     OBJ += MetaGetStencil.o
     OBJ += FillStencil2D.o
     OBJ += Help.o
-  # GSL objects
-    ifeq ($(findstring HAVE_GSL_INSTALLED, $(PPF)), HAVE_GSL_INSTALLED)
-      ifeq ($(findstring HAVE_OPT_SPLINE, $(PPF)), HAVE_OPT_SPLINE)
-        OBJ += cubic_spline.o
-        GSLOBJ += spline_interpolate.o
-      endif
-    endif
+    OBJ += MetaInterpolation.o
+    OBJ += nx1dInterpolation.o
   # MKL objects
     ifeq ($(findstring HAVE_MKL_INSTALLED, $(PPF)), HAVE_MKL_INSTALLED)
       MKLOBJ += EigensolverFEAST_MKL_2D.o
@@ -58,12 +51,6 @@
 
 
 # Additional linked libraries, library paths and include directories
-  # GNU Scientific Library
-    ifeq ($(findstring HAVE_GSL_INSTALLED, $(PPF)), HAVE_GSL_INSTALLED)
-    # additional libraries
-      LIB += `pkg-config --cflags --libs gsl`
-    endif
-
   # Armadillo ARPACK
     ifeq ($(findstring HAVE_ARMA_INSTALLED, $(PPF)), HAVE_ARMA_INSTALLED)
       ARMAINC = `pkg-config --cflags armadillo`
@@ -84,8 +71,8 @@
 
     # additional libraries
       MKLLIBDIR += -L$(MKLPATH)/mkl/lib/intel64
-     #MKLLIBDIR += -L$(MKLPATH)/compilers_and_libraries_2018.0.128/linux/compiler/lib/intel64_lin
-      MKLLIBDIR += -L$(MKLPATH)/compilers_and_libraries_2017.0.098/linux/compiler/lib/intel64_lin
+      MKLLIBDIR += -L$(MKLPATH)/compilers_and_libraries_2018.0.128/linux/compiler/lib/intel64_lin
+     #MKLLIBDIR += -L$(MKLPATH)/compilers_and_libraries_2017.0.098/linux/compiler/lib/intel64_lin
       LIB += -lmkl_core
       LIB += -lmkl_intel_ilp64
       LIB += -lmkl_intel_thread
@@ -114,8 +101,8 @@ endif
 
 
 # link all objects to create the executable
-$(EXE): $(OBJ) $(GSLOBJ) $(MKLOBJ) $(ARMAOBJ)
-	$(CC) $(CFLAGS) $(ARMALIBDIR) $(MKLLIBDIR) $(LIB) $(OBJ) $(GSLOBJ) $(MKLOBJ) $(ARMAOBJ) -o $@
+$(EXE): $(OBJ) $(MKLOBJ) $(ARMAOBJ)
+	$(CC) $(CFLAGS) $(ARMALIBDIR) $(MKLLIBDIR) $(LIB) $(OBJ) $(MKLOBJ) $(ARMAOBJ) -o $@
 
 
 # allows to print out makefile variables, just type make print-VARIABLE
@@ -125,4 +112,4 @@ print-%:
 
 # remove all generated binary files
 clean:
-	rm -f $(OBJ) $(GSLOBJ) $(MKLOBJ) $(ARMAOBJ) $(EXE)
+	rm -f $(OBJ) $(MKLOBJ) $(ARMAOBJ) $(EXE)
