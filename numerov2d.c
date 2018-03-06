@@ -24,6 +24,7 @@ int main(int argc, char* argv[]){
 
 // Conversion factors    1.0E20          Ang^2 / m^2
 //                       1.0 / 4184.0    kcal / J
+//                       6.275101074905574e+02   kcal/mol/hartree
 // Constants
     double lightspeed = 299792458;        // m/s
     double planck     = 6.626070040E-34;  // Js
@@ -33,7 +34,9 @@ int main(int argc, char* argv[]){
     int dipole_flag = 0;
     int n_stencil   = 9;
     int n_spline    = 0;
+    int coriolis    = 0;
     int analyse     = 0;
+
 
 // file names
     char * input_file_name      = NULL;
@@ -144,6 +147,7 @@ int main(int argc, char* argv[]){
 
             case 'c':
                 coriolis_input_file = optarg;
+                coriolis = 1;
                 break;
 
             case 'o':
@@ -180,7 +184,9 @@ int main(int argc, char* argv[]){
 //                            J kg m^2 * angstrom^2/m^2 * g/kg * (1/mol)^2  / kJ/J =  kJ/mol * g * angstrom^2 / mol
     double ekin_param = -1.0E20 * avogadro*avogadro * planck*planck/(8.0*M_PI*M_PI); // kJ/mol / (mol/g/angstrom^2)
     double kJmolToWavenumber = 10.0 / (avogadro*planck*lightspeed);              // cm^-1 / (kJ/mol)
-
+    double watson_deriv_param = -1.05457180013E-34 * 1.05457180013E-34 / 2.0 / 1.66053904020E-27 * 1.0E20 * 6.02214085774E23 / 4184.0;
+    double watson_pot_param = -1.05457180013E-34 * 1.05457180013E-34 / 8.0 / 1.66053904020E-27 * 1.0E20 * 6.02214085774E23 / 4184.0;
+//  double ekin_param = -1.05457180013E-34 * 1.05457180013E-34 / 2.0 / 1.66053904020E-27 * 1.0E20 * 6.02214085774E23 / 4184.0;
 // Output
     int index;
     double freq;
@@ -197,7 +203,9 @@ int main(int argc, char* argv[]){
     double * ts_dip_y = NULL;
     double * ts_dip_z = NULL;
 
-
+double onestencil[52]={0.0, 0.0, 0.0, 0.0, 0.0, -1.0/2.0, 0.0, 1.0/2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0/12.0, -2.0/3.0, 0.0, 2.0/3.0, -1.0/12.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0/60.0, 3.0/20.0, -3.0/4.0, 0.0, 3.0/4.0, -3.0/20.0, 1.0/60.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0/280.0, -4.0/105.0, 1.0/5.0, -4.0/5.0, 0.0, 4.0/5.0, -1.0/5.0, 4.0/105.0, -1.0/280.0, 0.0, 0.0};
+//double onestencil[52]={0.0,0.0,0.0,0.0,0.0,-1/2,0.0,1/2,0.0,0.0,0.0,0.0,0.0};
+double second_der[78]={0.0, 0.0, 0.0, 0.0, 0.0, 1.0, -2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0, -1.0/12.0, 4.0/3.0, -5.0/2.0, 4.0/3.0, -1.0/12.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 1.0/90.0, -3.0/20.0, 3.0/2.0, -49.0/18.0, 3.0/2.0, -3.0/20.0, 1.0/90.0, 0.0, 0.0, 0.0,0.0, 0.0, -1.0/560.0, 8.0/315.0, -1.0/5.0,  8.0/5.0,-205.0/72.0, 8.0/5.0, -1.0/5.0, 8.0/315.0, -1.0/560.0, 0.0, 0.0,0.0, 1.0/3150.0, -5.0/1008.0, 5.0/126.0, -5.0/21.0, 5.0/3.0, -5296.0/1800.0, 5.0/3.0, -5.0/21.0, 5.0/126.0, -5.0/1008.0, 1.0/3150.0, 0.0,-1.0/16632.0, 2.0/1925.0, -1.0/112.0, 10.0/189.0, -15.0/56.0, 12.0/7.0, -5369.0/1800.0, 12.0/7.0, -15.0/56.0,10.0/189.0, -1.0/112.0, 2.0/1925.0, -1.0/16632.0};
 //------------------------------------------------------------------------------------------------------------------
 // Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input Input
 //------------------------------------------------------------------------------------------------------------------
@@ -463,6 +471,11 @@ int main(int argc, char* argv[]){
     ekin_param = ekin_param / dq / dq / mass;
     ekin_param *= ekin_factor;
 
+int sec_st;
+if(n_stencil<10)
+{sec_st=(n_stencil-1)/2-1;}
+else
+{sec_st=3;}
 
 //------------------------------------------------------------------------------------------------------------------
 // MKL FEAST eigenvalue solver  MKL FEAST eigenvalue solver  MKL FEAST eigenvalue solver MKL FEAST eigenvalue solver
@@ -498,36 +511,89 @@ int main(int argc, char* argv[]){
         exit(1);
     }
 
-    for(i = 0; i < nq[0]; i++){
-        for(j = 0; j < nq[1]; j++){
-            for(xsh = -n_stencil/2; xsh < n_stencil/2 + 1; xsh++){
 
-                if( (i+xsh > -1) && (i+xsh < nq[0]) ){
-                    for(ysh = -n_stencil/2; ysh < n_stencil/2 + 1; ysh++){
+int m,n;
+double vorfaktor=0.0;
+double nothing[13]={0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0};// für die einzelnen ableitungen.
+//#############################################################################
+// TEST   TEST   TEST TEST TES TEST TEST TEST
+//##############################################################################
+// nothing to test atm.
+//#############################################################################
+// TEST   TEST   TEST TEST TES TEST TEST TEST
+//##############################################################################
 
-                        if( (j+ysh > -1) && ( j+ysh < nq[1]) ){
+    for(i = 0; i < nq[0]; i++)
+	{
+        for(j = 0; j < nq[1]; j++)
+	   {
+
+            for(xsh = -n_stencil/2; xsh < n_stencil/2 + 1; xsh++)
+		{
+                if( (i+xsh > -1) && (i+xsh < nq[0]) )
+		    {
+
+                    for(ysh = -n_stencil/2; ysh < n_stencil/2 + 1; ysh++)
+			{
+                        if( (j+ysh > -1) && ( j+ysh < nq[1]) )
+			{
+
                             element = (i + xsh)*nq[1] + j+ysh;
                             cols_A[n_entries] = element+1; // wieso +1? weil intel!!
+                        
 
                         // stencil entries have to be divided by 2 to get the right result.
                         //  in three dimensions it should be a division by 4
-                            vals_A[n_entries] = ekin_param * stencil[(xsh+n_stencil/2)*n_stencil+ysh+n_stencil/2]/2;
+                          if(coriolis==1)
+                          {   vorfaktor=0.0;
 
-                        // add potential to diagonal element
-                            if(xsh == 0 && ysh ==0){
+                              for (n=0;n<3;n++)
+                                 {
+                                 for(m=0;m<3;m++) 
+                                 {
+
+                                  vorfaktor=vorfaktor -   zeta[n][0][i*nq[1]+j]*zeta[m][0][i*nq[1]+j]*mu[n][m][i*nq[1]+j];
+                                 
+                                 }// for m
+                                }// for n
+
+
+                              vals_A[n_entries] = ekin_param * stencil[(xsh+n_stencil/2)*n_stencil+ysh+n_stencil/2]/2.0;
+
+     vals_A[n_entries] =vals_A[n_entries]+watson_deriv_param * vorfaktor * (q[0][i*nq[1]+j] *                   onestencil[sec_st*13+6+xsh] * nothing[6+ysh]              / dq
+                                                                          + q[1][i*nq[1]+j] *                   onestencil[sec_st*13+6+ysh] * nothing[6+xsh]              / dq
+                                                                          - q[0][i*nq[1]+j] * q[0][i*nq[1]+j] * second_der[sec_st*13+6+ysh] * nothing[6+xsh]              / dq / dq
+                                                                          - q[1][i*nq[1]+j] * q[1][i*nq[1]+j] * second_der[sec_st*13+6+xsh] * nothing[6+ysh]              / dq / dq
+                                                                       +2.0*q[0][i*nq[1]+j] * q[1][i*nq[1]+j] * onestencil[sec_st*13+6+xsh] * onestencil[sec_st*13+6+ysh] / dq / dq);
+
+
+                                if(xsh == 0 && ysh ==0)                        // add potential to diagonal element
+                                {
+                                 vals_A[n_entries] = vals_A[n_entries] + v[i*nq[1]+j] +  watson_pot_param * (mu[0][0][i*nq[1]+j]+mu[1][1][i*nq[1]+j]+mu[2][2][i*nq[1]+j]);// *dq*dq*mass*1.0/4.0; // watson pot 
+
+                                 }// end if xsh=ysh=0
+
+                            }// end if coriolis
+                            else
+                            {
+                               vals_A[n_entries] = ekin_param * stencil[(xsh+n_stencil/2)*n_stencil+ysh+n_stencil/2]/2.0;
+                               if(xsh == 0 && ysh ==0)                        // add potential to diagonal element
+                                {
                                 vals_A[n_entries] = vals_A[n_entries] + v[i*nq[1]+j];
-                            }
+                                }// end if xsh=ysh=0
+                            }//end else coriolis
 
                             n_entries ++;
-                        }
-                    }
-                }
-            }
+                        }// end if 0<=ysh<nq[1]
+                    }// end for ysh
+                } // end if 0<=xsh<nq[0]  
+            }// end for xsh
       // after inserting all entries in a row the total number of entries is inserted in the CSR format.
         rows_A[i*nq[1]+j+1]=n_entries+1;
-        }
-    }
+        } // end for j
+    }//end for i
     rows_A[0] = 1;
+
 
 
 ///// START EIGENVALUE CALCULATION
@@ -957,7 +1023,11 @@ int main(int argc, char* argv[]){
         if(i%nq[1] == 0){
             fprintf(file_ptr, "\n");
         }
-
+//####################################################################################################################################################<----------here is something to delete
+         // summe_mu=0;
+         // for (n=0;n<3;n++)
+         //  {summe_mu+=mu[n][n][i];}
+//        fprintf(file_ptr,"%24.16lf    %24.16lf    %24.16lf   %24.16lf", q[0][i], q[1][i], v[i],v[i]-1/4*ekin_param*summe_mu*dq*dq*mass);
     // output coordinates q1 and q2 as well as potential
         fprintf(file_ptr,"%24.16lf    %24.16lf    %24.16lf", q[0][i], q[1][i], v[i]);
 
