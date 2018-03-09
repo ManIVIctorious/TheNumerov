@@ -37,11 +37,12 @@ int main(int argc, char* argv[]){
     double avogadro   = 6.022140857E23;   // 1/mol
 
 // Default values
-    int dipole_flag = 0;
-    int n_stencil   = 9;
-    int n_spline    = 0;
-    int analyse     = 0;
-    int n_out       = 8;      // number of eigenstates (ARPACK)
+    int dipole_flag   = 0;
+    int check_spacing = 1;
+    int n_stencil     = 9;
+    int n_spline      = 0;
+    int analyse       = 0;
+    int n_out         = 8;      // number of eigenstates (ARPACK)
 
     double ekin_factor = 1.0/4.184;     // (kcal/mol) / (kJ/mol)
     double epot_factor = 1.0;           // (output unit) / (input unit)
@@ -69,32 +70,33 @@ int main(int argc, char* argv[]){
     if(argc == 1){ exit(Help(argv[0])); }
     // optstring contains a list of all short option indices,
     //  indices followed by a colon are options requiring an argument.
-    const char         * optstring = "hm:k:v:n:l:u:N:s:ac:i:dPo:t:M:";
+    const char         * optstring = "hm:k:v:n:l:u:N:s:ac:i:dPo:Tt:M:";
     const struct option longopts[] = {
     //  *name:      option name,
     //  has_arg:    if option requires argument,
     //  *flag:      if set to NULL getopt_long() returns val,
     //              else it returns 0 and flag points to a variable set to val
     //  val:        value to return
-        {"help",                  no_argument, 0, 'h'},
-        {"mass",            required_argument, 0, 'm'},
-        {"fkin",            required_argument, 0, 'k'},
-        {"fmu",             required_argument, 0, 'M'},
-        {"fpot",            required_argument, 0, 'v'},
-        {"n-stencil",       required_argument, 0, 'n'},
-        {"lower-bound",     required_argument, 0, 'l'},
-        {"upper-bound",     required_argument, 0, 'u'},
-        {"nout",            required_argument, 0, 'N'},
-        {"dq-threshold",    required_argument, 0, 't'},
-        {"spline",          required_argument, 0, 's'},
-        {"analyze",               no_argument, 0, 'a'},
-        {"dipole",                no_argument, 0, 'd'},
-        {"pipe",                  no_argument, 0, 'P'},
-        {"input-file",      required_argument, 0, 'i'},
-        {"coriolis-input",  required_argument, 0, 'c'},
-        {"output-file",     required_argument, 0, 'o'},
-        {"mkl",                   no_argument, &Eigensolver, 1},
-        {"armadillo",             no_argument, &Eigensolver, 2},
+        {"help",                   no_argument, 0, 'h'},
+        {"mass",             required_argument, 0, 'm'},
+        {"fkin",             required_argument, 0, 'k'},
+        {"fmu",              required_argument, 0, 'M'},
+        {"fpot",             required_argument, 0, 'v'},
+        {"n-stencil",        required_argument, 0, 'n'},
+        {"lower-bound",      required_argument, 0, 'l'},
+        {"upper-bound",      required_argument, 0, 'u'},
+        {"nout",             required_argument, 0, 'N'},
+        {"dq-threshold",     required_argument, 0, 't'},
+        {"no-spacing-check",       no_argument, 0, 'T'},
+        {"spline",           required_argument, 0, 's'},
+        {"analyze",                no_argument, 0, 'a'},
+        {"dipole",                 no_argument, 0, 'd'},
+        {"pipe",                   no_argument, 0, 'P'},
+        {"input-file",       required_argument, 0, 'i'},
+        {"coriolis-input",   required_argument, 0, 'c'},
+        {"output-file",      required_argument, 0, 'o'},
+        {"mkl",                    no_argument, &Eigensolver, 1},
+        {"armadillo",              no_argument, &Eigensolver, 2},
         { 0, 0, 0, 0 }
     };
 
@@ -153,6 +155,10 @@ int main(int argc, char* argv[]){
 
             case 't':
                 spacing_threshold = atof(optarg);
+                break;
+
+            case 'T':
+                check_spacing = 0;
                 break;
 
             case 'a':
@@ -230,9 +236,13 @@ int main(int argc, char* argv[]){
     double ** q   = NULL;       // coordinate entries of all dimensions
     double  * v   = NULL;       // potential entries for each coordinate
     double ** dip = NULL;       // dipole moment for each coordinate
-    double  * deltaq = NULL;    // delta q for each individual dimension (for check)
     double dq = 0;              // delta q after coordinate spacing check
     double v_min = 1.0E100;
+
+  // coordinate spacing
+    double dq_new = 0;          // new dq to check dq against (in coordinate check)
+    int n_blocks, block_size;   // integers for coordinate spacing
+    int index1, index2;         // indices for better readability
 
   // Coriolis coefficients
     double **  q_coriolis = NULL;
@@ -415,57 +425,187 @@ int main(int argc, char* argv[]){
 //------------------------------------------------------------------------------------------------------------
 //  Check Coordinate Spacing   Check Coordinate Spacing   Check Coordinate Spacing   Check Coordinate Spacing
 //------------------------------------------------------------------------------------------------------------
-    deltaq = calloc(dimension, sizeof(double));
-
 // The Numerov method needs to be applied to an equispaced grid.
 //  This means that the spacing within the particular coordinate axes (q[0] to q[dimension-1])
 //  has to be constant and must be the same in all directions.
 
-// Get the initial spacing:
-//  for the last coordinate q[dimension-1] the next (different) value is the next one
-//  for the second last coordinate q[dimension-2] the next (different) value is the nq[dimension-1]th, etc.
-    for(i = (dimension - 1), j = 1; i >= 0; --i){
-        deltaq[i] = q[i][j] - q[i][0];
-        j *= nq[i];
-    }
+/* Breaking down a ND array to 4 loops
+//{{{
+    Example: 3x2x4 3D dataset (n_points = 24)
 
-// check spacing within each dimension i
-    for(i = (dimension - 1), jump = 1; i >= 0; --i){
+        q0  q1  q2    index
+        -------------------     Each dimensional position index shows up n_points/nq[i] times,
+        0   0   0   |   0       giving the same number of starting points <n_starts>.
+        0   0   1   |   1
+        0   0   2   |   2           n_starts = n_points / nq[i]
+        0   0   3   |   3
+                                Additionally for all dimensions (except the last one) each
+        0   1   0   |   4       of these start indices occur subsequently multiple times.
+        0   1   1   |   5       The number of subsequent occurrences of the same position
+        0   1   2   |   6       index is referred to as <block_size>
+        0   1   3   |   7
+                                    block_size = n_starts / n_blocks
+        1   0   0   |   8                      = n_points / nq[i] / n_blocks
+        1   0   1   |   9
+        1   0   2   |  10       Where the number of blocks <n_blocks> is 1 for the first and
+        1   0   3   |  11       n_points for the last dimension. The representation will be
+                                directed from the last dimension to the first (D, D-1, ..., 1)
+        1   1   0   |  12       and therefore <n_blocks> breaks down to the initialisation
+        1   1   1   |  13
+        1   1   2   |  14           n_blocks = n_points
+        1   1   3   |  15
+                                and the new assignment for each dimension i
+        2   0   0   |  16
+        2   0   1   |  17           n_blocks = n_blocks / nq[i]
+        2   0   2   |  18
+        2   0   3   |  19       With the last two variables <block_size> and <n_blocks> as well
+                                as the number of entries for all dimensions <nq[i]> and the
+        2   1   0   |  20       resulting total number of points <n_points> it should be possible
+        2   1   1   |  21       to represent all wished array indices.
+        2   1   2   |  22       Below is an example code to represent the running index, and all
+        2   1   3   |  23       dimensions q.
 
-    // within dimension i check every subtraction of [j+jump]th and [j]th values
-    //  where j denotes the running index and jump is the index jump (e.g. 1 for q[dimension-1],
-    //  nq[dimension-1] for q[dimension-2] or nq[dimension-1]*nq[dimension-2] for q[dimension-3])
-        for(j = 0; j < n_points-jump; ++j){
-        // don't check spacing on jump positions
-            if( (j+1)%jump*nq[i] != 0 ){
-                if( (deltaq[i] - (q[i][j+jump]-q[i][j]))*(deltaq[i] - (q[i][j+jump]-q[i][j]) ) > spacing_threshold*spacing_threshold){
-                    fprintf(stderr,
-                        "\n (-) Error in input file."
-                        "\n     Coordinate spacing not equivalent."
-                        "\n     Aborting - please check your input..."
-                        "\n\n"
-                    );
-                    exit(-1);
+//  Example code
+//{{{
+int main(int argc, char **argv){
+
+   int i,j,k,l;
+   int n_blocks;
+   int block_size;
+   int index;
+
+// prerequisites:
+int dimension = 3;
+int n_points;
+int * nq = malloc(dimension * sizeof(int));
+nq[0] = 3;
+nq[1] = 2;
+nq[2] = 4;
+
+for(i = 0, n_points = 1; i < dimension; ++i){
+    n_points *= nq[i];
+}
+
+    for(i = (dimension-1), n_blocks = n_points; i >= 0; --i){
+
+        n_blocks   /= nq[i];
+        block_size  = n_points / nq[i] / n_blocks;
+
+        printf("\nDimension = %2d\n\n", i);
+
+        for(j = 0; j < n_blocks; ++j){
+            for(k = 0; k < nq[i]; ++k){
+                for(l = 0; l < block_size; ++l){
+
+                    index = l + k*block_size + j*block_size*nq[i];
+
+                    printf("\t%2d", index);
+                    printf("\t%2d", k);
+                    printf("\n");
                 }
             }
         }
-        jump *= nq[i];
+        printf("\n");
     }
+    return 0;
 
-// check spacing between dimensions
-    for(i = 1; i < dimension; ++i){
-        if( (deltaq[i] - deltaq[i-1])*(deltaq[i] - deltaq[i-1]) > spacing_threshold*spacing_threshold){
-            fprintf(stderr,
-                "\n (-) Error in input file."
-                "\n     Coordinate spacing not equivalent."
-                "\n     Aborting - please check your input..."
-                "\n\n"
-            );
-            exit(-1);
+}
+//}}}
+//}}}*/
+
+    if(check_spacing > 0){
+    // get initial value to compare with:
+        dq = q[dimension-1][1] - q[dimension-1][0];
+
+    // first check spacing within each dimension:
+    //  q[i][index2] - q[i][index1] must be same as dq
+
+        for(i = (dimension-1), n_blocks = n_points; i >= 0; --i){
+
+            n_blocks   /= nq[i];
+            block_size  = n_points/nq[i]/n_blocks;
+
+            for(j = 0; j < n_blocks; ++j){
+                for(k = 0; k < nq[i]-1; ++k){
+                    for(l = 0; l < block_size; ++l){
+
+                        index1 = l +     k*block_size + j*block_size*nq[i];
+                        index2 = l + (k+1)*block_size + j*block_size*nq[i];
+
+                        dq_new = q[i][index2] - q[i][index1];
+
+                        if( (dq - dq_new) * (dq - dq_new) > spacing_threshold*spacing_threshold ){
+                            fprintf(stderr,
+                                "\n (-) Error in input file."
+                                "\n     Coordinate spacing (check no. 1) not equivalent:"
+                                "\n     \ttarget = % .12lf"
+                                "\n     \tvalue  = % .12lf"
+                                "\n     Aborting - please check your input..."
+                                "\n\n"
+                                ,dq, dq_new
+                            );
+                            exit(-1);
+                        }
+
+                    }
+                }
+            }
+        }
+
+    // now check if all start points within a dimension have been the same
+    //  q[i][index2] - q[i][index1] must be zero
+        for(i = (dimension-1), n_blocks = n_points; i >= 0; --i){
+
+            n_blocks   /= nq[i];
+            block_size  = n_points/nq[i]/n_blocks;
+
+            for(j = 0; j < (n_blocks-1); ++j){
+                for(k = 0; k < block_size; ++k){
+
+                    index1 = k +   j  *nq[i]*block_size;
+                    index2 = k + (j+1)*nq[i]*block_size;
+
+                    dq_new = q[i][index2] - q[i][index1];
+
+                    if( dq_new * dq_new > spacing_threshold*spacing_threshold ){
+                        fprintf(stderr,
+                            "\n (-) Error in input file."
+                            "\n     Coordinate spacing (check no. 2) not equivalent:"
+                            "\n     \ttarget = % .12lf"
+                            "\n     \tvalue  = % .12lf"
+                            "\n     Aborting - please check your input..."
+                            "\n\n"
+                            ,dq, dq_new
+                        );
+                        exit(-1);
+                    }
+
+                }
+            }
+        }
+
+    // above loop does not iterate over q[0] since in this case n_blocks = 1
+    //  therefore check q[0] start points explicitly
+        block_size = n_points/nq[0];
+        for(i = 0; i < (block_size-1); ++i){
+
+            dq_new = q[0][i+1] - q[0][i];
+
+            if( dq_new * dq_new > spacing_threshold*spacing_threshold ){
+                fprintf(stderr,
+                    "\n (-) Error in input file."
+                    "\n     Coordinate spacing (check no. 3) not equivalent:"
+                    "\n     \ttarget = % .12lf"
+                    "\n     \tvalue  = % .12lf"
+                    "\n     Aborting - please check your input..."
+                    "\n\n"
+                    ,dq, dq_new
+                );
+                exit(-1);
+            }
+
         }
     }
-    dq = deltaq[0];
-    free(deltaq); deltaq = NULL;
 
 
 //------------------------------------------------------------------------------------------------------------
