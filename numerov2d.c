@@ -3,15 +3,19 @@
 #include <math.h>
 #include <getopt.h>
 
+#include "typedefinitions.h"
+
 // input/output functions
+settings GetSettingsGetopt(settings defaults, int argc, char **argv);
 int InputFunction(char *inputfile, double ***q, int *nq, double **V, int dimension);
 int InputFunctionDipole(char *inputfile, double ***q, int *nq, double **V, double ***mu, int dimension);
 int InputCoriolisCoefficients(char *inputfile, double ***q, double ****zeta, double ****mu, int dimension);
-int Help(char *filename);
+double CheckCoordinateSpacing(double **q, int *nq, double threshold, int dimension);
 
 // meta functions
 int MetaGetStencil(double *stencil, int n_stencil, int dimension);
 int MetaInterpolation(double ** v, int * nq, double dq, int dimension, int n_spline);
+int MetaEigensolver(settings preferences, double *v, int *nq, double ekin_param, double *stencil, double *E, double *X);
 
 // other
 double integrate_1d(int n, double dx, double integrand[]);
@@ -29,160 +33,53 @@ double integrate_2d(int nx, int ny, double dx, double integrand[]);
 
 int main(int argc, char* argv[]){
 
-// Conversion factors    1.0E20          Ang^2 / m^2
-//                       1.0 / 4184.0    kcal / J
+// Conversion factors
+//      1.0E20       Angstrom^2 / m^2
+//      1.0 / 4.184         cal / J
+//      2625.49962     (kJ/mol) / Hartree
+//      627.509469   (kcal/mol) / Hartree
 // Constants
     double lightspeed = 299792458;        // m/s
     double planck     = 6.626070040E-34;  // Js
     double avogadro   = 6.022140857E23;   // 1/mol
 
-// Default values
-    int dipole_flag   = 0;
-    int check_spacing = 1;
-    int n_stencil     = 9;
-    int n_spline      = 0;
-    int analyse       = 0;
-    int n_out         = 8;      // number of eigenstates (ARPACK)
+    settings defaults, prefs;
 
-    double ekin_factor = 1.0/4.184;     // (kcal/mol) / (kJ/mol)
-    double epot_factor = 1.0;           // (output unit) / (input unit)
-    double mass        = 1.0;           // g/mol
-    double e_min       = 0.0;           // output energy unit
-    double e_max       = 400.0;         // output energy unit
-    double spacing_threshold = 1.0E-12; // abs(q[i] - q[i+1])
-    double mu_factor = 1.0E20 * avogadro*avogadro * planck*planck/(4.0*M_PI*M_PI); // kJ/mol / (mol/g/angstrom^2)
+// fill defaults struct with default values
+    defaults = (struct settings) {
+    // integer values
+        .dimension = 2,     // dimension of the problem
+        .n_stencil = 9,     // 1D stencil size
+        .n_spline  = 0,     // number of interpolation points
 
-// Which eigen-solver to use
-//  1 matches MKL FEAST
-//  2 matches ARMADILLO ARPACK
-    int Eigensolver = 1;
+    // double precision values
+        .mass   = 1.0,      // g/mol
 
-// file names
-    char * input_file_name      = NULL;
-    char * coriolis_input_file  = NULL;
-    char * output_file_name     = "/dev/stdout";
+        .ekin_factor = 1.0/4.184,     // (kcal/mol) / (kJ/mol)
+        .epot_factor = 1.0,           // (output unit) / (input unit)
+        .mu_factor   = 1.0E20 * avogadro*avogadro * planck*planck/(4.0*M_PI*M_PI), // kJ/mol / (mol/g/angstrom^2)
+        .threshold = 1.0E-10, // abs(q[i] - q[i+1])
 
-    int control;
-    int i, j, k, l;     // integers for loops
-//------------------------------------------------------------------------------------------------------------
-//   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS
-//------------------------------------------------------------------------------------------------------------
-    if(argc == 1){ exit(Help(argv[0])); }
-    // optstring contains a list of all short option indices,
-    //  indices followed by a colon are options requiring an argument.
-    const char         * optstring = "hm:k:v:n:l:u:N:s:ac:i:dPo:Tt:M:";
-    const struct option longopts[] = {
-    //  *name:      option name,
-    //  has_arg:    if option requires argument,
-    //  *flag:      if set to NULL getopt_long() returns val,
-    //              else it returns 0 and flag points to a variable set to val
-    //  val:        value to return
-        {"help",                   no_argument, 0, 'h'},
-        {"mass",             required_argument, 0, 'm'},
-        {"fkin",             required_argument, 0, 'k'},
-        {"fmu",              required_argument, 0, 'M'},
-        {"fpot",             required_argument, 0, 'v'},
-        {"n-stencil",        required_argument, 0, 'n'},
-        {"lower-bound",      required_argument, 0, 'l'},
-        {"upper-bound",      required_argument, 0, 'u'},
-        {"nout",             required_argument, 0, 'N'},
-        {"dq-threshold",     required_argument, 0, 't'},
-        {"no-spacing-check",       no_argument, 0, 'T'},
-        {"spline",           required_argument, 0, 's'},
-        {"analyze",                no_argument, 0, 'a'},
-        {"dipole",                 no_argument, 0, 'd'},
-        {"pipe",                   no_argument, 0, 'P'},
-        {"input-file",       required_argument, 0, 'i'},
-        {"coriolis-input",   required_argument, 0, 'c'},
-        {"output-file",      required_argument, 0, 'o'},
-        {"mkl",                    no_argument, &Eigensolver, 1},
-        {"armadillo",              no_argument, &Eigensolver, 2},
-        { 0, 0, 0, 0 }
+    // Flags
+        .analyze = 0,
+        .dipole  = 0,
+        .check_spacing = 1,
+
+    // Eigensolver specific values
+        .Eigensolver = 1,   // 1 = MKL FEAST; 2 = ARMADILLO ARPACK
+        .n_out  = 8,        // Number of output eigenstates (ARPACK)
+        .e_min  = 0.0,      // minimal energy in output energy unit (FEAST)
+        .e_max  = 400.0,    // maximal energy in output energy unit (FEAST)
+
+    // file names
+        .input_file    = NULL,
+        .coriolis_file = NULL,
+        .output_file   = "/dev/stdout",
     };
 
-    optind = 1; // option index starting by 1, provided by <getopt.h>
-    while(optind < argc){
+// get preferences out of command line flags and defaults struct
+    prefs = GetSettingsGetopt(defaults, argc, argv);
 
-    // control is the integer representation of the corresponding option, e.g. x = 120
-    //  control = -1 corresponds to the end of the options
-        control = getopt_long(argc, argv, optstring, longopts, &j);
-
-    // iterate over options control
-        switch(control){
-            case 'h':
-                control = Help(argv[0]);
-                exit(control);
-
-            case 'm':
-                mass = atof(optarg);
-                break;
-
-            case 'k':
-                ekin_factor = atof(optarg);
-                break;
-
-            case 'M':
-                mu_factor = atof(optarg);
-                break;
-
-            case 'v':
-                epot_factor = atof(optarg);
-                break;
-
-            case 'n':
-                n_stencil = atoi(optarg);
-                break;
-
-            case 'l':
-                e_min = atof(optarg);
-                break;
-
-            case 'u':
-                e_max = atof(optarg);
-                break;
-
-            case 'N':
-                n_out = atoi(optarg);
-                break;
-
-            case 'P':
-                input_file_name = "/dev/stdin";
-                break;
-
-            case 's':
-                n_spline = atoi(optarg);
-                break;
-
-            case 't':
-                spacing_threshold = atof(optarg);
-                break;
-
-            case 'T':
-                check_spacing = 0;
-                break;
-
-            case 'a':
-                analyse = 1;
-                break;
-
-            case 'd':
-                dipole_flag = 1;
-                break;
-
-            case 'i':
-                input_file_name = optarg;
-                break;
-
-            case 'c':
-                coriolis_input_file = optarg;
-                break;
-
-            case 'o':
-                output_file_name = optarg;
-                break;
-
-        }
-    }
 
 //------------------------------------------------------------------------------------------------------------
 //    Check for usage of not compiled functionalities      Check for usage of not compiled functionalities
@@ -201,48 +98,23 @@ int main(int argc, char* argv[]){
 #endif
 #endif
 
-#ifndef HAVE_MKL_INSTALLED
-    if(Eigensolver == 1){
-        fprintf(stderr,
-            "\n (-) MKL FEAST eigensolver not available."
-            "\n     Please make sure to compile the -D HAVE_MKL_INSTALLED define"
-            "\n     Trying next eigensolver of the list..."
-            "\n\n"
-        );
-        Eigensolver++;
-    }
-#endif
-
-#ifndef HAVE_ARMA_INSTALLED
-    if(Eigensolver == 2){
-        fprintf(stderr,
-            "\n (-) Armadillo ARPACK eigensolver not available."
-            "\n     Please make sure to compile the -D HAVE_ARMA_INSTALLED define"
-            "\n     Trying next eigensolver of the list..."
-            "\n\n"
-        );
-        Eigensolver++;
-    }
-#endif
 
 //------------------------------------------------------------------------------------------------------------
 //   Declaration  Declaration  Declaration  Declaration  Declaration  Declaration  Declaration  Declaration
 //------------------------------------------------------------------------------------------------------------
 // Input
   // standard file
-    int dimension = 2;
+    int control;
+    int i, j, k, l;
+    int n_out = -1;
     int n_points  = 0;          // total number of entries per dimension
     int     * nq  = NULL;       // number of unique entries per dimension
     double ** q   = NULL;       // coordinate entries of all dimensions
     double  * v   = NULL;       // potential entries for each coordinate
     double ** dip = NULL;       // dipole moment for each coordinate
     double dq = 0;              // delta q after coordinate spacing check
-    double v_min = 1.0E100;
+    double v_min;
 
-  // coordinate spacing
-    double dq_new = 0;          // new dq to check dq against (in coordinate check)
-    int n_blocks, block_size;   // integers for coordinate spacing
-    int index1, index2;         // indices for better readability
 
   // Coriolis coefficients
     double **  q_coriolis = NULL;
@@ -284,18 +156,20 @@ int main(int argc, char* argv[]){
 //------------------------------------------------------------------------------------------------------------
 //  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input
 //------------------------------------------------------------------------------------------------------------
-// check input argument if the file is not present give a silly statement
-    if(input_file_name == NULL){
+// check input argument, abort if no file is set
+    if(prefs.input_file == NULL){
         fprintf(stderr, "\n (-) Please specify input file...\n\n");
         exit (1);
     }
 
-// create 2D array q
-    q  = malloc(dimension * sizeof(double*));
-    for(i = 0; i < dimension; ++i){
+// create 2D array q[dimension][entries] containing coordinates
+//  array nq, containing number of entries for each dimension
+//  and array v, containing all energy values
+    q  = malloc(prefs.dimension * sizeof(double*));
+    for(i = 0; i < prefs.dimension; ++i){
         q[i] = malloc(sizeof(double));
     }
-    nq = calloc(dimension, sizeof(int));
+    nq = calloc(prefs.dimension, sizeof(int));
     v  = malloc(sizeof(double));
     if(q == NULL || v  == NULL){
         fprintf(stderr,
@@ -304,7 +178,10 @@ int main(int argc, char* argv[]){
         );
         exit(1);
     }
-    if(dipole_flag == 1){
+
+// if dipole flag is set use different input routine,
+//  expecting 3 additional columns (dip_x, dip_y and dip_z)
+    if(prefs.dipole == 1){
         dip = malloc(3 * sizeof(double*));
         for(i = 0; i < 3; ++i){
             dip[i] = malloc(sizeof(double));
@@ -317,29 +194,27 @@ int main(int argc, char* argv[]){
                 exit(1);
             }
         }
-        n_points = InputFunctionDipole(input_file_name, &q, nq, &v, &dip, dimension);
+        n_points = InputFunctionDipole(prefs.input_file, &q, nq, &v, &dip, prefs.dimension);
     }else{
-        n_points = InputFunction(input_file_name, &q, nq, &v, dimension);
+        n_points = InputFunction(prefs.input_file, &q, nq, &v, prefs.dimension);
     }
 
 // check if the "N nq[0] ... nq[dimension-1]" line in input file matches the number of data points
-//  The following line is only needed in case of the 1D Numerov, since the N nq[0]...nq[dimension-1] flag
-//  is not present in this particular case:
-    if(dimension == 1){ nq[0] = n_points; }
-    for(i = 0, control = 1; i < dimension; ++i){
+    for(i = 0, control = 1; i < prefs.dimension; ++i){
         control *= nq[i];
     }
     if(n_points != control){
-        fprintf(stderr, "\n (-) Error reading data from input-file: '%s'", input_file_name);
+        fprintf(stderr, "\n (-) Error reading data from input-file: '%s'", prefs.input_file);
         fprintf(stderr, "\n     Number of Data points (\"%d\") doesn't match \"%d", n_points, nq[0]);
-        for(i = 1; i < dimension; ++i){ fprintf(stderr, "*%d", nq[i]); } fprintf(stderr, "\"");
+        for(i = 1; i < prefs.dimension; ++i){ fprintf(stderr, "*%d", nq[i]); } fprintf(stderr, "\"");
         fprintf(stderr, "\n     Aborting - please check your input...\n\n");
         exit(1);
     }
 
 // there must be at least as many data points as stencil points (n_stencil ** dimension)
-    control = 1;
-    for(i = 0; i < dimension; ++i){ control *= n_stencil; }
+    for(i = 0, control = 1; i < prefs.dimension; ++i){
+        control *= prefs.n_stencil;
+    }
     if(n_points < control){
         fprintf(stderr,
             "\n (-) Error reading data from input-file: '%s'"
@@ -347,25 +222,25 @@ int main(int argc, char* argv[]){
                    "for stencil size %d (%d points)."
             "\n     Aborting - please check your input..."
             "\n\n"
-            , input_file_name, n_points, n_stencil, control
+            , prefs.input_file, n_points, prefs.n_stencil, control
         );
         exit(1);
     }
 
 // input Coriolis coefficients file
-    if(coriolis_input_file != NULL){
+    if(prefs.coriolis_file != NULL){
 
     // initialize q_coriolis 2D [D][data] double array
-        q_coriolis = malloc(dimension * sizeof(double*));
-        for(i = 0; i < dimension; ++i){
+        q_coriolis = malloc(prefs.dimension * sizeof(double*));
+        for(i = 0; i < prefs.dimension; ++i){
             q_coriolis[i] = malloc(sizeof(double));
         }
 
     // initialize zeta 3D [3][(D*D-D)/2][data] double array
         zeta = malloc(3 * sizeof(double**));
         for(i = 0; i < 3; ++i){
-            zeta[i] = malloc((dimension*(dimension - 1))/2 * sizeof(double*));
-            for(j = 0; j < ((dimension*(dimension - 1))/2); ++j){
+            zeta[i] = malloc((prefs.dimension*(prefs.dimension - 1))/2 * sizeof(double*));
+            for(j = 0; j < ((prefs.dimension*(prefs.dimension - 1))/2); ++j){
                 zeta[i][j] = malloc(sizeof(double));
             }
         }
@@ -380,7 +255,7 @@ int main(int argc, char* argv[]){
         }
 
     // actual file input
-        control = InputCoriolisCoefficients(coriolis_input_file, &q_coriolis, &zeta, &mu, dimension);
+        control = InputCoriolisCoefficients(prefs.coriolis_file, &q_coriolis, &zeta, &mu, prefs.dimension);
 
     // for every entry in Coriolis input file there must be exact one in the input file
         if(control != n_points){
@@ -389,22 +264,22 @@ int main(int argc, char* argv[]){
                 "\n     Number of Data points (%d) doesn't match number in '%s' (%d)"
                 "\n     Aborting - please check your input..."
                 "\n\n"
-                , coriolis_input_file, control, input_file_name, n_points
+                , prefs.coriolis_file, control, prefs.input_file, n_points
             );
             exit(1);
         }
 
     // check if coordinates are the same
         for(i = 0; i < n_points; ++i){
-            for(j = 0; j < dimension; ++j){
-                if( (q[j][i] - q_coriolis[j][i])*(q[j][i] - q_coriolis[j][i]) > spacing_threshold*spacing_threshold ){
+            for(j = 0; j < prefs.dimension; ++j){
+                if( (q[j][i] - q_coriolis[j][i])*(q[j][i] - q_coriolis[j][i]) > prefs.threshold*prefs.threshold ){
                     fprintf(stderr,
                         "\n (-) Error in Coriolis input file \"%s\"."
                         "\n     The coordinates do not match the ones in the"
                         "\n     standard input file \"%s\""
                         "\n     Aborting - please check your input..."
                         "\n\n"
-                        , coriolis_input_file, input_file_name
+                        , prefs.coriolis_file, prefs.input_file
                     );
                     exit(-1);
 
@@ -413,206 +288,30 @@ int main(int argc, char* argv[]){
         }
 
     // free memory of q_coriolis
-        for(i = 0; i < dimension; ++i){
+        for(i = 0; i < prefs.dimension; ++i){
             free(q_coriolis[i]);
             q_coriolis[i] = NULL;
         }
         free(q_coriolis); q_coriolis = NULL;
-
     }
 
 
 //------------------------------------------------------------------------------------------------------------
 //  Check Coordinate Spacing   Check Coordinate Spacing   Check Coordinate Spacing   Check Coordinate Spacing
 //------------------------------------------------------------------------------------------------------------
-// The Numerov method needs to be applied to an equispaced grid.
-//  This means that the spacing within the particular coordinate axes (q[0] to q[dimension-1])
+// The Numerov method has to be applied to an equispaced grid.
+//  This means that the spacing within each particular coordinate axis (q[0] to q[dimension-1])
 //  has to be constant and must be the same in all directions.
 
-/* Breaking down a ND array to 4 loops
-//{{{
-    Example: 3x2x4 3D dataset (n_points = 24)
-
-        q0  q1  q2    index
-        -------------------     Each dimensional position index shows up n_points/nq[i] times,
-        0   0   0   |   0       giving the same number of starting points <n_starts>.
-        0   0   1   |   1
-        0   0   2   |   2           n_starts = n_points / nq[i]
-        0   0   3   |   3
-                                Additionally for all dimensions (except the last one) each
-        0   1   0   |   4       of these start indices occur subsequently multiple times.
-        0   1   1   |   5       The number of subsequent occurrences of the same position
-        0   1   2   |   6       index is referred to as <block_size>
-        0   1   3   |   7
-                                    block_size = n_starts / n_blocks
-        1   0   0   |   8                      = n_points / nq[i] / n_blocks
-        1   0   1   |   9
-        1   0   2   |  10       Where the number of blocks <n_blocks> is 1 for the first and
-        1   0   3   |  11       n_points for the last dimension. The representation will be
-                                directed from the last dimension to the first (D, D-1, ..., 1)
-        1   1   0   |  12       and therefore <n_blocks> breaks down to the initialisation
-        1   1   1   |  13
-        1   1   2   |  14           n_blocks = n_points
-        1   1   3   |  15
-                                and the new assignment for each dimension i
-        2   0   0   |  16
-        2   0   1   |  17           n_blocks = n_blocks / nq[i]
-        2   0   2   |  18
-        2   0   3   |  19       With the last two variables <block_size> and <n_blocks> as well
-                                as the number of entries for all dimensions <nq[i]> and the
-        2   1   0   |  20       resulting total number of points <n_points> it should be possible
-        2   1   1   |  21       to represent all wished array indices.
-        2   1   2   |  22       Below is an example code to represent the running index, and all
-        2   1   3   |  23       dimensions q.
-
-//  Example code
-//{{{
-int main(int argc, char **argv){
-
-   int i,j,k,l;
-   int n_blocks;
-   int block_size;
-   int index;
-
-// prerequisites:
-int dimension = 3;
-int n_points;
-int * nq = malloc(dimension * sizeof(int));
-nq[0] = 3;
-nq[1] = 2;
-nq[2] = 4;
-
-for(i = 0, n_points = 1; i < dimension; ++i){
-    n_points *= nq[i];
-}
-
-    for(i = (dimension-1), n_blocks = n_points; i >= 0; --i){
-
-        n_blocks   /= nq[i];
-        block_size  = n_points / nq[i] / n_blocks;
-
-        printf("\nDimension = %2d\n\n", i);
-
-        for(j = 0; j < n_blocks; ++j){
-            for(k = 0; k < nq[i]; ++k){
-                for(l = 0; l < block_size; ++l){
-
-                    index = l + k*block_size + j*block_size*nq[i];
-
-                    printf("\t%2d", index);
-                    printf("\t%2d", k);
-                    printf("\n");
-                }
-            }
-        }
-        printf("\n");
+    if(prefs.check_spacing == 1){
+        dq = CheckCoordinateSpacing(q, nq, prefs.threshold, prefs.dimension);
     }
-    return 0;
-
-}
-//}}}
-//}}}*/
-
-    if(check_spacing > 0){
-    // get initial value to compare with:
-        dq = q[dimension-1][1] - q[dimension-1][0];
-
-    // first check spacing within each dimension:
-    //  q[i][index2] - q[i][index1] must be same as dq
-
-        for(i = (dimension-1), n_blocks = n_points; i >= 0; --i){
-
-            n_blocks   /= nq[i];
-            block_size  = n_points/nq[i]/n_blocks;
-
-            for(j = 0; j < n_blocks; ++j){
-                for(k = 0; k < nq[i]-1; ++k){
-                    for(l = 0; l < block_size; ++l){
-
-                        index1 = l +     k*block_size + j*block_size*nq[i];
-                        index2 = l + (k+1)*block_size + j*block_size*nq[i];
-
-                        dq_new = q[i][index2] - q[i][index1];
-
-                        if( (dq - dq_new) * (dq - dq_new) > spacing_threshold*spacing_threshold ){
-                            fprintf(stderr,
-                                "\n (-) Error in input file."
-                                "\n     Coordinate spacing (check no. 1) not equivalent:"
-                                "\n     \ttarget = % .12lf"
-                                "\n     \tvalue  = % .12lf"
-                                "\n     Aborting - please check your input..."
-                                "\n\n"
-                                ,dq, dq_new
-                            );
-                            exit(-1);
-                        }
-
-                    }
-                }
-            }
-        }
-
-    // now check if all start points within a dimension have been the same
-    //  q[i][index2] - q[i][index1] must be zero
-        for(i = (dimension-1), n_blocks = n_points; i >= 0; --i){
-
-            n_blocks   /= nq[i];
-            block_size  = n_points/nq[i]/n_blocks;
-
-            for(j = 0; j < (n_blocks-1); ++j){
-                for(k = 0; k < block_size; ++k){
-
-                    index1 = k +   j  *nq[i]*block_size;
-                    index2 = k + (j+1)*nq[i]*block_size;
-
-                    dq_new = q[i][index2] - q[i][index1];
-
-                    if( dq_new * dq_new > spacing_threshold*spacing_threshold ){
-                        fprintf(stderr,
-                            "\n (-) Error in input file."
-                            "\n     Coordinate spacing (check no. 2) not equivalent:"
-                            "\n     \ttarget = % .12lf"
-                            "\n     \tvalue  = % .12lf"
-                            "\n     Aborting - please check your input..."
-                            "\n\n"
-                            ,dq, dq_new
-                        );
-                        exit(-1);
-                    }
-
-                }
-            }
-        }
-
-    // above loop does not iterate over q[0] since in this case n_blocks = 1
-    //  therefore check q[0] start points explicitly
-        block_size = n_points/nq[0];
-        for(i = 0; i < (block_size-1); ++i){
-
-            dq_new = q[0][i+1] - q[0][i];
-
-            if( dq_new * dq_new > spacing_threshold*spacing_threshold ){
-                fprintf(stderr,
-                    "\n (-) Error in input file."
-                    "\n     Coordinate spacing (check no. 3) not equivalent:"
-                    "\n     \ttarget = % .12lf"
-                    "\n     \tvalue  = % .12lf"
-                    "\n     Aborting - please check your input..."
-                    "\n\n"
-                    ,dq, dq_new
-                );
-                exit(-1);
-            }
-
-        }
-    }
-
 
 //------------------------------------------------------------------------------------------------------------
 //  Stencils    Stencils    Stencils    Stencils    Stencils    Stencils    Stencils    Stencils    Stencils
 //------------------------------------------------------------------------------------------------------------
 // Allocate memory of n_stencil ** dimension for stencil
-    for(i = 0, j = 1; i < dimension; ++i){ j *= n_stencil; }
+    for(i = 0, j = 1; i < prefs.dimension; ++i){ j *= prefs.n_stencil; }
     stencil = calloc(j, sizeof(double));
     if(stencil == NULL){
         fprintf(stderr,
@@ -624,7 +323,7 @@ for(i = 0, n_points = 1; i < dimension; ++i){
     }
 
 // Get stencil through meta function
-    control = MetaGetStencil(stencil, n_stencil, dimension);
+    control = MetaGetStencil(stencil, prefs.n_stencil, prefs.dimension);
     if(control != 0 ){
         fprintf(stderr,
             "\n (-) Error initialising stencil parameters."
@@ -635,7 +334,7 @@ for(i = 0, n_points = 1; i < dimension; ++i){
     }
 
 // update kinetic energy pre-factor
-    ekin_param *= (ekin_factor / dq / dq / mass);
+    ekin_param *= (prefs.ekin_factor / dq / dq / prefs.mass);
 
 
 //------------------------------------------------------------------------------------------------------------
@@ -643,40 +342,40 @@ for(i = 0, n_points = 1; i < dimension; ++i){
 //------------------------------------------------------------------------------------------------------------
 // convert potential to output unit of energy
     for(i = 0; i < n_points; ++i){
-        v[i] *= epot_factor;
-    }
-
-// if a Coriolis file has been provided as input:
-//  add the second term of the Watson molecular Hamiltonian to the potential
-    if(coriolis_input_file != NULL){
-    // conversion of mu_factor from kJ/mol to desired output unit of energy
-        mu_factor *= ekin_factor;
-    // add -1/8 * hbar^2 * (mu_xx + mu_yy + mu_zz) to potential
-        for(i = 0; i < n_points; ++i){
-            v[i] -= (mu[0][0][i] + mu[1][1][i] + mu[2][2][i])*mu_factor/8.0;
-        }
+        v[i] *= prefs.epot_factor;
     }
 
 // shift potential minimum to zero
-    for(i = 0; i < n_points; ++i){
+    for(i = 1, v_min = v[0]; i < n_points; ++i){
         if(v[i] < v_min){ v_min = v[i]; }
     }
     for(i = 0; i < n_points; ++i){
         v[i] -= v_min;
     }
 
+// if a Coriolis file has been provided as input:
+//  add the potential-like term of the Watson molecular Hamiltonian to the potential
+//  this happens after the potential shift to maintain the same upper and lower limits in the FEAST routine
+    if(prefs.coriolis_file != NULL){
+    // add -1/8 * hbar^2 * (mu_xx + mu_yy + mu_zz) to potential
+    // and convert mu_factor from kJ/mol to desired output unit of energy by applying ekin_factor
+        for(i = 0; i < n_points; ++i){
+            v[i] -= ((mu[0][0][i] + mu[1][1][i] + mu[2][2][i])/8.0 * (prefs.mu_factor * prefs.ekin_factor));
+        }
+    }
+
 
 //------------------------------------------------------------------------------------------------------------
 //  Interpolation  Interpolation  Interpolation  Interpolation  Interpolation  Interpolation  Interpolation
 //------------------------------------------------------------------------------------------------------------
-    if(n_spline > 0){
+    if(prefs.n_spline > 0){
 
     // Interpolation
-        n_points = MetaInterpolation(&v, nq, dq, dimension, n_spline);
+        n_points = MetaInterpolation(&v, nq, dq, prefs.dimension, prefs.n_spline);
 
     // Calculate expected return value and check it against n_points
-        for(i = 0, control = 1; i < dimension; ++i){
-            control *= ((nq[i] - 1) * (n_spline + 1) + 1);
+        for(i = 0, control = 1; i < prefs.dimension; ++i){
+            control *= ((nq[i] - 1) * (prefs.n_spline + 1) + 1);
         }
         if(n_points != control){
             fprintf(stderr,
@@ -688,7 +387,7 @@ for(i = 0, n_points = 1; i < dimension; ++i){
         }
 
     // update memory allocation to new n_points for all coordinates
-        for(i = 0; i < dimension; ++i){
+        for(i = 0; i < prefs.dimension; ++i){
             q[i] = realloc(q[i], n_points * sizeof(double));
 
             if(q[i] == NULL){
@@ -703,11 +402,11 @@ for(i = 0, n_points = 1; i < dimension; ++i){
         }
 
 
-    // if dipole_flag is set also interpolate dipole moments
-        if(dipole_flag == 1){
-            i = MetaInterpolation(&(dip[0]), nq, dq, dimension, n_spline);
-            j = MetaInterpolation(&(dip[1]), nq, dq, dimension, n_spline);
-            k = MetaInterpolation(&(dip[2]), nq, dq, dimension, n_spline);
+    // if prefs.dipole is set also interpolate dipole moments
+        if(prefs.dipole == 1){
+            i = MetaInterpolation(&(dip[0]), nq, dq, prefs.dimension, prefs.n_spline);
+            j = MetaInterpolation(&(dip[1]), nq, dq, prefs.dimension, prefs.n_spline);
+            k = MetaInterpolation(&(dip[2]), nq, dq, prefs.dimension, prefs.n_spline);
 
         // check return values
             if(i != n_points || j != n_points || k != n_points){
@@ -722,15 +421,14 @@ for(i = 0, n_points = 1; i < dimension; ++i){
 
 
     // set new values for number of points for all dimensions and dq
-        for(i = 0; i < dimension; ++i){
-            nq[i] = ((nq[i] - 1) * (n_spline + 1) + 1);
+        for(i = 0; i < prefs.dimension; ++i){
+            nq[i] = ((nq[i] - 1) * (prefs.n_spline + 1) + 1);
         }
-        dq = dq / (double) (n_spline + 1);
+        dq = dq / (double) (prefs.n_spline + 1);
 
 
     // set new values for all q entries
-        for(i = dimension-1, jump = 1; i >= 0; --i){
-
+        for(i = prefs.dimension-1, jump = 1; i >= 0; --i){
             for(j = 0; j < n_points/jump/nq[i]; ++j){
                 for(k = 0; k < nq[i]; ++k){
                     for(l = 0; l < jump; ++l){
@@ -760,16 +458,16 @@ for(i = 0, n_points = 1; i < dimension; ++i){
     }
 
 // Eigensolver routines
-    if(Eigensolver == 1){
+    if(prefs.Eigensolver == 1){
         #ifdef HAVE_MKL_INSTALLED
-            n_out = EigensolverFEAST_MKL_2D(v, nq, ekin_param, stencil, n_stencil, e_min, e_max, E, X);
+            n_out = EigensolverFEAST_MKL_2D(v, nq, ekin_param, stencil, prefs.n_stencil, prefs.e_min, prefs.e_max, E, X);
         #endif
         #ifndef HAVE_MKL_INSTALLED
             n_out = -1;
         #endif
-    }else if(Eigensolver == 2){
+    }else if(prefs.Eigensolver == 2){
         #ifdef HAVE_ARMA_INSTALLED
-            n_out = EigensolverArmadillo_2D(v, nq, ekin_param, stencil, n_stencil, n_out, E, X);
+            n_out = EigensolverArmadillo_2D(v, nq, ekin_param, stencil, prefs.n_stencil, prefs.n_out, E, X);
         #endif
         #ifndef HAVE_ARMA_INSTALLED
             n_out = -1;
@@ -813,17 +511,17 @@ for(i = 0, n_points = 1; i < dimension; ++i){
 //  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output
 //------------------------------------------------------------------------------------------------------------------
 // open output file
-    file_ptr = fopen(output_file_name, "w");
+    file_ptr = fopen(prefs.output_file, "w");
     if(file_ptr == NULL){
-        printf("\n\n (-) Error opening output-file: '%s'", output_file_name);
+        printf("\n\n (-) Error opening output-file: '%s'", prefs.output_file);
         printf(  "\n     Exiting ... \n\n");
         exit(0);
     }
 
 // output type of eigensolver
-    if(Eigensolver == 1){
+    if(prefs.Eigensolver == 1){
         fprintf(file_ptr, "# Eigensolver: MKL FEAST\n#\n");
-    }else if(Eigensolver == 2){
+    }else if(prefs.Eigensolver == 2){
         fprintf(file_ptr, "# Eigensolver: Armadillo ARPACK\n#\n");
     }
 
@@ -833,7 +531,7 @@ for(i = 0, n_points = 1; i < dimension; ++i){
         fprintf(file_ptr, " %24.16lf", E[i]);
     }
 
-    fprintf(file_ptr, "\n# Mass:        %24.16lf", mass);
+    fprintf(file_ptr, "\n# Mass:        %24.16lf", prefs.mass);
 
 // and output frequencies
     fprintf(file_ptr, "\n#\n# Frequencies:\n#\n#");
@@ -844,7 +542,7 @@ for(i = 0, n_points = 1; i < dimension; ++i){
         fprintf(file_ptr, "\n#%3d",i);
 
         for(j = 0; j < i; j++){
-            freq = (E[i] - E[j]) * kJmolToWavenumber / ekin_factor;
+            freq = (E[i] - E[j]) * kJmolToWavenumber / prefs.ekin_factor;
             fprintf(file_ptr, "  %12.5e", freq);
         }
     }
@@ -857,7 +555,7 @@ for(i = 0, n_points = 1; i < dimension; ++i){
 //    Analyze  Analyze  Analyze  Analyze  Analyze  Analyze  Analyze  Analyze  Analyze  Analyze  Analyze  Analyze
 //------------------------------------------------------------------------------------------------------------------
 // additional output information
-    if(analyse == 1){
+    if(prefs.analyze == 1){
     // check for ortho-normality of evaluated wave functions:
     //  calculate int Psi_i*Psi_j dxdy (i.e. <X[i]|X[j]>)
         fprintf(file_ptr, "\n# Orthonormality:\n#\n#");
@@ -920,17 +618,17 @@ for(i = 0, n_points = 1; i < dimension; ++i){
                         index = k*nq[1] + l;
                         integrand[index]=0;
 //------------------------------------------------------------------------------------------------------------------
-                        for(xsh = -n_stencil/2; xsh < (n_stencil/2 + 1); xsh++){
+                        for(xsh = -prefs.n_stencil/2; xsh < (prefs.n_stencil/2 + 1); xsh++){
 
                             if( (k+xsh > -1) && (k+xsh < nq[0]) ){
-                                for(ysh = -n_stencil/2; ysh < (n_stencil/2 + 1); ysh++){
+                                for(ysh = -prefs.n_stencil/2; ysh < (prefs.n_stencil/2 + 1); ysh++){
 
                                     if( (l+ysh > -1) && (l+ysh < nq[1]) ){
                                         element = (k + xsh)*nq[1] + l + ysh;
 
                                     // integrand has to be divided by d^2,
                                     //  but the division is already set in the "ekin_param" parameter
-                                        integrand[index] = integrand[index] + X[element + i*n_points] * ekin_param * stencil[(xsh + n_stencil/2)*n_stencil + ysh + n_stencil/2]/2;
+                                        integrand[index] = integrand[index] + X[element + i*n_points] * ekin_param * stencil[(xsh + prefs.n_stencil/2)*prefs.n_stencil + ysh + prefs.n_stencil/2]/2;
                                     }
                                 }
                             }
@@ -1013,7 +711,7 @@ for(i = 0, n_points = 1; i < dimension; ++i){
         free(dichtematrix_sq);  dichtematrix_sq = NULL;
         free(dm_integrand);     dm_integrand    = NULL;
         free(dm_integrand_sq);  dm_integrand_sq = NULL;
-    }// end if(analyse == 1)
+    }// end if(prefs.analyze == 1)
     free(stencil);  stencil = NULL;
 
 
@@ -1022,7 +720,7 @@ for(i = 0, n_points = 1; i < dimension; ++i){
 //------------------------------------------------------------------------------------------------------------------
 //    Dipole   Dipole   Dipole   Dipole   Dipole   Dipole   Dipole   Dipole   Dipole   Dipole   Dipole   Dipole
 //------------------------------------------------------------------------------------------------------------------
-    if(dipole_flag == 1){
+    if(prefs.dipole == 1){
         n_ts_dip = n_out * (n_out)/2;
 
         ts_dip_x = malloc(n_ts_dip * sizeof(double));
@@ -1133,7 +831,7 @@ for(i = 0, n_points = 1; i < dimension; ++i){
                 ts_dip_square =   ts_dip_x[element]*ts_dip_x[element]
                                 + ts_dip_y[element]*ts_dip_y[element]
                                 + ts_dip_z[element]*ts_dip_z[element];
-                freq = (E[i] - E[j]) * kJmolToWavenumber / ekin_factor;
+                freq = (E[i] - E[j]) * kJmolToWavenumber / prefs.ekin_factor;
 
                 fprintf(file_ptr, "  %12.5e", 4.702E-7 * ts_dip_square * freq);
                 element ++;
@@ -1149,7 +847,7 @@ for(i = 0, n_points = 1; i < dimension; ++i){
         free(ts_dip_x); ts_dip_x = NULL;
         free(ts_dip_y); ts_dip_y = NULL;
         free(ts_dip_z); ts_dip_z = NULL;
-    }// end if(dipole_flag == 1)
+    }// end if(prefs.dipole == 1)
 
 
 //------------------------------------------------------------------------------------------------------------------
@@ -1168,19 +866,22 @@ for(i = 0, n_points = 1; i < dimension; ++i){
             fprintf(file_ptr, "\n");
         }
 
-    // output coordinates q1 and q2 as well as potential
-        fprintf(file_ptr,"%24.16lf    %24.16lf    %24.16lf", q[0][i], q[1][i], v[i]);
+    // output coordinates q[j][i] and potential v[i]
+        for(j = 0; j < prefs.dimension; ++j){
+            fprintf(file_ptr, "\t% 24.16lf", q[j][i]);
+        }
+        fprintf(file_ptr, "\t% 24.16lf", v[i]);
 
     // output wave functions
-        for(j = 0; j < n_out; j++){
-            fprintf(file_ptr, "    %24.16lf", X[i + j*n_points]);
+        for(j = 0; j < n_out; ++j){
+            fprintf(file_ptr, "\t% 24.16lf", X[i + j*n_points]);
         }
 
-        fprintf(file_ptr,"\n");
+        fprintf(file_ptr, "\n");
     }
 
     fclose(file_ptr); file_ptr = NULL;
-    for(i = 0; i < dimension; ++i){
+    for(i = 0; i < prefs.dimension; ++i){
         free(q[i]); q[i] = NULL;
     }
     free(q);   q = NULL;

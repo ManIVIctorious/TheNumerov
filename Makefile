@@ -7,14 +7,14 @@
   CFLAGS += -march=native#          # Tune for current chipset, don't bother about backwards compatibility
  #CFLAGS += -mtune=native#          # Tune for current chipset, remain backwards compatible
 
-  CFLAGS += -Werror#                # Treat warnings as errors
   CFLAGS += -Wall#                  # Enable base set of warnings
   CFLAGS += -Wextra#                # Enable additional warnings
-  CFLAGS += -Wno-sign-compare#      # Disable sign-compare warning
-  CFLAGS += -Wno-misleading-indentation#
+  CFLAGS += -Werror#                # Treat warnings as errors
+ #CFLAGS += -Wno-sign-compare#      # Disable sign-compare warning
+ #CFLAGS += -Wno-misleading-indentation#
  #CFLAGS += -Wstrict-prototypes#    # Enable strict-prototypes warning  | not allowed in C++
  #CFLAGS += -Wmissing-prototypes#   # Enable missing-prototypes warning | not allowed in C++
-  CFLAGS += -Wno-unused-but-set-variable#
+ #CFLAGS += -Wno-unused-but-set-variable#
  #CFLAGS = -g -w#                   # Disable all warnings
 
 # Preprocessor flags (compile time flags)
@@ -32,6 +32,8 @@
 # List of resulting object files
 # Standard objects
     OBJ += numerov2d.o
+    OBJ += GetSettingsGetopt.o
+    OBJ += CheckCoordinateSpacing.o
     OBJ += InputFunction.o
     OBJ += InputFunctionDipole.o
     OBJ += InputCoriolisCoefficients.o
@@ -71,8 +73,8 @@
 
     # additional libraries
       MKLLIBDIR += -L$(MKLPATH)/mkl/lib/intel64
-      MKLLIBDIR += -L$(MKLPATH)/compilers_and_libraries_2018.0.128/linux/compiler/lib/intel64_lin
-     #MKLLIBDIR += -L$(MKLPATH)/compilers_and_libraries_2017.0.098/linux/compiler/lib/intel64_lin
+     #MKLLIBDIR += -L$(MKLPATH)/compilers_and_libraries_2018.0.128/linux/compiler/lib/intel64_lin
+      MKLLIBDIR += -L$(MKLPATH)/compilers_and_libraries_2017.0.098/linux/compiler/lib/intel64_lin
       LIB += -lmkl_core
       LIB += -lmkl_intel_ilp64
       LIB += -lmkl_intel_thread
