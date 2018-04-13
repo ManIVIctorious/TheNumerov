@@ -33,6 +33,7 @@
     OBJ += InputFunction.o
     OBJ += InputFunctionDipole.o
     OBJ += InputCoriolisCoefficients.o
+    OBJ += OutputSettings.c
     OBJ += MetaGetStencil.o
     OBJ += FillStencil2D.o
     OBJ += Help.o

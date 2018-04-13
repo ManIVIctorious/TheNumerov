@@ -11,6 +11,7 @@ settings GetSettingsGetopt(settings defaults, int argc, char **argv);
 int InputFunction(char *inputfile, double ***q, int *nq, double **V, int dimension);
 int InputFunctionDipole(char *inputfile, double ***q, int *nq, double **V, double ***mu, int dimension);
 int InputCoriolisCoefficients(char *inputfile, double ***q, double ****zeta, double ****mu, int dimension);
+int OutputSettings(FILE *fd, settings preferences);
 double CheckCoordinateSpacing(double **q, int *nq, double threshold, int dimension);
 
 // meta functions
@@ -652,20 +653,14 @@ double nothing[13]={0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0};// für
         exit(0);
     }
 
-// output type of eigensolver
-    if(prefs.Eigensolver == 1){
-        fprintf(file_ptr, "# Eigensolver: MKL FEAST\n#\n");
-    }else if(prefs.Eigensolver == 2){
-        fprintf(file_ptr, "# Eigensolver: Armadillo ARPACK\n#\n");
-    }
+// output all available settings
+    OutputSettings(file_ptr, prefs);
 
 // output eigenvalues
     fprintf(file_ptr, "# Eigenvalues:");
     for(i = 0; i < n_out; i++){
         fprintf(file_ptr, " %24.16lf", E[i]);
     }
-
-    fprintf(file_ptr, "\n# Mass:        %24.16lf", prefs.mass);
 
 // and output frequencies
     fprintf(file_ptr, "\n#\n# Frequencies:\n#\n#");
