@@ -86,7 +86,7 @@ int Help(char *filename){
            "\n\t-t, --dq-threshold"
            "\n\t    The multi dimensional Numerov procedure requires a equi spaced grid"
            "\n\t    This option sets the maximal variation of the grid spacing."
-           "\n\t    Default is \"-t 1.0E-12\""
+           "\n\t    Default is \"-t 1.0E-10\""
     );
 
     printf("\n"

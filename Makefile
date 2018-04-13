@@ -10,16 +10,12 @@
   CFLAGS += -Wall#                  # Enable base set of warnings
   CFLAGS += -Wextra#                # Enable additional warnings
   CFLAGS += -Werror#                # Treat warnings as errors
- #CFLAGS += -Wno-sign-compare#      # Disable sign-compare warning
- #CFLAGS += -Wno-misleading-indentation#
- #CFLAGS += -Wstrict-prototypes#    # Enable strict-prototypes warning  | not allowed in C++
- #CFLAGS += -Wmissing-prototypes#   # Enable missing-prototypes warning | not allowed in C++
- #CFLAGS += -Wno-unused-but-set-variable#
  #CFLAGS = -g -w#                   # Disable all warnings
 
 # Preprocessor flags (compile time flags)
   PPF += -D HAVE_MKL_INSTALLED#     # intel math kernel library support
  #PPF += -D HAVE_ARMA_INSTALLED#    # Armadillo C++ linear algebra library
+
 
 
 # Resulting executable
@@ -31,7 +27,7 @@
 
 # List of resulting object files
 # Standard objects
-    OBJ += numerov2d.o
+    MKLOBJ += numerov2d.o
     OBJ += GetSettingsGetopt.o
     OBJ += CheckCoordinateSpacing.o
     OBJ += InputFunction.o
@@ -43,9 +39,9 @@
     OBJ += MetaInterpolation.o
     OBJ += nx1dInterpolation.o
   # MKL objects
-    ifeq ($(findstring HAVE_MKL_INSTALLED, $(PPF)), HAVE_MKL_INSTALLED)
-      MKLOBJ += EigensolverFEAST_MKL_2D.o
-    endif
+#   ifeq ($(findstring HAVE_MKL_INSTALLED, $(PPF)), HAVE_MKL_INSTALLED)
+#     MKLOBJ += EigensolverFEAST_MKL_2D.o
+#   endif
   # Armadillo objects (require C++)
     ifeq ($(findstring HAVE_ARMA_INSTALLED, $(PPF)), HAVE_ARMA_INSTALLED)
       ARMAOBJ += EigensolverArmadillo_2D.o
@@ -64,7 +60,7 @@
 
   # Intel MKL
     ifeq ($(findstring HAVE_MKL_INSTALLED, $(PPF)), HAVE_MKL_INSTALLED)
-      MKLPATH = /opt/intel
+      MKLPATH = /usr/local/intel
 
     # MKL includes
       MKLINC += -I$(MKLPATH)/mkl/include
@@ -73,8 +69,8 @@
 
     # additional libraries
       MKLLIBDIR += -L$(MKLPATH)/mkl/lib/intel64
-     #MKLLIBDIR += -L$(MKLPATH)/compilers_and_libraries_2018.0.128/linux/compiler/lib/intel64_lin
-      MKLLIBDIR += -L$(MKLPATH)/compilers_and_libraries_2017.0.098/linux/compiler/lib/intel64_lin
+      MKLLIBDIR += -L$(MKLPATH)/compilers_and_libraries_2018.0.128/linux/compiler/lib/intel64_lin
+     #MKLLIBDIR += -L$(MKLPATH)/compilers_and_libraries_2017.0.098/linux/compiler/lib/intel64_lin
       LIB += -lmkl_core
       LIB += -lmkl_intel_ilp64
       LIB += -lmkl_intel_thread
