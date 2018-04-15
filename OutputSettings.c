@@ -1,6 +1,9 @@
 
 #include <stdio.h>
+#include <time.h>
+#include <string.h>
 #include "typedefinitions.h"
+#include "gitversion.h"
 
 // provided prototypes
 int OutputSettings(FILE *fd, settings prefs);
@@ -9,6 +12,7 @@ int OutputSettings(FILE *fd, settings prefs);
 int OutputSettings(FILE *fd, settings prefs){
 
     char * Eigensolver = NULL;
+    time_t current_time = time(NULL);
 
     switch(prefs.Eigensolver){
 
@@ -31,6 +35,17 @@ int OutputSettings(FILE *fd, settings prefs){
         "#------------------------------------------------------------------------------\n"
     );
 
+// General Information
+fprintf(fd,
+"## General Information:\n");
+    if(strlen(gitversion) > 0){
+        fprintf(fd, "##\tGit Revision:\t%s\n", gitversion);
+    }
+    fprintf(fd, "##\tUnix Epoch:\t%ld\n", current_time);
+    fprintf(fd, "##\tDate & Time:\t%s#\n", ctime(&current_time));
+    fprintf(fd, "#\n#\n");
+
+
 fprintf(fd,
 "## General settings:\n");
 // integer values
@@ -47,7 +62,7 @@ fprintf(fd,
     fprintf(fd, "#\tKin_E_Factor      = % 12.6lf; # in x per kJ/mol\n", prefs.ekin_factor);
     fprintf(fd, "#\tPot_E_Factor      = % 12.6lf; # input -> output unit of energy\n", prefs.epot_factor);
     fprintf(fd, "#\tIMOI_Mu_Factor    = % 12.6lf; # input (mu) -> kJ/mol\n", prefs.mu_factor);
-    fprintf(fd, "#\tSpacing_Threshold = % 12.6lf;\n", prefs.threshold);
+    fprintf(fd, "#\tSpacing_Threshold = % 12.5le;\n", prefs.threshold);
     fprintf(fd, "#\n#\n");
 
 

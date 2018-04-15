@@ -33,7 +33,7 @@
     OBJ += InputFunction.o
     OBJ += InputFunctionDipole.o
     OBJ += InputCoriolisCoefficients.o
-    OBJ += OutputSettings.c
+    OBJ += OutputSettings.o
     OBJ += MetaGetStencil.o
     OBJ += FillStencil2D.o
     OBJ += Help.o
@@ -82,8 +82,11 @@
 
 
 all: $(EXE)
+gitversion.h:
+	echo "const char *gitversion = \"$(shell git describe --tags --always)\";" > $@
+
 # Build object files out of C-source files
-%.o : %.c Makefile
+%.o : %.c Makefile gitversion.h
 	$(CC) $(CFLAGS) $(PPF) -c $<
 
 # Build Intel MKL objects
@@ -111,4 +114,4 @@ print-%:
 
 # remove all generated binary files
 clean:
-	rm -f $(OBJ) $(MKLOBJ) $(ARMAOBJ) $(EXE)
+	rm -f $(OBJ) $(MKLOBJ) $(ARMAOBJ) $(EXE) gitversion.h
