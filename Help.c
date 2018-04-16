@@ -1,11 +1,12 @@
 
 #include <stdio.h>
+#include "typedefinitions.h"
 
 // Offered prototypes
-int Help(char *filename);
+int Help(char *filename, settings defaults);
 
 
-int Help(char *filename){
+int Help(char *filename, settings defaults){
 
     printf("\n%s\t [OPTIONS] -i INPUT-FILENAME [-o OUTPUT-FILENAME]", filename);
 
@@ -19,6 +20,8 @@ int Help(char *filename){
     printf("\n"
            "\n\t-m, --mass"
            "\n\t    Set reduced mass of involved modes in g/mol"
+           "\n\t    For dimensions > 1 this should always be set to 1.0"
+           "\n\t    Default:\t% lf", defaults.mass
     );
 
     printf("\n"
@@ -27,6 +30,7 @@ int Help(char *filename){
            "\n\t    e.g. 1.0/4.184 (kcal/kJ) gives output in kcal/mol (default)"
            "\n\t    assuming the mass input is given in g/mol and the coordinate"
            "\n\t    input is given in angstrom"
+           "\n\t    Default:\t% lf", defaults.ekin_factor
     );
 
     printf("\n"
@@ -36,6 +40,7 @@ int Help(char *filename){
            "\n\t    Be aware that for output energy units different from kcal/mol the"
            "\n\t    kinetic energy factor [-k, -fkin] has to be set too."
            "\n\t    E.g. above example requires the option \"-k 1.0\"."
+           "\n\t    Default:\t% lf", defaults.epot_factor
     );
 
     printf("\n"
@@ -44,20 +49,23 @@ int Help(char *filename){
            "\n\t    The conversion is performed from the input dimension to kJ/mol,"
            "\n\t    further conversion to the desired output unit of energy is handled"
            "\n\t    by the kinetic energy factor [-k, --fkin]."
+           "\n\t    Default:\t% lf", defaults.mu_factor
     );
 
     printf("\n"
            "\n\t-n, --n-stencil"
            "\n\t    Set the one dimensional stencil size, e.g. \"-n 11\" gives a"
            "\n\t    11x11 stencil in the two dimensional Numerov."
+           "\n\t    Default:\t%d", defaults.n_stencil
     );
 
     printf("\n"
            "\n\t-s, --spline"
            "\n\t    Enable spline interpolation of potential points and set the Number"
            "\n\t    of points interpolated between each point-pair."
-           "\n\t    A spline of 1 doubles the number of data points for each dimension,"
-           "\n\t    n_points times (spline_points + 1)**dimension."
+           "\n\t    A spline of 1 effectively doubles the number of data points for each"
+           "\n\t    dimension, n_points times (spline_points + 1)**dimension."
+           "\n\t    Default:\t%d", defaults.n_spline
     );
 
 // I/O
@@ -75,18 +83,20 @@ int Help(char *filename){
            "\n\t-d, --dipole"
            "\n\t    Expect 3 additional columns containing the dipole moment in {x,y,z} direction"
            "\n\t    after the potential energy (e.g. 2D: q1, q2, potential, dipolemoment{x,y,z})"
+           "\n\t    Default:\t%s", defaults.dipole ? "true" : "false"
     );
 
     printf("\n"
            "\n\t-P, --pipe"
            "\n\t    Read input from standard input instead of an input file"
+           "\n\t    Default:\t%s", "false"
     );
 
     printf("\n"
            "\n\t-t, --dq-threshold"
            "\n\t    The multi dimensional Numerov procedure requires a equi spaced grid"
            "\n\t    This option sets the maximal variation of the grid spacing."
-           "\n\t    Default is \"-t 1.0E-10\""
+           "\n\t    Default:\t% le", defaults.threshold
     );
 
     printf("\n"
@@ -95,12 +105,14 @@ int Help(char *filename){
            "\n\t    This option does not disable the check if the Coriolis files"
            "\n\t    contain the same coordinates as the standard input file,"
            "\n\t    so threshold (-t) may still be needed"
+           "\n\t    Default:\t%s", defaults.check_spacing ? "false" : "true"
     );
 
     printf("\n"
            "\n\t-a, --analyze"
            "\n\t    Perform additional calculations, giving insight to"
            "\n\t    Orthonormality, Potential, kinetic energy and coupling"
+           "\n\t    Default:\t%s", defaults.analyze ? "true" : "false"
     );
 
     printf("\n"

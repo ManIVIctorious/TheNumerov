@@ -6,7 +6,7 @@
 #include "typedefinitions.h"
 
 // Dependencies
-int Help(char *filename);
+int Help(char *filename, settings defaults);
 
 
 // Offered prototypes
@@ -16,11 +16,12 @@ settings GetSettingsGetopt(settings defaults, int argc, char **argv){
 
     int control = 0;
     int * longindex = NULL;
+    settings preferences = defaults;
 
 //---------------------------------------------------------------------------------
 //  FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS
 //---------------------------------------------------------------------------------
-    if(argc == 1){ exit(Help(argv[0])); }
+    if(argc == 1){ exit(Help(argv[0], defaults)); }
 
     // optstring contains a list of all short option indices,
     //  indices followed by a colon are options requiring an argument.
@@ -49,8 +50,8 @@ settings GetSettingsGetopt(settings defaults, int argc, char **argv){
         {"input-file",       required_argument, 0, 'i'},
         {"coriolis-input",   required_argument, 0, 'c'},
         {"output-file",      required_argument, 0, 'o'},
-        {"mkl",                    no_argument, &defaults.Eigensolver, 1},
-        {"armadillo",              no_argument, &defaults.Eigensolver, 2},
+        {"mkl",                    no_argument, &preferences.Eigensolver, 1},
+        {"armadillo",              no_argument, &preferences.Eigensolver, 2},
         { 0, 0, 0, 0 }
     };
 
@@ -64,79 +65,79 @@ settings GetSettingsGetopt(settings defaults, int argc, char **argv){
     // iterate over options control
         switch(control){
             case 'h':
-                control = Help(argv[0]);
-                exit(control);
+                Help(argv[0], defaults);
+                exit(0);
 
             case 'm':
-                defaults.mass = atof(optarg);
+                preferences.mass = atof(optarg);
                 break;
 
             case 'k':
-                defaults.ekin_factor = atof(optarg);
+                preferences.ekin_factor = atof(optarg);
                 break;
 
             case 'M':
-                defaults.mu_factor = atof(optarg);
+                preferences.mu_factor = atof(optarg);
                 break;
 
             case 'v':
-                defaults.epot_factor = atof(optarg);
+                preferences.epot_factor = atof(optarg);
                 break;
 
             case 'n':
-                defaults.n_stencil = atoi(optarg);
+                preferences.n_stencil = atoi(optarg);
                 break;
 
             case 'l':
-                defaults.e_min = atof(optarg);
+                preferences.e_min = atof(optarg);
                 break;
 
             case 'u':
-                defaults.e_max = atof(optarg);
+                preferences.e_max = atof(optarg);
                 break;
 
             case 'N':
-                defaults.n_out = atoi(optarg);
+                preferences.n_out = atoi(optarg);
                 break;
 
             case 'P':
-                defaults.input_file = "/dev/stdin";
+                preferences.input_file = "/dev/stdin";
                 break;
 
             case 's':
-                defaults.n_spline = atoi(optarg);
+                preferences.n_spline = atoi(optarg);
                 break;
 
             case 't':
-                defaults.threshold = atof(optarg);
+                preferences.threshold = atof(optarg);
                 break;
 
             case 'T':
-                defaults.check_spacing = 0;
+                preferences.check_spacing = 0;
                 break;
 
             case 'a':
-                defaults.analyze = 1;
+                preferences.analyze = 1;
                 break;
 
             case 'd':
-                defaults.dipole = 1;
+                preferences.dipole = 1;
                 break;
 
             case 'i':
-                defaults.input_file = optarg;
+                preferences.input_file = optarg;
                 break;
 
             case 'c':
-                defaults.coriolis_file = optarg;
+                preferences.coriolis_file = optarg;
                 break;
 
             case 'o':
-                defaults.output_file = optarg;
+                preferences.output_file = optarg;
                 break;
 
         }
     }
 
-    return defaults;
+    return preferences;
 }
