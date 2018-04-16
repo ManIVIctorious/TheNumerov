@@ -1,7 +1,9 @@
 
 #include <stdio.h>
-#include <time.h>
 #include <string.h>
+#include <unistd.h>
+#include <pwd.h>
+#include <time.h>
 #include "typedefinitions.h"
 #include "gitversion.h"
 
@@ -13,6 +15,8 @@ int OutputSettings(FILE *fd, settings prefs){
 
     char * Eigensolver = NULL;
     time_t current_time = time(NULL);
+    char * Hostname = malloc(16 * sizeof(char));
+
 
     switch(prefs.Eigensolver){
 
@@ -30,9 +34,9 @@ int OutputSettings(FILE *fd, settings prefs){
     
 
     fprintf(fd,
-        "#------------------------------------------------------------------------------\n"
-        "#  Settings   Settings   Settings   Settings   Settings   Settings   Settings\n"
-        "#------------------------------------------------------------------------------\n"
+        "#-----------------------------------------------------------------------------------------\n"
+        "#  Settings   Settings   Settings   Settings   Settings   Settings   Settings   Settings\n"
+        "#-----------------------------------------------------------------------------------------\n"
     );
 
 // General Information
@@ -41,6 +45,13 @@ fprintf(fd,
     if(strlen(gitversion) > 0){
         fprintf(fd, "##\tGit Revision:\t%s\n", gitversion);
     }
+
+    if(0 == gethostname(Hostname, 16)){
+        struct passwd *p = getpwuid(getuid());
+        fprintf(fd, "##\tSystem:\t\t%s@%s (UID:%d)\n", p->pw_name, Hostname, getuid());
+    }
+
+
     fprintf(fd, "##\tUnix Epoch:\t%ld\n", current_time);
     fprintf(fd, "##\tDate & Time:\t%s#\n", ctime(&current_time));
     fprintf(fd, "#\n#\n");
@@ -49,20 +60,20 @@ fprintf(fd,
 fprintf(fd,
 "## General settings:\n");
 // integer values
-    fprintf(fd, "#\tDimensionality = % d;\n", prefs.dimension);
-    fprintf(fd, "#\tStencil_Size   = % d;\n", prefs.n_stencil);
+    fprintf(fd, "#\tDimensionality       = % d;\n", prefs.dimension);
+    fprintf(fd, "#\tStencil_Size         = % d;\n", prefs.n_stencil);
     if(prefs.n_spline == 0){
-        fprintf(fd, "#\tInterpolation  = %s;\n", "false");
+    fprintf(fd, "#\tInterpolation_Points = %s;\n", "none");
     }else{
-        fprintf(fd, "#\tN_Inter_Points = % d;\n", prefs.n_spline);
+        fprintf(fd, "#\tInterpolation_Points = % d;\n", prefs.n_spline);
     }
 // double values
     fprintf(fd, "#\n");
-    fprintf(fd, "#\tReduced_Mass      = % 12.6lf; # in g/mol\n", prefs.mass);
-    fprintf(fd, "#\tKin_E_Factor      = % 12.6lf; # in x per kJ/mol\n", prefs.ekin_factor);
-    fprintf(fd, "#\tPot_E_Factor      = % 12.6lf; # input -> output unit of energy\n", prefs.epot_factor);
-    fprintf(fd, "#\tIMOI_Mu_Factor    = % 12.6lf; # input (mu) -> kJ/mol\n", prefs.mu_factor);
-    fprintf(fd, "#\tSpacing_Threshold = % 12.5le;\n", prefs.threshold);
+    fprintf(fd, "#\tReduced_Mass         = % 12.6lf; # in g/mol\n", prefs.mass);
+    fprintf(fd, "#\tKin_E_Factor         = % 12.6lf; # in x per kJ/mol\n", prefs.ekin_factor);
+    fprintf(fd, "#\tPot_E_Factor         = % 12.6lf; # input (v)  -> output unit of energy\n", prefs.epot_factor);
+    fprintf(fd, "#\tIMOI_Factor          = % 12.6lf; # input (mu) -> kJ/mol\n", prefs.mu_factor);
+    fprintf(fd, "#\tSpacing_Threshold    = % 12.5le;\n", prefs.threshold);
     fprintf(fd, "#\n#\n");
 
 
@@ -98,9 +109,9 @@ fprintf(fd,
 
 
     fprintf(fd,
-        "#------------------------------------------------------------------------------\n"
-        "#   End Settings   End Settings   End Settings   End Settings   End Settings\n"
-        "#------------------------------------------------------------------------------\n"
+        "#-----------------------------------------------------------------------------------------\n"
+        "# End Settings   End Settings   End Settings   End Settings   End Settings   End Settings\n"
+        "#-----------------------------------------------------------------------------------------\n"
         "#\n#\n"
     );
 

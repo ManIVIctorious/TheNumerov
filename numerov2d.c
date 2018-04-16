@@ -356,19 +356,6 @@ int main(int argc, char* argv[]){
         v[i] -= v_min;
     }
 
-/*
-// if a Coriolis file has been provided as input:
-//  add the potential-like term of the Watson molecular Hamiltonian to the potential
-//  this happens after the potential shift to maintain the same upper and lower limits in the FEAST routine
-    if(prefs.coriolis_file != NULL){
-    // add -1/8 * hbar^2 * (mu_xx + mu_yy + mu_zz) to potential
-    // and convert mu_factor from kJ/mol to desired output unit of energy by applying ekin_factor
-        for(i = 0; i < n_points; ++i){
-            v[i] -= ((mu[0][0][i] + mu[1][1][i] + mu[2][2][i])/8.0 * (prefs.mu_factor * prefs.ekin_factor));
-        }
-    }
-//*/
-
 
 //------------------------------------------------------------------------------------------------------------
 //  Interpolation  Interpolation  Interpolation  Interpolation  Interpolation  Interpolation  Interpolation
@@ -968,11 +955,6 @@ double nothing[13]={0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0};// für
         }
         fprintf(file_ptr, "\n#\n#");
 
-    // free dipole 2D array:
-        for(i = 0; i < 3; ++i){
-            free(dip[i]); dip[i] = NULL;
-        }
-        free(dip);      dip      = NULL;
         free(ts_dip_x); ts_dip_x = NULL;
         free(ts_dip_y); ts_dip_y = NULL;
         free(ts_dip_z); ts_dip_z = NULL;
@@ -984,15 +966,45 @@ double nothing[13]={0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0};// für
 //------------------------------------------------------------------------------------------------------------------
 //  Eigenvectors  Eigenvectors  Eigenvectors  Eigenvectors  Eigenvectors  Eigenvectors  Eigenvectors  Eigenvectors
 //------------------------------------------------------------------------------------------------------------------
-// output eigenfunctions
     fprintf(file_ptr, "\n# Potential and Eigenfunctions: %d data-points", n_points);
-    fprintf(file_ptr, "\n  N %2d %2d", nq[0], nq[1]);
+
+// output size per dimension
+    fprintf(file_ptr, "\n  N");
+    for(i = 0; i < prefs.dimension; ++i){
+        fprintf(file_ptr, " %4d", nq[i]);
+    }
     fprintf(file_ptr, "\n");
 
-    for(i = 0; i < n_points; i++){
-    // newline every "nq[1]"th line
-        if(i%nq[1] == 0){
-            fprintf(file_ptr, "\n");
+// output key
+    fprintf(file_ptr, "\n#");
+    for(i = 0; i < prefs.dimension; ++i){
+        fprintf(file_ptr, "\t          q[%d]          ", i);
+    }
+        fprintf(file_ptr, "\t           v(q)          ");
+
+    if(prefs.dipole != 0){
+        fprintf(file_ptr, "\t          dip_x          ");
+        fprintf(file_ptr, "\t          dip_y          ");
+        fprintf(file_ptr, "\t          dip_z          ");
+    }
+
+    if(prefs.coriolis_file != NULL){
+        fprintf(file_ptr, "\tv(q) - sum_i(mu[i][i])/8 ");
+    }
+
+    for(i = 0; i < n_out; ++i){
+        fprintf(file_ptr, "\t        Psi[%d]          ", i);
+    }
+
+
+// output data
+    for(i = 0; i < n_points; ++i){
+    // add a newline every time a index jumps (from max to min)
+        for(j = (prefs.dimension - 1), k = 1; j >= 1; --j){
+            k *= nq[j];
+            if(i%k == 0){
+                fprintf(file_ptr, "\n");
+            }
         }
 
     // output coordinates q[j][i] and potential v[i]
@@ -1000,6 +1012,19 @@ double nothing[13]={0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0};// für
             fprintf(file_ptr, "\t% 24.16lf", q[j][i]);
         }
         fprintf(file_ptr, "\t% 24.16lf", v[i]);
+
+    // output dipole moment components
+        if(prefs.dipole != 0){
+            fprintf(file_ptr, "\t% 24.16lf", dip[0][i]);
+            fprintf(file_ptr, "\t% 24.16lf", dip[1][i]);
+            fprintf(file_ptr, "\t% 24.16lf", dip[2][i]);
+        }
+
+
+    // output potential after addition of Watson potential term
+        if(prefs.coriolis_file != NULL){
+            fprintf(file_ptr, "\t% 24.16lf", v[i] - ((mu[0][0][i] + mu[1][1][i] + mu[2][2][i])/8.0 * (prefs.mu_factor * prefs.ekin_factor)));
+        }
 
     // output wave functions
         for(j = 0; j < n_out; ++j){
@@ -1009,14 +1034,21 @@ double nothing[13]={0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0};// für
         fprintf(file_ptr, "\n");
     }
 
+
+// free memory
     fclose(file_ptr); file_ptr = NULL;
     for(i = 0; i < prefs.dimension; ++i){
         free(q[i]); q[i] = NULL;
     }
-    free(q);   q = NULL;
-    free(v);   v = NULL;
-    free(X);   X = NULL;
-    free(E);   E = NULL;
+    free(q); q = NULL;
+    for(i = 0; i < 3; ++i){
+        free(dip[i]); dip[i] = NULL;
+    }
+    free(dip); dip = NULL;
+    free(q);    q  = NULL;
+    free(v);    v  = NULL;
+    free(X);    X  = NULL;
+    free(E);    E  = NULL;
 
     return 0;
 }
