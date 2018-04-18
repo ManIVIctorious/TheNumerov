@@ -12,6 +12,7 @@ int InputCoriolisCoefficients(char *inputfile, double ***q, double ****zeta, dou
 
 int InputCoriolisCoefficients(char *inputfile, double ***q, double ****zeta, double ****mu, int dimension){
 
+    int linenumber;
     int rows, comment_flag;
     int m, n;
     unsigned int i;
@@ -33,7 +34,10 @@ int InputCoriolisCoefficients(char *inputfile, double ***q, double ****zeta, dou
     }
 
     rows = 0;
+    linenumber = 0;
     while(fgets(buffer, sizeof(buffer), fd) != NULL){
+
+        ++linenumber;
 
     // check if the first character in buffer is a comment char,
     //  if yes jump to next line
@@ -91,7 +95,7 @@ int InputCoriolisCoefficients(char *inputfile, double ***q, double ****zeta, dou
                     "\n    Too few entries in input line number %d"
                     "\n    Aborting - please check your input..."
                     "\n\n"
-                    , inputfile, rows
+                    , inputfile, linenumber
                 );
                 exit(1);
             }
@@ -124,7 +128,7 @@ int InputCoriolisCoefficients(char *inputfile, double ***q, double ****zeta, dou
                         "\n(-) ERROR reading data from input-file \"%s\"."
                         "\n    Too few entries in input line number %d"
                         "\n    Aborting - please check your input..."
-                        "\n\n", inputfile, rows
+                        "\n\n", inputfile, linenumber
                     );
                     exit(1);
                 }
@@ -158,7 +162,7 @@ int InputCoriolisCoefficients(char *inputfile, double ***q, double ****zeta, dou
                         "\n(-) ERROR reading data from input-file \"%s\"."
                         "\n    Too few entries in input line number %d"
                         "\n    Aborting - please check your input..."
-                        "\n\n", inputfile, rows
+                        "\n\n", inputfile, linenumber
                     );
                     exit(1);
                 }

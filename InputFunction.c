@@ -12,6 +12,7 @@ int InputFunction(char *inputfile, double ***q, int *nq, double **V, int dimensi
 
 int InputFunction(char *inputfile, double ***q, int *nq, double **V, int dimension){
 
+    int linenumber;
     int rows, comment_flag;
     int n;
     unsigned int i;
@@ -33,7 +34,10 @@ int InputFunction(char *inputfile, double ***q, int *nq, double **V, int dimensi
     }
 
     rows = 0;
+    linenumber = 0;
     while(fgets(buffer, sizeof(buffer), fd) != NULL){
+
+        ++linenumber;
 
     // check if the first character in buffer is a comment char,
     //  if yes jump to next line
@@ -116,7 +120,7 @@ int InputFunction(char *inputfile, double ***q, int *nq, double **V, int dimensi
                     "\n    Too few entries in input line number %d"
                     "\n    Aborting - please check your input..."
                     "\n\n"
-                    , inputfile, rows
+                    , inputfile, linenumber
                 );
                 exit(1);
             }
@@ -143,7 +147,7 @@ int InputFunction(char *inputfile, double ***q, int *nq, double **V, int dimensi
                 "\n    Too few entries in input line number %d"
                 "\n    Aborting - please check your input..."
                 "\n\n"
-                , inputfile, rows
+                , inputfile, linenumber
             );
             exit(1);
         }
