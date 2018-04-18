@@ -48,12 +48,11 @@ fprintf(fd,
 
     if(0 == gethostname(Hostname, 16)){
         struct passwd *p = getpwuid(getuid());
-        fprintf(fd, "##\tSystem:\t\t%s@%s (UID:%d)\n", p->pw_name, Hostname, getuid());
+        fprintf(fd, "##\tSystem:      \t%s@%s (UID:%d)\n", p->pw_name, Hostname, getuid());
     }
 
-
-    fprintf(fd, "##\tUnix Epoch:\t%ld\n", current_time);
-    fprintf(fd, "##\tDate & Time:\t%s#\n", ctime(&current_time));
+    fprintf(fd, "##\tUnix Epoch:  \t%ld\n", current_time);
+    fprintf(fd, "##\tDate & Time: \t%s#\n", ctime(&current_time));
     fprintf(fd, "#\n#\n");
 
 

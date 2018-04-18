@@ -27,7 +27,7 @@
 
 # List of resulting object files
 # Standard objects
-    MKLOBJ += numerov2d.o
+    OBJ += numerov2d.o
     OBJ += GetSettingsGetopt.o
     OBJ += CheckCoordinateSpacing.o
     OBJ += InputFunction.o
@@ -36,13 +36,15 @@
     OBJ += OutputSettings.o
     OBJ += MetaGetStencil.o
     OBJ += FillStencil2D.o
+    OBJ += MetaEigensolver.o
     OBJ += Help.o
     OBJ += MetaInterpolation.o
     OBJ += nx1dInterpolation.o
   # MKL objects
-#   ifeq ($(findstring HAVE_MKL_INSTALLED, $(PPF)), HAVE_MKL_INSTALLED)
-#     MKLOBJ += EigensolverFEAST_MKL_2D.o
-#   endif
+    ifeq ($(findstring HAVE_MKL_INSTALLED, $(PPF)), HAVE_MKL_INSTALLED)
+      MKLOBJ += Fill_MKL.o
+      MKLOBJ += SolverFEAST_MKL.o
+    endif
   # Armadillo objects (require C++)
     ifeq ($(findstring HAVE_ARMA_INSTALLED, $(PPF)), HAVE_ARMA_INSTALLED)
       ARMAOBJ += EigensolverArmadillo_2D.o
@@ -69,9 +71,11 @@
       MKLINC += -m64
 
     # additional libraries
-      MKLLIBDIR += -L$(MKLPATH)/mkl/lib/intel64
-      MKLLIBDIR += -L$(MKLPATH)/compilers_and_libraries_2018.0.128/linux/compiler/lib/intel64_lin
-     #MKLLIBDIR += -L$(MKLPATH)/compilers_and_libraries_2017.0.098/linux/compiler/lib/intel64_lin
+    # Library directories
+      LIB += -L$(MKLPATH)/mkl/lib/intel64
+      LIB += -L$(MKLPATH)/compilers_and_libraries_2018.0.128/linux/compiler/lib/intel64_lin
+     #LIB += -L$(MKLPATH)/compilers_and_libraries_2017.0.098/linux/compiler/lib/intel64_lin
+    # Libraries
       LIB += -lmkl_core
       LIB += -lmkl_intel_ilp64
       LIB += -lmkl_intel_thread
@@ -91,20 +95,20 @@ gitversion.h:
 
 # Build Intel MKL objects
 ifeq ($(findstring HAVE_MKL_INSTALLED, $(PPF)), HAVE_MKL_INSTALLED)
-$(MKLOBJ): $(subst .o,.c,$(MKLOBJ))
-	$(CC) $(CFLAGS) $(PPF) $(MKLINC) -c $<
+$(MKLOBJ): $(MKLOBJ:.o=.c)
+	$(CC) $(CFLAGS) $(PPF) $(MKLINC) -c $?
 endif
 
 # Build Armadillo ARPACK objects (require C++)
 ifeq ($(findstring HAVE_ARMA_INSTALLED, $(PPF)), HAVE_ARMA_INSTALLED)
 $(ARMAOBJ): $(subst .o,.cpp,$(ARMAOBJ))
-	$(CppC) $(CFLAGS) $(PPF) $(ARMAINC) -c $<
+	$(CppC) $(CFLAGS) $(PPF) $(ARMAINC) -c $?
 endif
 
 
 # link all objects to create the executable
 $(EXE): $(OBJ) $(MKLOBJ) $(ARMAOBJ)
-	$(CC) $(CFLAGS) $(ARMALIBDIR) $(MKLLIBDIR) $(LIB) $(OBJ) $(MKLOBJ) $(ARMAOBJ) -o $@
+	$(CC) $(CFLAGS) $(LIB) $(OBJ) $(MKLOBJ) $(ARMAOBJ) -o $@
 
 
 # allows to print out makefile variables, just type make print-VARIABLE
