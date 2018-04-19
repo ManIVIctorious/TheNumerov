@@ -31,7 +31,6 @@ double integrate_1d(int n, double dx, double integrand[])
 double integrate_2d(int nq1, int nq2, double dx, double integrand[])
 {
   int i, j,index;
-  int n_points = nq1 * nq2;
 
   double integral = 0.0;
 
@@ -58,7 +57,7 @@ double integrate_2d(int nq1, int nq2, double dx, double integrand[])
      integral = integral + 1/2*(integrand[i]+integrand[index]);
    }
 
-   
+
    integral = integral + 1/4*(integrand[0]+integrand[nq1-1]+integrand[nq1*nq2-1]+ integrand[(nq1-1)*nq2]);
 
   return integral * dx * dx; //
@@ -71,11 +70,10 @@ double integrate_2d(int nq1, int nq2, double dx, double integrand[])
 double integrate_3d(int nq1, int nq2, int nq3, double dx, double integrand[])
 {
   int i, j, k,index;
-  int n_points = nq1 * nq2 * nq3;
 
   double integral = 0.0;
 //--------------------------------------------------
-//inner part. without edges and boundary areas. 
+//inner part. without edges and boundary areas.
 // factor: 1.0
 for (i = 1; i < nq1-1; i++)
    {
@@ -192,11 +190,10 @@ integral = integral + integrand[index]*1/8;
 double integrate_4d(int nq1, int nq2, int nq3, int nq4, double dx, double integrand[])
 {
   int i, j, k, l, index;
-  int n_points = nq1 * nq2 * nq3 * nq4;
 
   double integral = 0.0;
 //--------------------------------------------------
-//inner part. without edges and boundary areas. 
+//inner part. without edges and boundary areas.
 // factor: 1.0
 for (i = 1; i < nq1-1; i++)
    {
@@ -461,19 +458,19 @@ for (i = 1; i < nq1-1; i++)
          integral = integral + integrand[index]*2/16;
          //j 0 | k,l nq
          index = i*nq2*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*2/16;  
+         integral = integral + integrand[index]*2/16;
          //l,k 0 | j nq
          index = i*nq2*nq3*nq4 + j*nq3*nq4;
-         integral = integral + integrand[index]*2/16;  
+         integral = integral + integrand[index]*2/16;
          //k 0 | j l nq
          index = i*nq2*nq3*nq4 + j*nq3*nq4 + l;
-         integral = integral + integrand[index]*2/16;  
+         integral = integral + integrand[index]*2/16;
          //l 0 | j,k nq
          index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4;
-         integral = integral + integrand[index]*2/16;  
+         integral = integral + integrand[index]*2/16;
          //0 | j,k,l nq
          index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*2/16;  
+         integral = integral + integrand[index]*2/16;
 
    }// endfor i
 
@@ -493,19 +490,19 @@ for (j = 1; j < nq2-1; j++)
          integral = integral + integrand[index]*2/16;
          //i 0 | k,l nq
          index = j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*2/16;  
+         integral = integral + integrand[index]*2/16;
          //l,k 0 | i nq
          index = i*nq2*nq3*nq4 + j*nq3*nq4;
-         integral = integral + integrand[index]*2/16;  
+         integral = integral + integrand[index]*2/16;
          //k 0 | i l nq
          index = i*nq2*nq3*nq4 + j*nq3*nq4 + l;
-         integral = integral + integrand[index]*2/16;  
+         integral = integral + integrand[index]*2/16;
          //l 0 | i,k nq
          index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4;
-         integral = integral + integrand[index]*2/16;  
+         integral = integral + integrand[index]*2/16;
          //0 | i,k,l nq
          index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*2/16;  
+         integral = integral + integrand[index]*2/16;
 
    }// endfor j
 
@@ -525,19 +522,19 @@ for (k = 1; k < nq3-1; k++)
          integral = integral + integrand[index]*2/16;
          //i 0 | j,l nq
          index = j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*2/16;  
+         integral = integral + integrand[index]*2/16;
          //l,j 0 | i nq
          index = i*nq2*nq3*nq4 + k*nq4;
-         integral = integral + integrand[index]*2/16;  
+         integral = integral + integrand[index]*2/16;
          //j 0 | i l nq
          index = i*nq2*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*2/16;  
+         integral = integral + integrand[index]*2/16;
          //l 0 | i,j nq
          index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4;
-         integral = integral + integrand[index]*2/16;  
+         integral = integral + integrand[index]*2/16;
          //0 | i,j,l nq
          index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*2/16;  
+         integral = integral + integrand[index]*2/16;
 
    }// endfor k
 
@@ -557,19 +554,19 @@ for (l = 1; l < nq4-1; l++)
          integral = integral + integrand[index]*2/16;
          //i 0 | j,k nq
          index = j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*2/16;  
+         integral = integral + integrand[index]*2/16;
          //k,j 0 | i nq
          index = i*nq2*nq3*nq4 + l;
-         integral = integral + integrand[index]*2/16;  
+         integral = integral + integrand[index]*2/16;
          //j 0 | i k nq
          index = i*nq2*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*2/16;  
+         integral = integral + integrand[index]*2/16;
          //k 0 | i,j nq
          index = i*nq2*nq3*nq4 + j*nq3*nq4 + l;
-         integral = integral + integrand[index]*2/16;  
+         integral = integral + integrand[index]*2/16;
          //0 | i,j,k nq
          index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*2/16;  
+         integral = integral + integrand[index]*2/16;
 
    }// endfor l
 //--------------------------------------------------
@@ -579,36 +576,36 @@ for (l = 1; l < nq4-1; l++)
          j=nq2-1;
          k=nq3-1;
          l=nq4-1;
-         integral = integral + integrand[index]*1/16;  
+         integral = integral + integrand[  0  ]*1/16;
          index = l;
-         integral = integral + integrand[index]*1/16;  
+         integral = integral + integrand[index]*1/16;
          index = k*nq4;
-         integral = integral + integrand[index]*1/16;  
+         integral = integral + integrand[index]*1/16;
          index = k*nq4 + l;
-         integral = integral + integrand[index]*1/16;  
+         integral = integral + integrand[index]*1/16;
          index = j*nq3*nq4;
-         integral = integral + integrand[index]*1/16;  
+         integral = integral + integrand[index]*1/16;
          index = j*nq3*nq4 + l;
-         integral = integral + integrand[index]*1/16;  
+         integral = integral + integrand[index]*1/16;
          index = j*nq3*nq4 + k*nq4;
-         integral = integral + integrand[index]*1/16;  
+         integral = integral + integrand[index]*1/16;
          index = j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*1/16;  
+         integral = integral + integrand[index]*1/16;
          index = i*nq2*nq3*nq4 ;
-         integral = integral + integrand[index]*1/16;  
+         integral = integral + integrand[index]*1/16;
          index = i*nq2*nq3*nq4 + l;
-         integral = integral + integrand[index]*1/16;  
+         integral = integral + integrand[index]*1/16;
          index = i*nq2*nq3*nq4 + k*nq4;
-         integral = integral + integrand[index]*1/16;  
+         integral = integral + integrand[index]*1/16;
          index = i*nq2*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*1/16;  
+         integral = integral + integrand[index]*1/16;
          index = i*nq2*nq3*nq4 + j*nq3*nq4;
-         integral = integral + integrand[index]*1/16;  
+         integral = integral + integrand[index]*1/16;
          index = i*nq2*nq3*nq4 + j*nq3*nq4 + l;
-         integral = integral + integrand[index]*1/16;  
+         integral = integral + integrand[index]*1/16;
          index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4;
-         integral = integral + integrand[index]*1/16;  
+         integral = integral + integrand[index]*1/16;
          index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*1/16;  
+         integral = integral + integrand[index]*1/16;
   return integral * dx * dx * dx * dx; //
 }

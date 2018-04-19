@@ -797,11 +797,11 @@ int main(int argc, char* argv[]){
     }// end if(prefs.dipole == 1)
 
 
-//------------------------------------------------------------------------------------------------------------------
-//  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output
-//------------------------------------------------------------------------------------------------------------------
-//  Eigenvectors  Eigenvectors  Eigenvectors  Eigenvectors  Eigenvectors  Eigenvectors  Eigenvectors  Eigenvectors
-//------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+//   Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output
+//------------------------------------------------------------------------------------------------------------
+//   Eigenvectors   Eigenvectors   Eigenvectors   Eigenvectors   Eigenvectors   Eigenvectors   Eigenvectors
+//------------------------------------------------------------------------------------------------------------
     fprintf(file_ptr, "\n# Potential and Eigenfunctions: %d data-points", n_points);
 
 // output size per dimension
@@ -871,62 +871,19 @@ int main(int argc, char* argv[]){
     }
 
 
-// free memory
+// close file and free memory
     fclose(file_ptr); file_ptr = NULL;
     for(i = 0; i < prefs.dimension; ++i){
         free(q[i]); q[i] = NULL;
     }
-    free(q); q = NULL;
+    free(q);    q  = NULL;
     for(i = 0; i < 3; ++i){
         free(dip[i]); dip[i] = NULL;
     }
     free(dip); dip = NULL;
-    free(q);    q  = NULL;
     free(v);    v  = NULL;
     free(X);    X  = NULL;
     free(E);    E  = NULL;
 
     return 0;
-}
-
-
-double integrate_2d(int nq1, int nq2, double dx, double integrand[]){
-
-    int i, j,index;
-    double integral = 0.0;
-
-// inner part, without edges and "RAND"
-    for(i = 1; i < (nq1-1); i++){
-        for (j = 1; j < (nq2-1); j++){
-            index = i*nq2 + j;
-            integral = integral + integrand[index];
-        }
-    }
-
-//randpunkte links rechts ohne ecken
-    for(j = 1; j < (nq1-1); j++){
-        index = j*nq2;
-        integral = integral + 1/2*(integrand[index]+integrand[index + nq2 - 1]);
-    }
-// randpunkte oben unten
-    for(i = 1; i < (nq2-1); i++){
-        index = (nq1-1)*nq2 + i;
-        integral = integral + 1/2*(integrand[i]+integrand[index]);
-    }
-    integral = integral + 1/4*(integrand[0]+integrand[nq1-1]+integrand[nq1*nq2-1]+ integrand[(nq1-1)*nq2]);
-
-    return (integral * dx * dx);
-}
-
-
-double integrate_1d(int n, double dx, double integrand[]){
-
-    int i;
-    double integral = 0.0;
-
-    integral = 0.5*(integrand[0] + integrand[n-1]);
-    for(i = 1; i < (n-1); ++i){
-        integral = integral + integrand[i];
-    }
-    return (integral*dx);
 }

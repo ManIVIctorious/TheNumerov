@@ -40,6 +40,7 @@
     OBJ += Help.o
     OBJ += MetaInterpolation.o
     OBJ += nx1dInterpolation.o
+    OBJ += Integrators.o
   # MKL objects
     ifeq ($(findstring HAVE_MKL_INSTALLED, $(PPF)), HAVE_MKL_INSTALLED)
       MKLOBJ += Fill_MKL.o
