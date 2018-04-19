@@ -13,13 +13,10 @@ int OutputSettings(FILE *fd, settings preferences);
 double CheckCoordinateSpacing(double **q, int *nq, double threshold, int dimension);
 
 // meta functions
+double Integrate(int dimension, int *nq, double dx, double *integrand);
 int MetaGetStencil(double *stencil, int n_stencil, int dimension);
 int MetaInterpolation(double ** v, int * nq, double dq, int dimension, int n_spline);
 int MetaEigensolver(settings prefs, int *nq, double *v, double ekin_param, double *stencil, double *E, double *X, double **q, double dq, double ***mu, double ***zeta);
-
-// other
-double integrate_1d(int n, double dx, double integrand[]);
-double integrate_2d(int nx, int ny, double dx, double integrand[]);
 
 // functions requiring compile time flags
 #ifdef HAVE_ARMA_INSTALLED
@@ -457,7 +454,7 @@ int main(int argc, char* argv[]){
             integrand[j] = X[j+i*n_points] * X[j+i*n_points];
         }
 
-        integral = integrate_2d(nq[0], nq[1], dq, integrand);
+        integral = Integrate(prefs.dimension, nq, dq, integrand);
 
         for (j = 0; j < n_points; j++){
             X[j+i*n_points] = X[j+i*n_points] / sqrt(integral);
@@ -524,7 +521,7 @@ int main(int argc, char* argv[]){
                     integrand[k] = X[k + i*n_points]*X[k + j*n_points];
                 }
 
-                integral = integrate_2d(nq[0], nq[1], dq, integrand);
+                integral = Integrate(2, nq, dq, integrand);
                 fprintf(file_ptr, "  %12.5e", integral);
             }
         }
@@ -547,7 +544,7 @@ int main(int argc, char* argv[]){
                     integrand[k] = X[k + i*n_points]*X[k + j*n_points] * v[k];
                 }
 
-                integral = integrate_2d(nq[0], nq[1], dq, integrand);
+                integral = Integrate(2, nq, dq, integrand);
                 fprintf(file_ptr, "  %12.5e", integral);
             }
         }
@@ -590,7 +587,7 @@ int main(int argc, char* argv[]){
                     }
                 }
 
-                integral = integrate_2d(nq[0], nq[1], dq, integrand);
+                integral = Integrate(2, nq, dq, integrand);
                 fprintf(file_ptr, "  %12.5e", integral);
             }
         }
@@ -623,7 +620,7 @@ int main(int argc, char* argv[]){
                         dm_integrand[j] = X[i*n_points + r1*nq[1] + j]*X[i*n_points + r2*nq[1] + j];
                     }
 
-                    integral = integrate_1d(nq[1], dq, dm_integrand);
+                    integral = Integrate(1, nq, dq, dm_integrand);
                     dichtematrix[r1*nq[0] + r2] = integral;
 
                     if(r1 != r2){
@@ -640,7 +637,7 @@ int main(int argc, char* argv[]){
                         dm_integrand_sq[j] = dichtematrix[r1*nq[0] + j]*dichtematrix[j*nq[0] + r2];
                     }
 
-                    integral = integrate_1d(nq[0], dq, dm_integrand_sq);
+                    integral = Integrate(1, nq, dq, dm_integrand_sq);
                     dichtematrix_sq[r1*nq[0] + r2] = integral;
 
                     if(r1 != r2){
@@ -653,7 +650,7 @@ int main(int argc, char* argv[]){
             for(j = 0; j < nq[0]; j++){
                 dm_integrand_sq[j] = dichtematrix_sq[j*nq[0] + j];
             }
-            integral = integrate_1d(nq[0], dq, dm_integrand_sq);
+            integral = Integrate(1, nq, dq, dm_integrand_sq);
 
             fprintf(file_ptr, "\n# state %02d: %2.15lf", i, integral);
         }
@@ -701,7 +698,7 @@ int main(int argc, char* argv[]){
                     integrand[k] = X[k + i*n_points]*X[k + j*n_points] * dip[0][k];
                 }
 
-                integral = integrate_2d(nq[0], nq[1], dq, integrand);
+                integral = Integrate(2, nq, dq, integrand);
                 fprintf(file_ptr, "  %12.5e", integral);
 
                 if(i != j){
@@ -729,7 +726,7 @@ int main(int argc, char* argv[]){
                     integrand[k] = X[k + i*n_points]*X[k + j*n_points] * dip[1][k];
                 }
 
-                integral = integrate_2d(nq[0], nq[1], dq, integrand);
+                integral = Integrate(2, nq, dq, integrand);
                 fprintf(file_ptr, "  %12.5e", integral);
 
                 if(i != j){
@@ -757,7 +754,7 @@ int main(int argc, char* argv[]){
                     integrand[k] = X[k + i*n_points]*X[k + j*n_points] * dip[2][k];
                 }
 
-                integral = integrate_2d(nq[0],nq[1], dq, integrand);
+                integral = Integrate(2, nq, dq, integrand);
                 fprintf(file_ptr, "  %12.5e", integral);
 
                 if(i != j){
