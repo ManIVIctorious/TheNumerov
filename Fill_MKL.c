@@ -48,7 +48,7 @@ else
     (*rows_A) = calloc(n_points + 1, sizeof(MKL_INT));
     (*cols_A) = calloc(max_entries,  sizeof(MKL_INT));
     (*vals_A) = calloc(max_entries,  sizeof(double));
-    if(rows_A == NULL || cols_A == NULL || vals_A == NULL){
+    if((*rows_A) == NULL || (*cols_A) == NULL || (*vals_A) == NULL){
         fprintf(stderr,
             "\n (-) Error in memory allocation for row, column and/or value arrays"
             "\n     Aborting..."
@@ -81,8 +81,7 @@ else
 
                         // stencil entries have to be divided by 2 to get the right result.
                         //  in three dimensions it should be a division by 4
-                          if(prefs.coriolis_file != NULL)
-                          {   vorfaktor=0.0;
+                            vorfaktor=0.0;
 
                               for (n=0;n<3;n++)
                                  {
@@ -110,15 +109,6 @@ else
 
                                  }// end if xsh=ysh=0
 
-                            }// end if coriolis
-                            else
-                            {
-                               (*vals_A)[n_entries] = ekin_param * stencil[(xsh+prefs.n_stencil/2)*prefs.n_stencil+ysh+prefs.n_stencil/2]/2.0;
-                               if(xsh == 0 && ysh ==0)                        // add potential to diagonal element
-                                {
-                                (*vals_A)[n_entries] += v[i*nq[1]+j];
-                                }// end if xsh=ysh=0
-                            }//end else coriolis
 
                             n_entries ++;
                         }// end if 0<=ysh<nq[1]

@@ -6,6 +6,7 @@
 
 // Dependencies
 int FillMKL_2D(settings prefs, int *nq, double *v, double ekin_param, double *stencil, double **q, double dq, double ***mu, double ***zeta, MKL_INT **rows_A, MKL_INT **cols_A, double **vals_A);
+int FillMKL_2D_norot(double *v, int *nq, double ekin_param, double *stencil, int n_stencil, MKL_INT **rows_A, MKL_INT **cols_A, double **vals_A);
 
 // Offered prototypes
 int SolverFEAST_MKL(settings prefs, int *nq, double *v, double ekin_param, double *stencil, double *E, double *X, double **q, double dq, double ***mu, double ***zeta);
@@ -31,7 +32,11 @@ int SolverFEAST_MKL(settings prefs, int *nq, double *v, double ekin_param, doubl
 
         case 2: 
         // two dimensional filling routine with rotation enabled
-            FillMKL_2D(prefs, nq, v, ekin_param, stencil, q, dq, mu, zeta, &rows_A, &cols_A, &vals_A);
+            if(prefs.coriolis_file != NULL){
+                FillMKL_2D(prefs, nq, v, ekin_param, stencil, q, dq, mu, zeta, &rows_A, &cols_A, &vals_A);
+            }else{
+                FillMKL_2D_norot(v, nq, ekin_param, stencil, prefs.n_stencil, &rows_A, &cols_A, &vals_A);
+            }
             break;
 
         default:

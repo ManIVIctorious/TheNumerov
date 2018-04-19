@@ -43,6 +43,7 @@
   # MKL objects
     ifeq ($(findstring HAVE_MKL_INSTALLED, $(PPF)), HAVE_MKL_INSTALLED)
       MKLOBJ += Fill_MKL.o
+      MKLOBJ += Fill_MKL_norot.o
       MKLOBJ += SolverFEAST_MKL.o
     endif
   # Armadillo objects (require C++)
