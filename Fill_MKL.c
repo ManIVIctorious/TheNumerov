@@ -77,7 +77,7 @@ else
 
                             element = (i + xsh)*nq[1] + j+ysh;
                             (*cols_A)[n_entries] = element+1; // wieso +1? weil intel!!
-                        
+
 
                         // stencil entries have to be divided by 2 to get the right result.
                         //  in three dimensions it should be a division by 4
@@ -85,11 +85,11 @@ else
 
                               for (n=0;n<3;n++)
                                  {
-                                 for(m=0;m<3;m++) 
+                                 for(m=0;m<3;m++)
                                  {
 
                                   vorfaktor=vorfaktor -   zeta[n][0][i*nq[1]+j]*zeta[m][0][i*nq[1]+j]*mu[n][m][i*nq[1]+j];
-                                 
+
                                  }// for m
                                 }// for n
 
@@ -101,11 +101,11 @@ else
                                                                                    - q[0][i*nq[1]+j] * q[0][i*nq[1]+j] * second_der[sec_st*13+6+ysh] * nothing[6+xsh]              / dq / dq
                                                                                    - q[1][i*nq[1]+j] * q[1][i*nq[1]+j] * second_der[sec_st*13+6+xsh] * nothing[6+ysh]              / dq / dq
                                                                                 +2.0*q[0][i*nq[1]+j] * q[1][i*nq[1]+j] * onestencil[sec_st*13+6+xsh] * onestencil[sec_st*13+6+ysh] / dq / dq);
-         
+
 
                                 if(xsh == 0 && ysh ==0)                        // add potential to diagonal element
                                 {
-                                 (*vals_A)[n_entries] += v[i*nq[1]+j] - ((mu[0][0][i*nq[1]+j] + mu[1][1][i*nq[1]+j] + mu[2][2][i*nq[1]+j]) * (prefs.mu_factor * prefs.ekin_factor) / 8.0);// *dq*dq*mass*1.0/4.0; // watson pot 
+                                 (*vals_A)[n_entries] += v[i*nq[1]+j] - ((mu[0][0][i*nq[1]+j] + mu[1][1][i*nq[1]+j] + mu[2][2][i*nq[1]+j]) * (prefs.mu_factor * prefs.ekin_factor) / 8.0);// *dq*dq*mass*1.0/4.0; // watson pot
 
                                  }// end if xsh=ysh=0
 
@@ -113,7 +113,7 @@ else
                             n_entries ++;
                         }// end if 0<=ysh<nq[1]
                     }// end for ysh
-                } // end if 0<=xsh<nq[0]  
+                } // end if 0<=xsh<nq[0]
             }// end for xsh
       // after inserting all entries in a row the total number of entries is inserted in the CSR format.
         (*rows_A)[i*nq[1]+j+1] = n_entries+1;
@@ -121,6 +121,6 @@ else
     }//end for i
     (*rows_A)[0] = 1;
 
-    
+
     return 0;
 }

@@ -31,7 +31,7 @@ int OutputSettings(FILE *fd, settings prefs){
         default:
             Eigensolver = "unknown";
     }
-    
+
 
     fprintf(fd,
         "#-----------------------------------------------------------------------------------------\n"

@@ -450,9 +450,9 @@ int main(int argc, char* argv[]){
     }
 
 
-//------------------------------------------------------------------------------------------------------------------
-//  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output
-//------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+//   Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output
+//------------------------------------------------------------------------------------------------------------
 // open output file
     file_ptr = fopen(prefs.output_file, "w");
     if(file_ptr == NULL){
@@ -486,15 +486,15 @@ int main(int argc, char* argv[]){
     fprintf(file_ptr, "\n#\n#");
 
 
-//------------------------------------------------------------------------------------------------------------------
-//  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output
-//------------------------------------------------------------------------------------------------------------------
-//    Analyze  Analyze  Analyze  Analyze  Analyze  Analyze  Analyze  Analyze  Analyze  Analyze  Analyze  Analyze
-//------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+//   Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output
+//------------------------------------------------------------------------------------------------------------
+// Analyze  Analyze  Analyze  Analyze  Analyze  Analyze  Analyze  Analyze  Analyze  Analyze  Analyze  Analyze
+//------------------------------------------------------------------------------------------------------------
 // additional output information
     if(prefs.analyze == 1){
     // check for ortho-normality of evaluated wave functions:
-    //  calculate int Psi_i*Psi_j dxdy (i.e. <X[i]|X[j]>)
+    //  calculate int Psi_i*Psi_j dτ (i.e. <X[i]|X[j]>)
         fprintf(file_ptr, "\n# Orthonormality:\n#\n#");
 
         for(i = 0; i < n_out; i++){
@@ -516,9 +516,9 @@ int main(int argc, char* argv[]){
         fprintf(file_ptr, "\n#\n#");
 
 
-    // Potential output
-    //  calculate int Psi_i*V*Psi_j dxdy (i.e. <X[i]|V|X[j]>)
-        fprintf(file_ptr, "\n# Potential:\n#\n#");
+    // Potential energy output
+    //  calculate int Psi_i*V*Psi_j dτ (i.e. <X[i]|V|X[j]>)
+        fprintf(file_ptr, "\n# Potential Energy:\n#\n#");
 
         for(i = 0; i < n_out; i++){
             fprintf(file_ptr, "%11d   ", i);
@@ -539,7 +539,7 @@ int main(int argc, char* argv[]){
         fprintf(file_ptr, "\n#\n#");
 
 
-    // kinetic energy output
+    // Kinetic energy output
         fprintf(file_ptr, "\n# Kinetic Energy:\n#\n#");
 
         for(i = 0; i < n_out; i++){
@@ -581,79 +581,12 @@ int main(int argc, char* argv[]){
         }
         fprintf(file_ptr,"\n#\n#");
 
-
-    // calculate coupling
-        double *dichtematrix    = calloc(nq[0]*nq[0], sizeof(double));
-        double *dichtematrix_sq = calloc(nq[0]*nq[0], sizeof(double));
-        if(dichtematrix == NULL || dichtematrix_sq == NULL){
-            fprintf(stderr, "\n (-) Error in memory allocation for dichtematrix or its square.");
-            fprintf(stderr, "\n     Aborting...\n\n");
-            exit(1);
-        }
-        double *dm_integrand    = calloc(nq[1],     sizeof(double));
-        double *dm_integrand_sq = calloc(nq[0],     sizeof(double));
-        if(dm_integrand == NULL || dm_integrand_sq == NULL){
-            fprintf(stderr, "\n (-) Error in memory allocation for density matrix integrand or its square.");
-            fprintf(stderr, "\n     Aborting...\n\n");
-            exit(1);
-        }
-        int r1,r2;
-
-        fprintf(file_ptr, "\n# Coupling:\n#");
-        for(i = 0; i < n_out; i++){
-        // calculate density-matrix for all wave functions
-            for(r1 = 0; r1 < nq[0]; r1++){
-                for(r2 = r1; r2 < nq[0]; r2++){
-                    for(j = 0; j < nq[1]; j++){
-                        dm_integrand[j] = X[i*n_points + r1*nq[1] + j]*X[i*n_points + r2*nq[1] + j];
-                    }
-
-                    integral = Integrate(1, nq, dq, dm_integrand);
-                    dichtematrix[r1*nq[0] + r2] = integral;
-
-                    if(r1 != r2){
-                        dichtematrix[r2*nq[0] + r1] = integral;
-                    }
-                }
-            }
-
-        // calculate density-matrix square
-        //  careful: density-matrix has dimension nq[0] times nq[0]!
-            for(r1 = 0; r1 < nq[0]; r1++){
-                for(r2 = r1; r2 < nq[0]; r2++){
-                    for(j = 0; j < nq[0]; j++){
-                        dm_integrand_sq[j] = dichtematrix[r1*nq[0] + j]*dichtematrix[j*nq[0] + r2];
-                    }
-
-                    integral = Integrate(1, nq, dq, dm_integrand_sq);
-                    dichtematrix_sq[r1*nq[0] + r2] = integral;
-
-                    if(r1 != r2){
-                       dichtematrix_sq[r2*nq[0] + r1] = integral;
-                    }
-                }
-            }
-
-        // calculate the trace of density-matrix square
-            for(j = 0; j < nq[0]; j++){
-                dm_integrand_sq[j] = dichtematrix_sq[j*nq[0] + j];
-            }
-            integral = Integrate(1, nq, dq, dm_integrand_sq);
-
-            fprintf(file_ptr, "\n# state %02d: %2.15lf", i, integral);
-        }
-        fprintf(file_ptr,"\n#\n#");
-
-        free(dichtematrix);     dichtematrix    = NULL;
-        free(dichtematrix_sq);  dichtematrix_sq = NULL;
-        free(dm_integrand);     dm_integrand    = NULL;
-        free(dm_integrand_sq);  dm_integrand_sq = NULL;
     }// end if(prefs.analyze == 1)
-    free(stencil);  stencil = NULL;
 
 // close output file and free integrand
     fclose(file_ptr); file_ptr = NULL;
     free(integrand); integrand = NULL;
+    free(stencil);     stencil = NULL;
 
 
 //------------------------------------------------------------------------------------------------------------

@@ -30,7 +30,7 @@ int SolverFEAST_MKL(settings prefs, int *nq, double *v, double ekin_param, doubl
 // depending on the dimensionality use the appropriate filling routine
     switch(prefs.dimension){
 
-        case 2: 
+        case 2:
         // two dimensional filling routine with rotation enabled
             if(prefs.coriolis_file != NULL){
                 FillMKL_2D(prefs, nq, v, ekin_param, stencil, q, dq, mu, zeta, &rows_A, &cols_A, &vals_A);
@@ -48,7 +48,7 @@ int SolverFEAST_MKL(settings prefs, int *nq, double *v, double ekin_param, doubl
             );
             exit(-1);
     }
-            
+
 // Start eigenstate calculation
     double * res = calloc(n_points, sizeof(double));    // Residual
     if(res == NULL){
