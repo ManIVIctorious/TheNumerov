@@ -90,7 +90,7 @@
 
 all: $(EXE)
 gitversion.h:
-	echo "const char *gitversion = \"$(shell git describe --tags --always)\";" > $@
+	echo "static const char *gitversion = \"$(shell git describe --tags --always)\";" > $@
 
 # Build object files out of C-source files
 %.o : %.c Makefile gitversion.h

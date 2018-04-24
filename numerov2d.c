@@ -124,7 +124,7 @@ int main(int argc, char* argv[]){
 // Output
     int index;
     double freq;
-    FILE * file_ptr = NULL;
+    FILE * fd = NULL;
 
     double * stencil   = NULL;
     double * integrand = NULL;
@@ -454,36 +454,39 @@ int main(int argc, char* argv[]){
 //   Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output
 //------------------------------------------------------------------------------------------------------------
 // open output file
-    file_ptr = fopen(prefs.output_file, "w");
-    if(file_ptr == NULL){
+    fd = fopen(prefs.output_file, "w");
+    if(fd == NULL){
         printf("\n\n (-) Error opening output-file: '%s'", prefs.output_file);
         printf(  "\n     Exiting ... \n\n");
-        exit(0);
+        exit(1);
     }
 
 // output all available settings
-    OutputSettings(file_ptr, prefs);
+    OutputSettings(fd, prefs);
 
 // output eigenvalues
-    fprintf(file_ptr, "# Eigenvalues:");
+    fprintf(fd, "# Eigenvalues:");
     for(i = 0; i < n_out; i++){
-        fprintf(file_ptr, " %24.16lf", E[i]);
+        fprintf(fd, " %24.16lf", E[i]);
     }
 
 // and output frequencies
-    fprintf(file_ptr, "\n#\n# Frequencies:\n#\n#");
+    fprintf(fd, "\n#\n# Frequencies:\n#\n#");
     for(i = 0; i < (n_out - 1); i++){
-        fprintf(file_ptr,"%11d   ", i);
+        fprintf(fd, "       %7d", i);
     }
     for(i = 1; i < n_out; i++){
-        fprintf(file_ptr, "\n#%3d",i);
+        fprintf(fd, "\n# %3d",i);
 
         for(j = 0; j < i; j++){
             freq = (E[i] - E[j]) * kJmolToWavenumber / prefs.ekin_factor;
-            fprintf(file_ptr, "  %12.5e", freq);
+            fprintf(fd, "  % 12.5e", freq);
         }
     }
-    fprintf(file_ptr, "\n#\n#");
+    fprintf(fd, "\n#\n#");
+
+// close output file
+    fclose(fd); fd = NULL;
 
 
 //------------------------------------------------------------------------------------------------------------
@@ -493,15 +496,22 @@ int main(int argc, char* argv[]){
 //------------------------------------------------------------------------------------------------------------
 // additional output information
     if(prefs.analyze == 1){
+    // open output file
+        fd = fopen(prefs.output_file, "a");
+        if(fd == NULL){
+            printf("\n\n (-) Error opening output-file: '%s'", prefs.output_file);
+            printf(  "\n     Exiting ... \n\n");
+            exit(1);
+        }
     // check for ortho-normality of evaluated wave functions:
     //  calculate int Psi_i*Psi_j dτ (i.e. <X[i]|X[j]>)
-        fprintf(file_ptr, "\n# Orthonormality:\n#\n#");
+        fprintf(fd, "\n# Orthonormality:\n#\n#");
 
         for(i = 0; i < n_out; i++){
-            fprintf(file_ptr, "%11d   ", i);
+            fprintf(fd, "       %7d", i);
         }
         for(i = 0; i < n_out; i++){
-            fprintf(file_ptr, "\n#%3d",i);
+            fprintf(fd, "\n# %3d",i);
 
             for(j = 0; j < (i+1); j++){
                 for(k = 0; k < n_points; k++){
@@ -510,21 +520,21 @@ int main(int argc, char* argv[]){
                 }
 
                 integral = Integrate(prefs.dimension, nq, dq, integrand);
-                fprintf(file_ptr, "  %12.5e", integral);
+                fprintf(fd, "  % 12.5e", integral);
             }
         }
-        fprintf(file_ptr, "\n#\n#");
+        fprintf(fd, "\n#\n#");
 
 
     // Potential energy output
     //  calculate int Psi_i*V*Psi_j dτ (i.e. <X[i]|V|X[j]>)
-        fprintf(file_ptr, "\n# Potential Energy:\n#\n#");
+        fprintf(fd, "\n# Potential Energy:\n#\n#");
 
         for(i = 0; i < n_out; i++){
-            fprintf(file_ptr, "%11d   ", i);
+            fprintf(fd, "       %7d", i);
         }
         for(i = 0; i < n_out; i++){
-            fprintf(file_ptr, "\n#%3d",i);
+            fprintf(fd, "\n# %3d",i);
 
             for(j = 0; j < (i+1); j++){
                 for(k = 0; k < n_points; k++){
@@ -533,21 +543,21 @@ int main(int argc, char* argv[]){
                 }
 
                 integral = Integrate(prefs.dimension, nq, dq, integrand);
-                fprintf(file_ptr, "  %12.5e", integral);
+                fprintf(fd, "  % 12.5e", integral);
             }
         }
-        fprintf(file_ptr, "\n#\n#");
+        fprintf(fd, "\n#\n#");
 
 
     // Kinetic energy output
-        fprintf(file_ptr, "\n# Kinetic Energy:\n#\n#");
+        fprintf(fd, "\n# Kinetic Energy:\n#\n#");
 
         for(i = 0; i < n_out; i++){
-            fprintf(file_ptr,"%11d   ", i);
+            fprintf(fd, "       %7d", i);
         }
 
         for(i = 0; i < n_out; i++){
-            fprintf(file_ptr, "\n#%3d",i);
+            fprintf(fd, "\n# %3d",i);
 
             for(j = 0; j < (i+1); j++){
                 for(k = 0; k < nq[0]; k++){
@@ -576,15 +586,16 @@ int main(int argc, char* argv[]){
                 }
 
                 integral = Integrate(2, nq, dq, integrand);
-                fprintf(file_ptr, "  %12.5e", integral);
+                fprintf(fd, "  % 12.5e", integral);
             }
         }
-        fprintf(file_ptr,"\n#\n#");
+        fprintf(fd,"\n#\n#");
 
+    // close output file
+        fclose(fd); fd = NULL;
     }// end if(prefs.analyze == 1)
 
-// close output file and free integrand
-    fclose(file_ptr); file_ptr = NULL;
+// free memory
     free(integrand); integrand = NULL;
     free(stencil);     stencil = NULL;
 
@@ -596,13 +607,18 @@ int main(int argc, char* argv[]){
 //------------------------------------------------------------------------------------------------------------
     if(prefs.dipole == 1){
     // open output file
-        file_ptr = fopen(prefs.output_file, "a");
+        fd = fopen(prefs.output_file, "a");
+        if(fd == NULL){
+            printf("\n\n (-) Error opening output-file: '%s'", prefs.output_file);
+            printf(  "\n     Exiting ... \n\n");
+            exit(1);
+        }
 
     // calculate transition dipole moments and write them to output file
-        OutputDipoleIntegration(prefs, nq, n_out, dq, dip, E, X, file_ptr);
+        OutputDipoleIntegration(prefs, nq, n_out, dq, dip, E, X, fd);
 
     // close output file
-        fclose(file_ptr); file_ptr = NULL;
+        fclose(fd); fd = NULL;
     }
 
 
@@ -612,35 +628,42 @@ int main(int argc, char* argv[]){
 //   Eigenvectors   Eigenvectors   Eigenvectors   Eigenvectors   Eigenvectors   Eigenvectors   Eigenvectors
 //------------------------------------------------------------------------------------------------------------
 // open output file
-    file_ptr = fopen(prefs.output_file, "a");
-    fprintf(file_ptr, "\n# Potential and Eigenfunctions: %d data-points", n_points);
+    fd = fopen(prefs.output_file, "a");
+    if(fd == NULL){
+        printf("\n\n (-) Error opening output-file: '%s'", prefs.output_file);
+        printf(  "\n     Exiting ... \n\n");
+        exit(1);
+    }
+
+// print header
+    fprintf(fd, "\n# Potential and Eigenfunctions: %d data-points", n_points);
 
 // output size per dimension
-    fprintf(file_ptr, "\n  N");
+    fprintf(fd, "\n  N");
     for(i = 0; i < prefs.dimension; ++i){
-        fprintf(file_ptr, " %4d", nq[i]);
+        fprintf(fd, " %4d", nq[i]);
     }
-    fprintf(file_ptr, "\n");
+    fprintf(fd, "\n");
 
 // output key
-    fprintf(file_ptr, "\n#");
+    fprintf(fd, "\n#");
     for(i = 0; i < prefs.dimension; ++i){
-        fprintf(file_ptr, "\t          q[%d]          ", i);
+        fprintf(fd, "\t          q[%d]          ", i);
     }
-        fprintf(file_ptr, "\t           v(q)         ");
+        fprintf(fd, "\t           v(q)         ");
 
     if(prefs.dipole != 0){
-        fprintf(file_ptr, "\t          dip_x         ");
-        fprintf(file_ptr, "\t          dip_y         ");
-        fprintf(file_ptr, "\t          dip_z         ");
+        fprintf(fd, "\t          dip_x         ");
+        fprintf(fd, "\t          dip_y         ");
+        fprintf(fd, "\t          dip_z         ");
     }
 
     if(prefs.coriolis_file != NULL){
-        fprintf(file_ptr, "\tv(q) - sum_i(mu[i][i])/8");
+        fprintf(fd, "\tv(q) - sum_i(mu[i][i])/8");
     }
 
     for(i = 0; i < n_out; ++i){
-        fprintf(file_ptr, "\t        Psi[%d]          ", i);
+        fprintf(fd, "\t        Psi[%d]          ", i);
     }
 
 
@@ -650,40 +673,40 @@ int main(int argc, char* argv[]){
         for(j = (prefs.dimension - 1), k = 1; j >= 1; --j){
             k *= nq[j];
             if(i%k == 0){
-                fprintf(file_ptr, "\n");
+                fprintf(fd, "\n");
             }
         }
 
     // output coordinates q[j][i] and potential v[i]
         for(j = 0; j < prefs.dimension; ++j){
-            fprintf(file_ptr, "\t% 24.16lf", q[j][i]);
+            fprintf(fd, "\t% 24.16lf", q[j][i]);
         }
-        fprintf(file_ptr, "\t% 24.16lf", v[i]);
+        fprintf(fd, "\t% 24.16lf", v[i]);
 
     // output dipole moment components
         if(prefs.dipole != 0){
-            fprintf(file_ptr, "\t% 24.16lf", dip[0][i]);
-            fprintf(file_ptr, "\t% 24.16lf", dip[1][i]);
-            fprintf(file_ptr, "\t% 24.16lf", dip[2][i]);
+            fprintf(fd, "\t% 24.16lf", dip[0][i]);
+            fprintf(fd, "\t% 24.16lf", dip[1][i]);
+            fprintf(fd, "\t% 24.16lf", dip[2][i]);
         }
 
 
     // output potential after addition of Watson potential term
         if(prefs.coriolis_file != NULL){
-            fprintf(file_ptr, "\t% 24.16lf", v[i] - ((mu[0][0][i] + mu[1][1][i] + mu[2][2][i])/8.0 * (prefs.mu_factor * prefs.ekin_factor)));
+            fprintf(fd, "\t% 24.16lf", v[i] - ((mu[0][0][i] + mu[1][1][i] + mu[2][2][i])/8.0 * (prefs.mu_factor * prefs.ekin_factor)));
         }
 
     // output wave functions
         for(j = 0; j < n_out; ++j){
-            fprintf(file_ptr, "\t% 24.16lf", X[i + j*n_points]);
+            fprintf(fd, "\t% 24.16lf", X[i + j*n_points]);
         }
 
-        fprintf(file_ptr, "\n");
+        fprintf(fd, "\n");
     }
 
 
 // close file and free memory
-    fclose(file_ptr); file_ptr = NULL;
+    fclose(fd); fd = NULL;
     for(i = 0; i < prefs.dimension; ++i){
         free(q[i]); q[i] = NULL;
     }

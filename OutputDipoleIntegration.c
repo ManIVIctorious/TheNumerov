@@ -54,7 +54,7 @@ int OutputDipoleIntegration(settings prefs, int* nq, int n_out, double dq, doubl
     // print header and index line
         fprintf(fd, "\n# Dipole - %c-component:\n#\n#", "xyz"[m]);
         for(i = 0; i < n_out; ++i){
-            fprintf(fd,"       %7d", i);
+            fprintf(fd, "       %7d", i);
         }
 
 
