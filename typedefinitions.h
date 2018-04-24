@@ -1,3 +1,5 @@
+#ifndef _TYPEDEFINITIONS_H
+#define _TYPEDEFINITIONS_H
 
 typedef struct settings {
   int dimension;      // dimension of the problem
@@ -9,6 +11,7 @@ typedef struct settings {
   double ekin_factor; // Kinetic     energy factor
   double epot_factor; // Potential   energy factor
   double mu_factor;   // Watson term energy factor
+  double DipToAsm;    // Conversion from input dipole moment to A.s.m
   double threshold;   // Spacing threshold for double comparison
 
 // Flags
@@ -27,3 +30,5 @@ typedef struct settings {
   char * coriolis_file;
   char * output_file;
 } settings;
+
+#endif

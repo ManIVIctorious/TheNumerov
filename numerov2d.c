@@ -3,14 +3,17 @@
 #include <math.h>
 
 #include "typedefinitions.h"
+#include "constants.h"
 
-// input/output functions
+// input functions
 settings GetSettingsGetopt(settings defaults, int argc, char **argv);
 int InputFunction(char *inputfile, double ***q, int *nq, double **V, int dimension);
 int InputFunctionDipole(char *inputfile, double ***q, int *nq, double **V, double ***mu, int dimension);
 int InputCoriolisCoefficients(char *inputfile, double ***q, double ****zeta, double ****mu, int dimension);
-int OutputSettings(FILE *fd, settings preferences);
 double CheckCoordinateSpacing(double **q, int *nq, double threshold, int dimension);
+// output functions
+int OutputSettings(FILE *fd, settings preferences);
+int OutputDipoleIntegration(settings prefs, int* nq, int n_out, double dq, double** dip, double* E, double* X, FILE* fd);
 
 // meta functions
 double Integrate(int dimension, int *nq, double dx, double *integrand);
@@ -26,16 +29,6 @@ int MetaEigensolver(settings prefs, int *nq, double *v, double ekin_param, doubl
 
 int main(int argc, char* argv[]){
 
-// Conversion factors
-//      1.0E20       Angstrom^2 / m^2
-//      1.0 / 4.184         cal / J
-//      2625.49962     (kJ/mol) / Hartree
-//      627.509469   (kcal/mol) / Hartree
-// Constants
-    double lightspeed = 299792458;        // m/s
-    double planck     = 6.62607004E-34;   // Js
-    double avogadro   = 6.022140857E23;   // 1/mol
-
     settings defaults, prefs;
 
 // fill defaults struct with default values
@@ -48,10 +41,12 @@ int main(int argc, char* argv[]){
     // double precision values
         .mass   = 1.0,      // g/mol
 
-        .ekin_factor = 1.0/4.184,     // (kcal/mol) / (kJ/mol)
-        .epot_factor = 1.0,           // (output unit) / (input unit)
+        .ekin_factor = 1.0/4.184,       // (kcal/mol) / (kJ/mol)
+        .epot_factor = 1.0,             // (output unit) / (input unit)
         .mu_factor   = 1.0E20 * avogadro*avogadro * planck*planck/(4.0*M_PI*M_PI), // kJ/mol / (mol/g/angstrom^2)
-        .threshold = 1.0E-10, // abs(q[i] - q[i+1])
+        .DipToAsm    = 3.33564E-30,     // A.s.m / Debye
+        .threshold   = 1.0E-10,         // abs(q[i] - q[i+1])
+
 
     // Flags
         .analyze = 0,
@@ -134,13 +129,6 @@ int main(int argc, char* argv[]){
     double * stencil   = NULL;
     double * integrand = NULL;
     double integral;
-
-// dipole integration
-    int n_ts_dip = 0;
-    double ts_dip_square;
-    double * ts_dip_x = NULL;
-    double * ts_dip_y = NULL;
-    double * ts_dip_z = NULL;
 
 // jump parameter for generation of dimension-generalized
 //  checks and sets
@@ -521,7 +509,7 @@ int main(int argc, char* argv[]){
                     integrand[k] = X[k + i*n_points]*X[k + j*n_points];
                 }
 
-                integral = Integrate(2, nq, dq, integrand);
+                integral = Integrate(prefs.dimension, nq, dq, integrand);
                 fprintf(file_ptr, "  %12.5e", integral);
             }
         }
@@ -544,7 +532,7 @@ int main(int argc, char* argv[]){
                     integrand[k] = X[k + i*n_points]*X[k + j*n_points] * v[k];
                 }
 
-                integral = Integrate(2, nq, dq, integrand);
+                integral = Integrate(prefs.dimension, nq, dq, integrand);
                 fprintf(file_ptr, "  %12.5e", integral);
             }
         }
@@ -663,135 +651,26 @@ int main(int argc, char* argv[]){
     }// end if(prefs.analyze == 1)
     free(stencil);  stencil = NULL;
 
+// close output file and free integrand
+    fclose(file_ptr); file_ptr = NULL;
+    free(integrand); integrand = NULL;
 
-//------------------------------------------------------------------------------------------------------------------
-//  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output
-//------------------------------------------------------------------------------------------------------------------
-//    Dipole   Dipole   Dipole   Dipole   Dipole   Dipole   Dipole   Dipole   Dipole   Dipole   Dipole   Dipole
-//------------------------------------------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------------------------------------
+//   Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output
+//------------------------------------------------------------------------------------------------------------
+// Dipole   Dipole   Dipole   Dipole   Dipole   Dipole   Dipole   Dipole   Dipole   Dipole   Dipole   Dipole
+//------------------------------------------------------------------------------------------------------------
     if(prefs.dipole == 1){
-        n_ts_dip = n_out * (n_out)/2;
+    // open output file
+        file_ptr = fopen(prefs.output_file, "a");
 
-        ts_dip_x = malloc(n_ts_dip * sizeof(double));
-        ts_dip_y = malloc(n_ts_dip * sizeof(double));
-        ts_dip_z = malloc(n_ts_dip * sizeof(double));
-        if(ts_dip_x == NULL || ts_dip_y == NULL || ts_dip_z == NULL){
-            fprintf(stderr, "\n (-) Error in memory allocation for ts_dip_x, ts_dip_y or ts_dip_z");
-            fprintf(stderr, "\n     Aborting...\n\n");
-            exit(1);
-        }
+    // calculate transition dipole moments and write them to output file
+        OutputDipoleIntegration(prefs, nq, n_out, dq, dip, E, X, file_ptr);
 
-    // Evaluate x-component of IR-intensity
-    //  calculate int Psi_i * \mu_x * Psi_j dxdy (i.e. <X[i]|\mu_x|X[j]>
-        fprintf(file_ptr, "\n# Dipole - x-component:\n#\n#");
-        for(i = 0; i < n_out; i++){
-            fprintf(file_ptr,"%11d   ", i);
-        }
-
-        element = 0;
-        for(i = 0; i < n_out; i++){
-            fprintf(file_ptr, "\n#%3d",i);
-
-            for(j = 0; j < (i+1); j++){
-                for(k = 0; k < n_points; k++){
-                // generate integrand
-                    integrand[k] = X[k + i*n_points]*X[k + j*n_points] * dip[0][k];
-                }
-
-                integral = Integrate(2, nq, dq, integrand);
-                fprintf(file_ptr, "  %12.5e", integral);
-
-                if(i != j){
-                    ts_dip_x[element] = integral;
-                    element ++;
-                }
-            }
-        }
-        fprintf(file_ptr, "\n#\n#");
-
-    // Evaluate y-component of IR-intensity
-    //  calculate int Psi_i * \mu_y * Psi_j dxdy (i.e. <X[i]|\mu_y|X[j]>
-        fprintf(file_ptr, "\n# Dipole - y-component:\n#\n#");
-        for(i = 0; i < n_out; i++){
-            fprintf(file_ptr,"%11d   ", i);
-        }
-
-        element = 0;
-        for(i = 0; i < n_out; i++){
-            fprintf(file_ptr, "\n#%3d",i);
-
-            for(j = 0; j < (i+1); j++){
-                for(k = 0; k < n_points; k++){
-                // generate integrand
-                    integrand[k] = X[k + i*n_points]*X[k + j*n_points] * dip[1][k];
-                }
-
-                integral = Integrate(2, nq, dq, integrand);
-                fprintf(file_ptr, "  %12.5e", integral);
-
-                if(i != j){
-                    ts_dip_y[element] = integral;
-                    element ++;
-                }
-            }
-        }
-        fprintf(file_ptr, "\n#\n#");
-
-    // Evaluate z-component of IR-intensity
-    //  calculate int Psi_i * \mu_z * Psi_j dxdy (i.e. <X[i]|\mu_z|X[j]>
-        fprintf(file_ptr, "\n# Dipole - z-component:\n#\n#");
-        for(i = 0; i < n_out; i++){
-            fprintf(file_ptr,"%11d   ", i);
-        }
-
-        element = 0;
-        for(i = 0; i < n_out; i++){
-            fprintf(file_ptr, "\n#%3d",i);
-
-            for(j = 0; j < (i+1); j++){
-                for(k = 0; k < n_points; k++){
-                // generate integrand
-                    integrand[k] = X[k + i*n_points]*X[k + j*n_points] * dip[2][k];
-                }
-
-                integral = Integrate(2, nq, dq, integrand);
-                fprintf(file_ptr, "  %12.5e", integral);
-
-                if(i != j){
-                    ts_dip_z[element] = integral;
-                    element ++;
-                }
-            }
-        }
-        fprintf(file_ptr, "\n#\n#");
-
-    // calculate oscillator strength:
-    //  (4m\pi) / (3e^2\hbar) * (<Psi_i|\mu_x|Psi_j> + <Psi_i|\mu_y|Psi_j> + <Psi_i|\mu_z|Psi_j>) * (E_j - E_i)
-        fprintf(file_ptr, "\n# Oscillator strength:\n#\n#");
-        for(i = 0; i < (n_out - 1); i++){
-            fprintf(file_ptr,"%11d   ", i);
-        }
-
-        element = 0;
-        for(i = 1; i < n_out; i++){
-            fprintf(file_ptr, "\n#%3d",i);
-
-            for(j = 0; j < i; j++){
-                ts_dip_square =   ts_dip_x[element]*ts_dip_x[element]
-                                + ts_dip_y[element]*ts_dip_y[element]
-                                + ts_dip_z[element]*ts_dip_z[element];
-                freq = (E[i] - E[j]) * kJmolToWavenumber / prefs.ekin_factor;
-
-                fprintf(file_ptr, "  %12.5e", 4.702E-7 * ts_dip_square * freq);
-                element ++;
-            }
-        }
-        fprintf(file_ptr, "\n#\n#");
-
-        free(ts_dip_x); ts_dip_x = NULL;
-        free(ts_dip_y); ts_dip_y = NULL;
-        free(ts_dip_z); ts_dip_z = NULL;
-    }// end if(prefs.dipole == 1)
+    // close output file
+        fclose(file_ptr); file_ptr = NULL;
+    }
 
 
 //------------------------------------------------------------------------------------------------------------
@@ -799,6 +678,8 @@ int main(int argc, char* argv[]){
 //------------------------------------------------------------------------------------------------------------
 //   Eigenvectors   Eigenvectors   Eigenvectors   Eigenvectors   Eigenvectors   Eigenvectors   Eigenvectors
 //------------------------------------------------------------------------------------------------------------
+// open output file
+    file_ptr = fopen(prefs.output_file, "a");
     fprintf(file_ptr, "\n# Potential and Eigenfunctions: %d data-points", n_points);
 
 // output size per dimension
