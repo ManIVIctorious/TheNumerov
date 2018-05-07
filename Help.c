@@ -3,10 +3,10 @@
 #include "typedefinitions.h"
 
 // Offered prototypes
-int Help(char *filename, settings defaults);
+int Help(char* filename, settings defaults);
 
 
-int Help(char *filename, settings defaults){
+int Help(char* filename, settings defaults){
 
     printf("\n%s\t [OPTIONS] -i INPUT-FILENAME [-o OUTPUT-FILENAME]", filename);
 
@@ -57,6 +57,12 @@ int Help(char *filename, settings defaults){
            "\n\t    Set the one dimensional stencil size, e.g. \"-n 11\" gives a"
            "\n\t    11x11 stencil in the two dimensional Numerov."
            "\n\t    Default:\t%d", defaults.n_stencil
+    );
+
+    printf("\n"
+           "\n\t-D, --dimension"
+           "\n\t    Set the dimensionality of the applied Numerov procedure"
+           "\n\t    Default:\t%d", defaults.dimension
     );
 
     printf("\n"

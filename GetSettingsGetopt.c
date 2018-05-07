@@ -6,13 +6,13 @@
 #include "typedefinitions.h"
 
 // Dependencies
-int Help(char *filename, settings defaults);
+int Help(char* filename, settings defaults);
 
 
 // Offered prototypes
-settings GetSettingsGetopt(settings defaults, int argc, char **argv);
+settings GetSettingsGetopt(settings defaults, int argc, char** argv);
 
-settings GetSettingsGetopt(settings defaults, int argc, char **argv){
+settings GetSettingsGetopt(settings defaults, int argc, char** argv){
 
     int control = 0;
     int * longindex = NULL;
@@ -25,7 +25,7 @@ settings GetSettingsGetopt(settings defaults, int argc, char **argv){
 
     // optstring contains a list of all short option indices,
     //  indices followed by a colon are options requiring an argument.
-    const char         * optstring = "hm:k:v:n:l:u:N:s:ac:i:dPo:t:TM:";
+    const char         * optstring = "hm:k:v:n:l:u:N:s:ac:i:dPo:t:TM:D:";
     const struct option longopts[] = {
     //  *name:      option name,
     //  has_arg:    if option requires argument,
@@ -46,6 +46,7 @@ settings GetSettingsGetopt(settings defaults, int argc, char **argv){
         {"spline",           required_argument, 0, 's'},
         {"analyze",                no_argument, 0, 'a'},
         {"dipole",                 no_argument, 0, 'd'},
+        {"dimension",        required_argument, 0, 'D'},
         {"pipe",                   no_argument, 0, 'P'},
         {"input-file",       required_argument, 0, 'i'},
         {"coriolis-input",   required_argument, 0, 'c'},
@@ -122,6 +123,10 @@ settings GetSettingsGetopt(settings defaults, int argc, char **argv){
 
             case 'd':
                 preferences.dipole = 1;
+                break;
+
+            case 'D':
+                preferences.dimension = atoi(optarg);
                 break;
 
             case 'i':

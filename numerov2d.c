@@ -434,7 +434,7 @@ int main(int argc, char* argv[]){
     n_out = MetaEigensolver(prefs, nq, v, ekin_param, stencil, E, X, q, dq, mu, zeta);
 
 
-// calculate norm
+// Normalize eigen vectors
     integrand = calloc(n_points, sizeof(double));
 
     for(i = 0; i < n_out; i++){
@@ -711,10 +711,12 @@ int main(int argc, char* argv[]){
         free(q[i]); q[i] = NULL;
     }
     free(q);    q  = NULL;
-    for(i = 0; i < 3; ++i){
-        free(dip[i]); dip[i] = NULL;
+    if(prefs.dipole == 1){
+        for(i = 0; i < 3; ++i){
+            free(dip[i]); dip[i] = NULL;
+        }
+        free(dip); dip = NULL;
     }
-    free(dip); dip = NULL;
     free(v);    v  = NULL;
     free(X);    X  = NULL;
     free(E);    E  = NULL;

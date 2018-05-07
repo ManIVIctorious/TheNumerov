@@ -2,30 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// Offered prototypes
-int FillStencil2D(double *stencil, int n_stencil);
+// provided prototypes
+int FillStencil2D(double* stencil, int n_stencil);
 
-int FillStencil2D(double *stencil, int n_stencil){
-
-    int i, control = -1;
-
-// check for implementation of requested stencil
-//  for now only the stecils from 3 to 13 are implemented
-    for(i = 3; i <= 13; i += 2){
-        if(n_stencil == i){
-            control = 0;
-            break;
-        }
-    }
-    if(control != 0){
-        fprintf(stderr,
-            "\n (-) Error no data for %d-point stencil available."
-            "\n     Aborting - please check your input..."
-            "\n\n"
-            , n_stencil
-        );
-        exit(-1);
-    }
+int FillStencil2D(double* stencil, int n_stencil){
 
 // fill the stencil array
     switch(n_stencil){
@@ -550,7 +530,13 @@ int FillStencil2D(double *stencil, int n_stencil){
             return 0;
 
         default:
-        // assignemnt unsuccessful
-            return 1;
+        // if stencil is not implemented print an error message and exit program
+            fprintf(stderr,
+                "\n (-) Error no data for %d-point stencil available."
+                "\n     Aborting - please check your input..."
+                "\n\n"
+                , n_stencil
+            );
+            exit(-1);
     }
 }

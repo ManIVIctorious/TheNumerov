@@ -5,14 +5,14 @@
 
 // Dependencies
 #ifdef HAVE_MKL_INSTALLED
-int SolverFEAST_MKL(settings prefs, int *nq, double *v, double ekin_param, double *stencil, double *E, double *X, double **q, double dq, double ***mu, double ***zeta);
+int SolverFEAST_MKL(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double* E, double* X, double** q, double dq, double*** mu, double*** zeta);
 #endif
 
 // Offered prototypes
-int MetaEigensolver(settings prefs, int *nq, double *v, double ekin_param, double *stencil, double *E, double *X, double **q, double dq, double ***mu, double ***zeta);
+int MetaEigensolver(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double* E, double* X, double** q, double dq, double*** mu, double*** zeta);
 
 
-int MetaEigensolver(settings prefs, int *nq, double *v, double ekin_param, double *stencil, double *E, double *X, double **q, double dq, double ***mu, double ***zeta){
+int MetaEigensolver(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double* E, double* X, double** q, double dq, double*** mu, double*** zeta){
 
     int n_out;
 

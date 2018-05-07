@@ -3,13 +3,14 @@
 #include <stdlib.h>
 
 // Dependencies
-int FillStencil2D(double *stencil, int n_stencil);
+int FillStencil1D(double* stencil, int n_stencil);
+int FillStencil2D(double* stencil, int n_stencil);
 
 
 // Offered prototypes
-int MetaGetStencil(double *stencil, int n_stencil, int dimension);
+int MetaGetStencil(double* stencil, int n_stencil, int dimension);
 
-int MetaGetStencil(double *stencil, int n_stencil, int dimension){
+int MetaGetStencil(double* stencil, int n_stencil, int dimension){
 
     int control = -1;
 
@@ -37,6 +38,11 @@ int MetaGetStencil(double *stencil, int n_stencil, int dimension){
 
 // Assignment of stencil functions
     switch(dimension){
+
+        case 1:
+            control = FillStencil1D(stencil, n_stencil);
+            break;
+
         case 2:
             control = FillStencil2D(stencil, n_stencil);
             break;
