@@ -9,10 +9,10 @@
 #include "gitversion.h"
 
 // provided prototypes
-int OutputSettings(FILE *fd, settings prefs);
+int OutputSettings(FILE* fd, settings prefs);
 
 
-int OutputSettings(FILE *fd, settings prefs){
+int OutputSettings(FILE* fd, settings prefs){
 
     char * Eigensolver = NULL;
     time_t current_time = time(NULL);

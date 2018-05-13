@@ -6,25 +6,21 @@
 #include "constants.h"
 
 // input functions
-settings GetSettingsGetopt(settings defaults, int argc, char **argv);
-int InputFunction(char *inputfile, double ***q, int *nq, double **V, int dimension);
-int InputFunctionDipole(char *inputfile, double ***q, int *nq, double **V, double ***mu, int dimension);
-int InputCoriolisCoefficients(char *inputfile, double ***q, double ****zeta, double ****mu, int dimension);
-double CheckCoordinateSpacing(double **q, int *nq, double threshold, int dimension);
-// output functions
-int OutputSettings(FILE *fd, settings preferences);
-int OutputDipoleIntegration(settings prefs, int* nq, int n_out, double dq, double** dip, double* E, double* X, FILE* fd);
+settings GetSettingsGetopt(settings defaults, int argc, char** argv);
+int InputFunction(char* inputfile, double** *q, int* nq, double* *V, int dimension);
+int InputFunctionDipole(char* inputfile, double** *q, int* nq, double* *V, double** *mu, int dimension);
+int InputCoriolisCoefficients(char* inputfile, double** *q, double*** *zeta, double*** *mu, int dimension);
+double CheckCoordinateSpacing(double** q, int* nq, double threshold, int dimension);
 
 // meta functions
-double Integrate(int dimension, int *nq, double dx, double *integrand);
-int MetaGetStencil(double *stencil, int n_stencil, int dimension);
-int MetaInterpolation(double ** v, int * nq, double dq, int dimension, int n_spline);
-int MetaEigensolver(settings prefs, int *nq, double *v, double ekin_param, double *stencil, double *E, double *X, double **q, double dq, double ***mu, double ***zeta);
+int MetaGetStencil(double* stencil, int n_stencil, int dimension);
+int MetaInterpolation(double* *v, int* nq, double dq, int dimension, int n_spline);
+int MetaEigensolver(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double* E, double* X, double** q, double dq, double*** mu, double*** zeta);
+double Integrate(int dimension, int* nq, double dx, double* integrand);
 
-// functions requiring compile time flags
-#ifdef HAVE_ARMA_INSTALLED
-    int EigensolverArmadillo_2D(double *v, int *nq, double ekin_param, double *stencil, int n_stencil, int n_out, double *E, double *X);
-#endif
+// output functions
+int OutputSettings(FILE* fd, settings preferences);
+int OutputDipoleIntegration(settings prefs, int* nq, int n_out, double dq, double** dip, double* E, double* X, FILE* fd);
 
 
 int main(int argc, char* argv[]){

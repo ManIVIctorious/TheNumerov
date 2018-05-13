@@ -3,15 +3,15 @@
 #include <stdlib.h>
 
 // provided prototypes
-double integrate_1d(int n, double dx, double *integrand);
-double integrate_2d(int nq1, int nq2, double dx, double *integrand);
-double integrate_3d(int nq1, int nq2, int nq3, double dx, double *integrand);
-double integrate_4d(int nq1, int nq2, int nq3, int nq4, double dx, double *integrand);
+double integrate_1d(int n, double dx, double* integrand);
+double integrate_2d(int nq1, int nq2, double dx, double* integrand);
+double integrate_3d(int nq1, int nq2, int nq3, double dx, double* integrand);
+double integrate_4d(int nq1, int nq2, int nq3, int nq4, double dx, double* integrand);
 
-double Integrate(int dimension, int *nq, double dx, double *integrand);
+double Integrate(int dimension, int* nq, double dx, double* integrand);
 
 
-double Integrate(int dimension, int *nq, double dx, double *integrand){
+double Integrate(int dimension, int* nq, double dx, double* integrand){
 
     double integral = 0.0;
 

@@ -19,7 +19,7 @@
 
 
 # Resulting executable
-  EXE = bin/numerov2d
+  EXE = bin/numerov
 
 
 # List of linked libraries
@@ -27,7 +27,7 @@
 
 # List of resulting object files
 # Standard objects
-    OBJ += numerov2d.o
+    OBJ += main.o
     OBJ += GetSettingsGetopt.o
     OBJ += CheckCoordinateSpacing.o
     OBJ += InputFunction.o

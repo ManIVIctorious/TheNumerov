@@ -6,8 +6,10 @@
 #include "typedefinitions.h"
 #include "constants.h"
 
-double Integrate(int dimension, int *nq, double dx, double *integrand);
+// Dependencies
+double Integrate(int dimension, int* nq, double dx, double* integrand);
 
+// provided prototypes
 int OutputDipoleIntegration(settings prefs, int* nq, int n_out, double dq, double** dip, double* E, double* X, FILE* fd);
 
 int OutputDipoleIntegration(settings prefs, int* nq, int n_out, double dq, double** dip, double* E, double* X, FILE* fd){

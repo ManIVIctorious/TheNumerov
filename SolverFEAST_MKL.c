@@ -5,12 +5,12 @@
 #include "typedefinitions.h"
 
 // Dependencies (with rotation)
-int FillMKL_2D(settings prefs, int *nq, double *v, double ekin_param, double *stencil, double **q, double dq, double ***mu, double ***zeta, MKL_INT **rows_A, MKL_INT **cols_A, double **vals_A);
+int FillMKL_2D(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double** q, double dq, double*** mu, double*** zeta, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A);
 // Dependencies (without rotation)
 int FillMKL_1D_norot(double* v, int* nq, double ekin_param, double* stencil, int n_stencil, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A);
 int FillMKL_2D_norot(double* v, int* nq, double ekin_param, double* stencil, int n_stencil, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A);
 
-// Offered prototypes
+// provided prototypes
 int SolverFEAST_MKL(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double* E, double* X, double** q, double dq, double*** mu, double*** zeta);
 
 

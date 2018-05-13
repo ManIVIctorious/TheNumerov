@@ -8,7 +8,7 @@
 int SolverFEAST_MKL(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double* E, double* X, double** q, double dq, double*** mu, double*** zeta);
 #endif
 
-// Offered prototypes
+// provided prototypes
 int MetaEigensolver(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double* E, double* X, double** q, double dq, double*** mu, double*** zeta);
 
 

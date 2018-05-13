@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "typedefinitions.h"
 
-// Offered prototypes
+// provided prototypes
 int Help(char* filename, settings defaults);
 
 

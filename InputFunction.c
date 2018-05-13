@@ -7,10 +7,10 @@
 #include <string.h>
 #include <ctype.h>
 
-// Offered prototypes
-int InputFunction(char *inputfile, double ***q, int *nq, double **V, int dimension);
+// provided prototypes
+int InputFunction(char* inputfile, double** *q, int* nq, double* *V, int dimension);
 
-int InputFunction(char *inputfile, double ***q, int *nq, double **V, int dimension){
+int InputFunction(char* inputfile, double** *q, int* nq, double* *V, int dimension){
 
     int linenumber;
     int rows, comment_flag;

@@ -2,10 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// Offered prototypes
-double CheckCoordinateSpacing(double **q, int *nq, double threshold, int dimension);
+// provided prototypes
+double CheckCoordinateSpacing(double** q, int* nq, double threshold, int dimension);
 
-double CheckCoordinateSpacing(double **q, int *nq, double threshold, int dimension){
+double CheckCoordinateSpacing(double** q, int* nq, double threshold, int dimension){
 
     int i, j, k, l;
     int n_points;

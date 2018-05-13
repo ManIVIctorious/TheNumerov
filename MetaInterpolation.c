@@ -1,12 +1,12 @@
 
 // Dependencies
-int nx1dInterpolation(double ** v, int * nq, double dq, int dimension, int n_spline);
+int nx1dInterpolation(double** v, int* nq, double dq, int dimension, int n_spline);
 
-// Offered prototypes
-int MetaInterpolation(double ** v, int * nq, double dq, int dimension, int n_spline);
+// provided prototypes
+int MetaInterpolation(double* *v, int* nq, double dq, int dimension, int n_spline);
 
 
-int MetaInterpolation(double ** v, int * nq, double dq, int dimension, int n_spline){
+int MetaInterpolation(double* *v, int* nq, double dq, int dimension, int n_spline){
 
     int control;
 

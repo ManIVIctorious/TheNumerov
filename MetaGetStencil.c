@@ -7,22 +7,12 @@ int FillStencil1D(double* stencil, int n_stencil);
 int FillStencil2D(double* stencil, int n_stencil);
 
 
-// Offered prototypes
+// provided prototypes
 int MetaGetStencil(double* stencil, int n_stencil, int dimension);
 
 int MetaGetStencil(double* stencil, int n_stencil, int dimension){
 
     int control = -1;
-
-// dimension has to be greater than zero
-    if(dimension <= 0){
-        fprintf(stderr,
-            "\n (-) Error dimension has to be greater than zero"
-            "\n     Aborting..."
-            "\n\n"
-        );
-        exit(-1);
-    }
 
 // stencil has to have an odd number of entries (at least in current implementation)
     if(n_stencil%2 == 0){

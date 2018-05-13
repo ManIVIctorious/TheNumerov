@@ -7,10 +7,10 @@
 #include <string.h>
 #include <ctype.h>
 
-// Offered prototypes
-int InputFunctionDipole(char *inputfile, double ***q, int *nq, double **V, double ***mu, int dimension);
+// provided prototypes
+int InputFunctionDipole(char* inputfile, double** *q, int* nq, double* *V, double** *mu, int dimension);
 
-int InputFunctionDipole(char *inputfile, double ***q, int *nq, double **V, double ***mu, int dimension){
+int InputFunctionDipole(char* inputfile, double** *q, int* nq, double* *V, double** *mu, int dimension){
 
     int linenumber;
     int rows, comment_flag;

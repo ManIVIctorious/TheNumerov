@@ -9,7 +9,7 @@
 int Help(char* filename, settings defaults);
 
 
-// Offered prototypes
+// provided prototypes
 settings GetSettingsGetopt(settings defaults, int argc, char** argv);
 
 settings GetSettingsGetopt(settings defaults, int argc, char** argv){

@@ -2,10 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// Offered prototypes
-int nx1dInterpolation(double ** v, int * nq_in, double dq, int dimension, int n_spline);
+// provided prototypes
+int nx1dInterpolation(double** v, int* nq_in, double dq, int dimension, int n_spline);
 
-int nx1dInterpolation(double ** v, int * nq_in, double dq, int dimension, int n_spline){
+int nx1dInterpolation(double** v, int* nq_in, double dq, int dimension, int n_spline){
 
 /*  One dimensional cubic spline interpolation:
 //{{{

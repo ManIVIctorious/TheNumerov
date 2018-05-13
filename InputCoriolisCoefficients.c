@@ -7,10 +7,10 @@
 #include <string.h>
 #include <ctype.h>
 
-// Offered prototypes
-int InputCoriolisCoefficients(char *inputfile, double ***q, double ****zeta, double ****mu, int dimension);
+// provided prototypes
+int InputCoriolisCoefficients(char* inputfile, double** *q, double*** *zeta, double*** *mu, int dimension);
 
-int InputCoriolisCoefficients(char *inputfile, double ***q, double ****zeta, double ****mu, int dimension){
+int InputCoriolisCoefficients(char* inputfile, double** *q, double*** *zeta, double*** *mu, int dimension){
 
     int linenumber;
     int rows, comment_flag;
