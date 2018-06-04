@@ -118,7 +118,6 @@ int main(int argc, char* argv[]){
 
 
 // Output
-    int index;
     double freq;
     FILE * fd = NULL;
 
@@ -285,52 +284,6 @@ int main(int argc, char* argv[]){
         dq = CheckCoordinateSpacing(q, nq, prefs.threshold, prefs.dimension);
     }
 
-//------------------------------------------------------------------------------------------------------------
-//  Stencils    Stencils    Stencils    Stencils    Stencils    Stencils    Stencils    Stencils    Stencils
-//------------------------------------------------------------------------------------------------------------
-// Allocate memory of n_stencil ** dimension for stencil
-    for(i = 0, j = 1; i < prefs.dimension; ++i){ j *= prefs.n_stencil; }
-    stencil = calloc(j, sizeof(double));
-    if(stencil == NULL){
-        fprintf(stderr,
-            "\n (-) Error in memory allocation for stencil"
-            "\n     Aborting..."
-            "\n\n"
-        );
-        exit(1);
-    }
-
-// Get stencil through meta function
-    control = MetaGetStencil(stencil, prefs.n_stencil, prefs.dimension);
-    if(control != 0 ){
-        fprintf(stderr,
-            "\n (-) Error initialising stencil parameters."
-            "\n     Aborting - please check your input..."
-            "\n\n"
-        );
-        exit(1);
-    }
-
-// update kinetic energy pre-factor
-    ekin_param *= (prefs.ekin_factor / dq / dq / prefs.mass);
-
-
-//------------------------------------------------------------------------------------------------------------
-//  Shift potential   Shift potential   Shift potential   Shift potential   Shift potential   Shift potential
-//------------------------------------------------------------------------------------------------------------
-// convert potential to output unit of energy
-    for(i = 0; i < n_points; ++i){
-        v[i] *= prefs.epot_factor;
-    }
-
-// shift potential minimum to zero
-    for(i = 1, v_min = v[0]; i < n_points; ++i){
-        if(v[i] < v_min){ v_min = v[i]; }
-    }
-    for(i = 0; i < n_points; ++i){
-        v[i] -= v_min;
-    }
-
 
 //------------------------------------------------------------------------------------------------------------
 //  Interpolation  Interpolation  Interpolation  Interpolation  Interpolation  Interpolation  Interpolation
@@ -407,6 +360,53 @@ int main(int argc, char* argv[]){
             }
             jump *= nq[i];
         }
+    }
+
+
+//------------------------------------------------------------------------------------------------------------
+//  Stencils    Stencils    Stencils    Stencils    Stencils    Stencils    Stencils    Stencils    Stencils
+//------------------------------------------------------------------------------------------------------------
+// Allocate memory of n_stencil ** dimension for stencil
+    for(i = 0, j = 1; i < prefs.dimension; ++i){ j *= prefs.n_stencil; }
+    stencil = calloc(j, sizeof(double));
+    if(stencil == NULL){
+        fprintf(stderr,
+            "\n (-) Error in memory allocation for stencil"
+            "\n     Aborting..."
+            "\n\n"
+        );
+        exit(1);
+    }
+
+// Get stencil through meta function
+    control = MetaGetStencil(stencil, prefs.n_stencil, prefs.dimension);
+    if(control != 0 ){
+        fprintf(stderr,
+            "\n (-) Error initialising stencil parameters."
+            "\n     Aborting - please check your input..."
+            "\n\n"
+        );
+        exit(1);
+    }
+
+// update kinetic energy pre-factor
+    ekin_param *= (prefs.ekin_factor / dq / dq / prefs.mass);
+
+
+//------------------------------------------------------------------------------------------------------------
+//  Shift potential   Shift potential   Shift potential   Shift potential   Shift potential   Shift potential
+//------------------------------------------------------------------------------------------------------------
+// convert potential to output unit of energy
+    for(i = 0; i < n_points; ++i){
+        v[i] *= prefs.epot_factor;
+    }
+
+// shift potential minimum to zero
+    for(i = 1, v_min = v[0]; i < n_points; ++i){
+        if(v[i] < v_min){ v_min = v[i]; }
+    }
+    for(i = 0; i < n_points; ++i){
+        v[i] -= v_min;
     }
 
 
@@ -530,7 +530,7 @@ int main(int argc, char* argv[]){
             fprintf(fd, "       %7d", i);
         }
         for(i = 0; i < n_out; i++){
-            fprintf(fd, "\n# %3d",i);
+            fprintf(fd, "\n# %3d", i);
 
             for(j = 0; j < (i+1); j++){
                 for(k = 0; k < n_points; k++){
@@ -553,13 +553,12 @@ int main(int argc, char* argv[]){
         }
 
         for(i = 0; i < n_out; i++){
-            fprintf(fd, "\n# %3d",i);
+            fprintf(fd, "\n# %3d", i);
 
             for(j = 0; j < (i+1); j++){
                 for(k = 0; k < nq[0]; k++){
                     for(l = 0; l < nq[1]; l++){
-                        index = k*nq[1] + l;
-                        integrand[index]=0;
+                        integrand[k*nq[1] + l] = 0;
 //------------------------------------------------------------------------------------------------------------------
                         for(xsh = -prefs.n_stencil/2; xsh < (prefs.n_stencil/2 + 1); xsh++){
 
@@ -571,13 +570,13 @@ int main(int argc, char* argv[]){
 
                                     // integrand has to be divided by d^2,
                                     //  but the division is already set in the "ekin_param" parameter
-                                        integrand[index] = integrand[index] + X[element + i*n_points] * ekin_param * stencil[(xsh + prefs.n_stencil/2)*prefs.n_stencil + ysh + prefs.n_stencil/2]/2;
+                                        integrand[k*nq[1] + l] += X[element + i*n_points] * ekin_param * stencil[(xsh + prefs.n_stencil/2)*prefs.n_stencil + ysh + prefs.n_stencil/2]/2;
                                     }
                                 }
                             }
                         }
 //------------------------------------------------------------------------------------------------------------------
-                        integrand[index] *= X[index + j*n_points];
+                        integrand[k*nq[1] + l] *= X[(k*nq[1] + l) + j*n_points];
                     }
                 }
 
@@ -661,6 +660,7 @@ int main(int argc, char* argv[]){
     for(i = 0; i < n_out; ++i){
         fprintf(fd, "\t        Psi[%d]          ", i);
     }
+    fprintf(fd, "\n");
 
 
 // output data

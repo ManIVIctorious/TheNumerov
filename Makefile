@@ -19,7 +19,7 @@
 
 
 # Resulting executable
-  EXE = bin/numerov
+  EXE = bin/TheNumerov
 
 
 # List of linked libraries
