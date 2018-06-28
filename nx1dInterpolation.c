@@ -125,21 +125,21 @@ int nx1dInterpolation(double** v, int* nq_in, double dq, int dimension, int n_sp
 // nq array containing number of points per dimension
 //  the new nq array is needed to prevent overwriting of the original
 //  value in the superordinate function stack
-    int * nq = NULL;
+    int * nq = NULL;            // freed
 
 // tridiagonal matrix algorithm coefficients
-    double * matrix_c = NULL;
-    double * matrix_d = NULL;
+    double * matrix_c = NULL;   // freed
+    double * matrix_d = NULL;   // freed
 // interpolation coefficients
-    double * inter_c  = NULL;
+    double * inter_c  = NULL;   // freed
     double   inter_b;
     double   inter_d;
 // interpolated data array
-    double * yy = NULL;
+    double * yy = NULL;         // freed
 
 // auxiliary pointers to allow freeing and swapping
-    double * aux_v  = (*v);
-    double * aux_yy = NULL;
+    double * aux_v  = (*v);     // freed
+    double * aux_yy = NULL;     // at the end points to new *v => don't free!!!
 
 // variables for dimensional loop
 //  to break down n-dimensional arrays to a set of 1D arrays
@@ -346,6 +346,7 @@ int nx1dInterpolation(double** v, int* nq_in, double dq, int dimension, int n_sp
     free(inter_c);  inter_c  = NULL;
     free(aux_v);    aux_v    = NULL;
     free(yy);       yy       = NULL;
+    free(nq);       nq       = NULL;
 
     return n_points;
 

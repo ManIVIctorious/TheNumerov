@@ -8,9 +8,9 @@
 #include <ctype.h>
 
 // provided prototypes
-int InputCoriolisCoefficients(char* inputfile, double** *q, double*** *zeta, double*** *mu, int dimension);
+int InputCoriolisCoefficients(char* inputfile, double** *q, double** zeta, double*** *mu, int dimension);
 
-int InputCoriolisCoefficients(char* inputfile, double** *q, double*** *zeta, double*** *mu, int dimension){
+int InputCoriolisCoefficients(char* inputfile, double** *q, double** zeta, double*** *mu, int dimension){
 
     int linenumber;
     int rows, comment_flag;
@@ -75,8 +75,8 @@ int InputCoriolisCoefficients(char* inputfile, double** *q, double*** *zeta, dou
                 (*q)[n] = realloc((*q)[n], (rows + 1)*sizeof(double));
                 if( (*q)[n] == NULL){
                     fprintf(stderr,
-                        "\n(-) ERROR in reallocation of %s"
-                        "\n    Aborting..."
+                        "\n (-) ERROR in reallocation of %s"
+                        "\n     Aborting..."
                         "\n\n"
                         , "coordinate"
                     );
@@ -91,9 +91,9 @@ int InputCoriolisCoefficients(char* inputfile, double** *q, double*** *zeta, dou
             token = strtok(NULL, " \t");
             if(token == NULL){
                 fprintf(stderr,
-                    "\n(-) ERROR reading data from input-file \"%s\"."
-                    "\n    Too few entries in input line number %d"
-                    "\n    Aborting - please check your input..."
+                    "\n (-) ERROR reading data from input-file \"%s\"."
+                    "\n     Too few entries in input line number %d"
+                    "\n     Aborting - please check your input..."
                     "\n\n"
                     , inputfile, linenumber
                 );
@@ -102,37 +102,41 @@ int InputCoriolisCoefficients(char* inputfile, double** *q, double*** *zeta, dou
             (*q)[m][rows] = atof(token);
         }
 
-    // store potential values:
-    //  increase array size:
-        for(m = 0; m < 3; ++m){
-            for(n = 0; n < ((dimension*(dimension - 1))/2); ++n){
-                (*zeta)[m][n] = realloc((*zeta)[m][n], (rows + 1) * sizeof(double));
 
-                if( (*zeta)[m][n] == NULL){
-                    fprintf(stderr,
-                        "\n(-) ERROR in reallocation of %s"
-                        "\n    Aborting..."
-                        "\n\n"
-                        , "Coriolis coefficient"
-                    );
-                    exit(2);
-                }
-            }
-        }
+    // Zeta values:
     // get token and convert to double
         for(m = 0; m < 3; ++m){
             for(n = 0; n < ((dimension*(dimension - 1))/2); ++n){
                 token = strtok(NULL, " \t");
                 if(token == NULL){
                     fprintf(stderr,
-                        "\n(-) ERROR reading data from input-file \"%s\"."
-                        "\n    Too few entries in input line number %d"
-                        "\n    Aborting - please check your input..."
+                        "\n (-) ERROR reading data from input-file \"%s\"."
+                        "\n     Too few entries in input line number %d"
+                        "\n     Aborting - please check your input..."
                         "\n\n", inputfile, linenumber
                     );
                     exit(1);
                 }
-                (*zeta)[m][n][rows] = atof(token);
+                if(zeta[m][n] == 0.0){
+                    zeta[m][n] = atof(token);
+                }else{
+                    if(zeta[m][n] != atof(token)){
+
+                        fprintf(stderr,
+                            "\n (-) ERROR reading data from input-file \"%s\"."
+                            "\n     The zeta parameters are only dependent on the"
+                            "\n     mode files and not the deviation from minimum"
+                            "\n     => they are not allowed to change with q"
+                            "\n     Line %d:"
+                            "\n         old zeta: % .12le"
+                            "\n         new zeta: % .12le"
+                            "\n     Aborting - please check your input..."
+                            "\n\n", inputfile, linenumber, zeta[m][n], atof(token)
+                        );
+                        exit(1);
+
+                    }
+                }
             }
         }
 
@@ -144,8 +148,8 @@ int InputCoriolisCoefficients(char* inputfile, double** *q, double*** *zeta, dou
 
                 if( (*mu)[m][n] == NULL){
                     fprintf(stderr,
-                        "\n(-) ERROR in reallocation of %s"
-                        "\n    Aborting..."
+                        "\n (-) ERROR in reallocation of %s"
+                        "\n     Aborting..."
                         "\n\n"
                         , "effective reciprocal inertia tensor"
                     );
@@ -159,9 +163,9 @@ int InputCoriolisCoefficients(char* inputfile, double** *q, double*** *zeta, dou
                 token = strtok(NULL, " \t");
                 if(token == NULL){
                     fprintf(stderr,
-                        "\n(-) ERROR reading data from input-file \"%s\"."
-                        "\n    Too few entries in input line number %d"
-                        "\n    Aborting - please check your input..."
+                        "\n (-) ERROR reading data from input-file \"%s\"."
+                        "\n     Too few entries in input line number %d"
+                        "\n     Aborting - please check your input..."
                         "\n\n", inputfile, linenumber
                     );
                     exit(1);

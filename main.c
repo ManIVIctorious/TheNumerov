@@ -9,13 +9,13 @@
 settings GetSettingsGetopt(settings defaults, int argc, char** argv);
 int InputFunction(char* inputfile, double** *q, int* nq, double* *V, int dimension);
 int InputFunctionDipole(char* inputfile, double** *q, int* nq, double* *V, double** *mu, int dimension);
-int InputCoriolisCoefficients(char* inputfile, double** *q, double*** *zeta, double*** *mu, int dimension);
+int InputCoriolisCoefficients(char* inputfile, double** *q, double** zeta, double*** *mu, int dimension);
 double CheckCoordinateSpacing(double** q, int* nq, double threshold, int dimension);
 
 // meta functions
 int MetaGetStencil(double* stencil, int n_stencil, int dimension);
 int MetaInterpolation(double* *v, int* nq, double dq, int dimension, int n_spline);
-int MetaEigensolver(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double* E, double* X, double** q, double dq, double*** mu, double*** zeta);
+int MetaEigensolver(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double* E, double* X, double** q, double dq, double*** mu, double** zeta);
 double Integrate(int dimension, int* nq, double dx, double* integrand);
 
 // output functions
@@ -102,7 +102,7 @@ int main(int argc, char* argv[]){
 
   // Coriolis coefficients
     double **  q_coriolis = NULL;
-    double *** zeta       = NULL;
+    double **  zeta       = NULL;
     double *** mu         = NULL;
 
 // kinetic energy factor:   - hbar^2/2 * 10^20          * 1000 * avogadro^2 / 1000 = -10^20 * hbar^2/2 * avogadro^2
@@ -213,13 +213,10 @@ int main(int argc, char* argv[]){
             q_coriolis[i] = malloc(sizeof(double));
         }
 
-    // initialize zeta 3D [3][(D*D-D)/2][data] double array
-        zeta = malloc(3 * sizeof(double**));
+    // create zeta 2D [3][(D*D-D)/2] double array
+        zeta = malloc(3 * sizeof(double*));
         for(i = 0; i < 3; ++i){
-            zeta[i] = malloc((prefs.dimension*(prefs.dimension - 1))/2 * sizeof(double*));
-            for(j = 0; j < ((prefs.dimension*(prefs.dimension - 1))/2); ++j){
-                zeta[i][j] = malloc(sizeof(double));
-            }
+            zeta[i] = calloc((prefs.dimension*(prefs.dimension - 1))/2, sizeof(double));
         }
 
     // initialize mu 3D [3][3][data] double array
@@ -232,7 +229,7 @@ int main(int argc, char* argv[]){
         }
 
     // actual file input
-        control = InputCoriolisCoefficients(prefs.coriolis_file, &q_coriolis, &zeta, &mu, prefs.dimension);
+        control = InputCoriolisCoefficients(prefs.coriolis_file, &q_coriolis, zeta, &mu, prefs.dimension);
 
     // for every entry in Coriolis input file there must be exact one in the input file
         if(control != n_points){
@@ -282,7 +279,7 @@ int main(int argc, char* argv[]){
 
     if(prefs.check_spacing == 1){
         dq = CheckCoordinateSpacing(q, nq, prefs.threshold, prefs.dimension);
-    }
+    }else{ dq = q[prefs.dimension-1][1] - q[prefs.dimension-1][0]; }
 
 
 //------------------------------------------------------------------------------------------------------------
@@ -337,6 +334,32 @@ int main(int argc, char* argv[]){
                 );
                 exit(1);
             }
+        }
+
+
+    // if coriolis file is set also interpolate mu
+        if(prefs.coriolis_file != NULL){
+            control = MetaInterpolation(&(mu[0][0]), nq, dq, prefs.dimension, prefs.n_spline);
+            element = MetaInterpolation(&(mu[0][1]), nq, dq, prefs.dimension, prefs.n_spline);
+            i       = MetaInterpolation(&(mu[0][2]), nq, dq, prefs.dimension, prefs.n_spline);
+            j       = MetaInterpolation(&(mu[1][1]), nq, dq, prefs.dimension, prefs.n_spline);
+            k       = MetaInterpolation(&(mu[1][2]), nq, dq, prefs.dimension, prefs.n_spline);
+            l       = MetaInterpolation(&(mu[2][2]), nq, dq, prefs.dimension, prefs.n_spline);
+
+        // check return values
+            if(control != n_points || element != n_points || i != n_points || j != n_points || k != n_points || l != n_points){
+                fprintf(stderr,
+                    "\n (-) Error in execution of interpolation function."
+                    "\n     Aborting..."
+                    "\n\n"
+                );
+                exit(1);
+            }
+
+        // make mu symmetric again
+            mu[1][0] = mu[0][1];
+            mu[2][0] = mu[0][2];
+            mu[2][1] = mu[1][2];
         }
 
 
