@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 
 #include "typedefinitions.h"
@@ -35,7 +36,8 @@ int main(int argc, char* argv[]){
         .n_spline  = 0,     // number of interpolation points
 
     // double precision values
-        .mass   = 1.0,      // g/mol
+        .masses_string = NULL,
+        .masses        = NULL,    // g/mol
 
         .ekin_factor = 1.0/4.184,       // (kcal/mol) / (kJ/mol)
         .epot_factor = 1.0,             // (output unit) / (input unit)
@@ -99,7 +101,6 @@ int main(int argc, char* argv[]){
     double dq = 0;              // delta q after coordinate spacing check
     double v_min;
 
-
   // Coriolis coefficients
     double **  q_coriolis = NULL;
     double **  zeta       = NULL;
@@ -125,9 +126,65 @@ int main(int argc, char* argv[]){
     double * integrand = NULL;
     double integral;
 
-// jump parameter for generation of dimension-generalized
-//  checks and sets
-    int jump;
+// MISC
+    int jump;               // needed to respect coordinate jumps between dimensions
+
+
+//------------------------------------------------------------------------------------------------------------
+//     Post process input of setting     Post process input of setting     Post process input of settings
+//------------------------------------------------------------------------------------------------------------
+//Reduced masses:
+// The reduced masses are given as a colon separated string array with the number of
+//  entries being the dimensionality. To ensure the dimensionality is set beforehand
+//  the string is saved temporarily and the conversion to a double array is
+//  performed after the initial input
+
+// allocate memory for prefs.masses array and initialize all entries to 1.0 g/mol
+    prefs.masses = malloc(prefs.dimension * sizeof(double));
+    for(i = 0; i < prefs.dimension; ++i){
+        prefs.masses[i] = 1.0;
+    }
+
+// get reduced masses from masses_string
+    if(prefs.masses_string != NULL){
+
+        for(i = 0; i < prefs.dimension; ++i){
+
+        // masses string is separated by colon => split at colon position
+            if( (prefs.masses[i] = atof(strsep(&prefs.masses_string, ":"))) == 0.0){
+
+            // if prefs.masses[i] is 0.0 (error value of atof) throw an error and abort
+                fprintf(stderr,
+                    "\n (-) Error in input of reduced masses."
+                    "\n     The reduced masses have to be passed as a colon separated array"
+                    "\n     with the same number of entries as the problem's dimensionality."
+                    "\n     e.g. 1D: -m 1.070908503521"
+                    "\n          2D: -m 1.070908503521:1.262900145313, etc."
+                    "\n     Aborting..."
+                    "\n\n"
+                );
+                exit(1);
+            }
+        }
+    }
+
+
+//------------------------------------------------------------------------------------------------------------
+//       Output all settings for verification purpose      Output all settings for verification purpose
+//------------------------------------------------------------------------------------------------------------
+// open output file
+    fd = fopen(prefs.output_file, "w");
+    if(fd == NULL){
+        printf("\n\n (-) Error opening output-file: '%s'", prefs.output_file);
+        printf(  "\n     Exiting ... \n\n");
+        exit(1);
+    }
+
+// output all available settings
+    OutputSettings(fd, prefs);
+
+// close output file
+    fclose(fd); fd = NULL;
 
 
 //------------------------------------------------------------------------------------------------------------
@@ -188,21 +245,6 @@ int main(int argc, char* argv[]){
         exit(1);
     }
 
-// there must be at least as many data points as stencil points (n_stencil ** dimension)
-    for(i = 0, control = 1; i < prefs.dimension; ++i){
-        control *= prefs.n_stencil;
-    }
-    if(n_points < control){
-        fprintf(stderr,
-            "\n (-) Error reading data from input-file: '%s'"
-            "\n     Insufficient number of data points (%d) "
-                   "for stencil size %d (%d points)."
-            "\n     Aborting - please check your input..."
-            "\n\n"
-            , prefs.input_file, n_points, prefs.n_stencil, control
-        );
-        exit(1);
-    }
 
 // input Coriolis coefficients file
     if(prefs.coriolis_file != NULL){
@@ -273,10 +315,18 @@ int main(int argc, char* argv[]){
 //------------------------------------------------------------------------------------------------------------
 //  Check Coordinate Spacing   Check Coordinate Spacing   Check Coordinate Spacing   Check Coordinate Spacing
 //------------------------------------------------------------------------------------------------------------
-// The Numerov method has to be applied to an equispaced grid.
+// The Numerov method has to be applied on an equispaced, mass weighted grid.
 //  This means that the spacing within each particular coordinate axis (q[0] to q[dimension-1])
 //  has to be constant and must be the same in all directions.
 
+// apply mass weighting to coordinates
+    for(i = 0; i < prefs.dimension; ++i){
+        for(j = 0; j < n_points; ++j){
+            q[i][j] *= sqrt(prefs.masses[i]);
+        }
+    }
+
+// perform spacing check
     if(prefs.check_spacing == 1){
         dq = CheckCoordinateSpacing(q, nq, prefs.threshold, prefs.dimension);
     }else{ dq = q[prefs.dimension-1][1] - q[prefs.dimension-1][0]; }
@@ -390,13 +440,25 @@ int main(int argc, char* argv[]){
 //  Stencils    Stencils    Stencils    Stencils    Stencils    Stencils    Stencils    Stencils    Stencils
 //------------------------------------------------------------------------------------------------------------
 // Allocate memory of n_stencil ** dimension for stencil
-    for(i = 0, j = 1; i < prefs.dimension; ++i){ j *= prefs.n_stencil; }
-    stencil = calloc(j, sizeof(double));
+    for(i = 0, control = 1; i < prefs.dimension; ++i){ control *= prefs.n_stencil; }
+    stencil = calloc(control, sizeof(double));
     if(stencil == NULL){
         fprintf(stderr,
             "\n (-) Error in memory allocation for stencil"
             "\n     Aborting..."
             "\n\n"
+        );
+        exit(1);
+    }
+// The number of data points (n_points) must be at least as big as the number of
+//  stencil points (n_stencil ** dimension)
+    if(n_points < control){
+        fprintf(stderr,
+            "\n (-) Error reading data from input-file: '%s'"
+            "\n     Insufficient number of data points (%d) for stencil size %d (%d points)."
+            "\n     Aborting - please check your input..."
+            "\n\n"
+            , prefs.input_file, n_points, prefs.n_stencil, control
         );
         exit(1);
     }
@@ -412,12 +474,9 @@ int main(int argc, char* argv[]){
         exit(1);
     }
 
-// update kinetic energy pre-factor
-    ekin_param *= (prefs.ekin_factor / dq / dq / prefs.mass);
-
 
 //------------------------------------------------------------------------------------------------------------
-//  Shift potential   Shift potential   Shift potential   Shift potential   Shift potential   Shift potential
+//      Potential and kinetic energy      Potential and kinetic energy      Potential and kinetic energy
 //------------------------------------------------------------------------------------------------------------
 // convert potential to output unit of energy
     for(i = 0; i < n_points; ++i){
@@ -431,6 +490,12 @@ int main(int argc, char* argv[]){
     for(i = 0; i < n_points; ++i){
         v[i] -= v_min;
     }
+
+// convert kinetic energy pre-factor (being hbar^2 / (2 * mass)) to output unit of energy
+//  ekin_param          is given in     kJ/mol / (mol/g/angstrom^2)
+//  dq                  is given in     angstrom * sqrt(g/mol)
+//  prefs.ekin_factor   is given in     (output unit of energy) / (kJ/mol)
+    ekin_param *= (prefs.ekin_factor / dq / dq);
 
 
 //------------------------------------------------------------------------------------------------------------
@@ -479,9 +544,6 @@ int main(int argc, char* argv[]){
         printf(  "\n     Exiting ... \n\n");
         exit(1);
     }
-
-// output all available settings
-    OutputSettings(fd, prefs);
 
 // output eigenvalues
     fprintf(fd, "# Eigenvalues:");

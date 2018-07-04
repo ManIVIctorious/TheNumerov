@@ -33,7 +33,7 @@ settings GetSettingsGetopt(settings defaults, int argc, char** argv){
     //              else it returns 0 and flag points to a variable set to val
     //  val:        value to return
         {"help",                   no_argument, 0, 'h'},
-        {"mass",             required_argument, 0, 'm'},
+        {"masses",           required_argument, 0, 'm'},
         {"fkin",             required_argument, 0, 'k'},
         {"fmu",              required_argument, 0, 'M'},
         {"fpot",             required_argument, 0, 'v'},
@@ -70,7 +70,7 @@ settings GetSettingsGetopt(settings defaults, int argc, char** argv){
                 exit(0);
 
             case 'm':
-                preferences.mass = atof(optarg);
+                preferences.masses_string = optarg;
                 break;
 
             case 'k':
@@ -144,5 +144,6 @@ settings GetSettingsGetopt(settings defaults, int argc, char** argv){
         }
     }
 
+// return settings struct "preferences"
     return preferences;
 }

@@ -18,10 +18,12 @@ int Help(char* filename, settings defaults){
 
 // Numerov
     printf("\n"
-           "\n\t-m, --mass"
+           "\n\t-m, --masses"
            "\n\t    Set reduced mass of involved modes in g/mol"
-           "\n\t    For dimensions > 1 this should always be set to 1.0"
-           "\n\t    Default:\t% lf", defaults.mass
+           "\n\t    This setting is only required if the input is not given in mass weighted"
+           "\n\t    coordinates. For dimensions greater than 1 the reduced masses are passed"
+           "\n\t    as a colon separated array of reduced masses"
+           "\n\t    Default:\t1.0:1.0"
     );
 
     printf("\n"

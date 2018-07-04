@@ -14,6 +14,7 @@ int OutputSettings(FILE* fd, settings prefs);
 
 int OutputSettings(FILE* fd, settings prefs){
 
+    int i;
     char * Eigensolver = NULL;
     time_t current_time = time(NULL);
     char * Hostname = malloc(16 * sizeof(char));
@@ -35,9 +36,9 @@ int OutputSettings(FILE* fd, settings prefs){
 
 
     fprintf(fd,
-        "#-----------------------------------------------------------------------------------------\n"
-        "#  Settings   Settings   Settings   Settings   Settings   Settings   Settings   Settings\n"
-        "#-----------------------------------------------------------------------------------------\n"
+        "##-----------------------------------------------------------------------------------------\n"
+        "##  Settings   Settings   Settings   Settings   Settings   Settings   Settings   Settings\n"
+        "##-----------------------------------------------------------------------------------------\n"
     );
 
 // General Information
@@ -69,12 +70,20 @@ fprintf(fd,
     }
 // double values
     fprintf(fd, "#\n");
-    fprintf(fd, "#\tReduced_Mass         = % 12.6lf; # in g/mol\n", prefs.mass);
-    fprintf(fd, "#\tKin_E_Factor         = % 12.6lf; # in x per kJ/mol\n", prefs.ekin_factor);
-    fprintf(fd, "#\tPot_E_Factor         = % 12.6lf; # input (v)  -> output unit of energy\n", prefs.epot_factor);
-    fprintf(fd, "#\tIMOI_Factor          = % 12.6lf; # input (mu) -> kJ/mol\n", prefs.mu_factor);
+
+    fprintf(fd, "#\tKin_E_Factor         = % 12.6lf;\t# in x per kJ/mol\n", prefs.ekin_factor);
+    fprintf(fd, "#\tPot_E_Factor         = % 12.6lf;\t# input (v)  -> output unit of energy\n", prefs.epot_factor);
+    fprintf(fd, "#\tIMOI_Factor          = % 12.6lf;\t# input (mu) -> kJ/mol\n", prefs.mu_factor);
     fprintf(fd, "#\tSpacing_Threshold    = % 12.5le;\n", prefs.threshold);
-    fprintf(fd, "#\n#\n");
+    fprintf(fd, "#\n");
+
+    fprintf(fd, "#\t# Reduced mass of each dimension,\n");
+    fprintf(fd, "#\t# given as colon separated string, with entries in g/mol\n");
+    fprintf(fd, "#\tReduced_Masses = %.12lf", prefs.masses[0]);
+    for(i = 1; i < prefs.dimension; ++i){
+        fprintf(fd, ":%.12lf", prefs.masses[i]);
+    }
+    fprintf(fd, ";\n#\n");
 
 
 fprintf(fd,
@@ -109,9 +118,9 @@ fprintf(fd,
 
 
     fprintf(fd,
-        "#-----------------------------------------------------------------------------------------\n"
-        "# End Settings   End Settings   End Settings   End Settings   End Settings   End Settings\n"
-        "#-----------------------------------------------------------------------------------------\n"
+        "##-----------------------------------------------------------------------------------------\n"
+        "## End Settings   End Settings   End Settings   End Settings   End Settings   End Settings\n"
+        "##-----------------------------------------------------------------------------------------\n"
         "#\n#\n"
     );
 

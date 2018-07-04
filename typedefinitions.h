@@ -6,7 +6,8 @@ typedef struct settings {
   int n_stencil;      // 1D stencil size
   int n_spline;       // Number of interpolation points
 
-  double mass;        // Reduced mass
+  char * masses_string; // String containing reduced masses
+  double * masses;      // Actual reduced masses array
 
   double ekin_factor; // Kinetic     energy factor
   double epot_factor; // Potential   energy factor
