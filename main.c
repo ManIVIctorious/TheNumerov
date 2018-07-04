@@ -498,6 +498,18 @@ int main(int argc, char* argv[]){
     ekin_param *= (prefs.ekin_factor / dq / dq);
 
 
+// if Coriolis file is set apply third term of the Watson Hamiltonian ( -1/8 sum_{i=0}^2 mu_ii )
+//  to the potential:
+//  mu                  is given in     g/mol/angstrom^2
+//  prefs.mu_factor     is given in     kJ/mol / [mu]
+//  prefs.ekin_factor   is given in     (output unit of energy) / (kJ/mol)
+    if(prefs.coriolis_file != NULL){
+        for(i = 0; i < n_points; ++i){
+            v[i] -= ((mu[0][0][i] + mu[1][1][i] + mu[2][2][i]) / 8.0 * (prefs.mu_factor * prefs.ekin_factor));
+        }
+    }
+
+
 //------------------------------------------------------------------------------------------------------------
 //   eigen-value solver   eigen-value solver   eigen-value solver   eigen-value solver   eigen-value solver
 //------------------------------------------------------------------------------------------------------------
@@ -538,7 +550,7 @@ int main(int argc, char* argv[]){
 //   Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output
 //------------------------------------------------------------------------------------------------------------
 // open output file
-    fd = fopen(prefs.output_file, "w");
+    fd = fopen(prefs.output_file, "a");
     if(fd == NULL){
         printf("\n\n (-) Error opening output-file: '%s'", prefs.output_file);
         printf(  "\n     Exiting ... \n\n");
@@ -762,7 +774,11 @@ int main(int argc, char* argv[]){
         for(j = 0; j < prefs.dimension; ++j){
             fprintf(fd, "\t% 24.16lf", q[j][i]);
         }
-        fprintf(fd, "\t% 24.16lf", v[i]);
+        if(prefs.coriolis_file != NULL){
+            fprintf(fd, "\t% 24.16lf", v[i] + ((mu[0][0][i] + mu[1][1][i] + mu[2][2][i])/8.0 * (prefs.mu_factor * prefs.ekin_factor)));
+        }else{
+            fprintf(fd, "\t% 24.16lf", v[i]);
+        }
 
     // output dipole moment components
         if(prefs.dipole != 0){
@@ -774,7 +790,7 @@ int main(int argc, char* argv[]){
 
     // output potential after addition of Watson potential term
         if(prefs.coriolis_file != NULL){
-            fprintf(fd, "\t% 24.16lf", v[i] - ((mu[0][0][i] + mu[1][1][i] + mu[2][2][i])/8.0 * (prefs.mu_factor * prefs.ekin_factor)));
+            fprintf(fd, "\t% 24.16lf", v[i]);
         }
 
     // output wave functions

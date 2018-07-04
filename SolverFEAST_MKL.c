@@ -5,9 +5,9 @@
 #include "typedefinitions.h"
 
 // Dependencies (with rotation)
+int FillMKL_1D(double* v, int* nq, double ekin_param, double* stencil, int n_stencil, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A);
 int FillMKL_2D(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double** q, double dq, double*** mu, double** zeta, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A);
 // Dependencies (without rotation)
-int FillMKL_1D_norot(double* v, int* nq, double ekin_param, double* stencil, int n_stencil, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A);
 int FillMKL_2D_norot(double* v, int* nq, double ekin_param, double* stencil, int n_stencil, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A);
 
 // provided prototypes
@@ -33,13 +33,8 @@ int SolverFEAST_MKL(settings prefs, int* nq, double* v, double ekin_param, doubl
     switch(prefs.dimension){
 
         case 1:
-            //if(prefs.coriolis_file != NULL){
-            //// one dimensional filling routine with rotation enabled
-            //    FillMKL_1D(prefs, nq, v, ekin_param, stencil, q, dq, mu, zeta, &rows_A, &cols_A, &vals_A);
-            //}else{
-            //// one dimensional filling routine without rotation enabled
-                  FillMKL_1D_norot(v, nq, ekin_param, stencil, prefs.n_stencil, &rows_A, &cols_A, &vals_A);
-            //}
+        // one dimensional filling routine, the rotation terms are already set in main (Watson term)
+            FillMKL_1D(v, nq, ekin_param, stencil, prefs.n_stencil, &rows_A, &cols_A, &vals_A);
             break;
 
         case 2:
@@ -54,8 +49,8 @@ int SolverFEAST_MKL(settings prefs, int* nq, double* v, double ekin_param, doubl
 
         default:
             fprintf(stderr,
-                "\n (-) Error: For the requested dimensionality of \"%d\""
-                "\n     no adequate MKL FEAST fill routine exists."
+                "\n (-) Error: The requested MKL FEAST filling routine"
+                "\n     for a dimensionality of \"%d\" is not implemented"
                 "\n     Please check your input. Aborting...\n\n"
                 ,prefs.dimension
             );
