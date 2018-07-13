@@ -2,7 +2,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <mkl_solvers_ee.h>
+
 #include "typedefinitions.h"
+
+// Dependencies
+int FirstDerivative (int n_stencil, double*  first_derivative);
+int SecondDerivative(int n_stencil, double* second_derivative);
 
 // provided prototypes
 int FillMKL_1D(double* v, int* nq, double ekin_param, double* stencil, int n_stencil, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A);
@@ -72,19 +77,6 @@ int FillMKL_1D(double* v, int* nq, double ekin_param, double* stencil, int n_ste
 
 int FillMKL_2D(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double** q, double dq, double*** mu, double** zeta, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A){
 
-double onestencil[52]={0.0, 0.0, 0.0, 0.0, 0.0, -1.0/2.0, 0.0, 1.0/2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0/12.0, -2.0/3.0, 0.0, 2.0/3.0, -1.0/12.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0/60.0, 3.0/20.0, -3.0/4.0, 0.0, 3.0/4.0, -3.0/20.0, 1.0/60.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0/280.0, -4.0/105.0, 1.0/5.0, -4.0/5.0, 0.0, 4.0/5.0, -1.0/5.0, 4.0/105.0, -1.0/280.0, 0.0, 0.0};
-double second_der[78]={0.0, 0.0, 0.0, 0.0, 0.0, 1.0, -2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0, -1.0/12.0, 4.0/3.0, -5.0/2.0, 4.0/3.0, -1.0/12.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 1.0/90.0, -3.0/20.0, 3.0/2.0, -49.0/18.0, 3.0/2.0, -3.0/20.0, 1.0/90.0, 0.0, 0.0, 0.0,0.0, 0.0, -1.0/560.0, 8.0/315.0, -1.0/5.0,  8.0/5.0,-205.0/72.0, 8.0/5.0, -1.0/5.0, 8.0/315.0, -1.0/560.0, 0.0, 0.0,0.0, 1.0/3150.0, -5.0/1008.0, 5.0/126.0, -5.0/21.0, 5.0/3.0, -5296.0/1800.0, 5.0/3.0, -5.0/21.0, 5.0/126.0, -5.0/1008.0, 1.0/3150.0, 0.0,-1.0/16632.0, 2.0/1925.0, -1.0/112.0, 10.0/189.0, -15.0/56.0, 12.0/7.0, -5369.0/1800.0, 12.0/7.0, -15.0/56.0,10.0/189.0, -1.0/112.0, 2.0/1925.0, -1.0/16632.0};
-
-int m,n;
-double vorfaktor=0.0;
-double nothing[13]={0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0};// für die einzelnen Ableitungen.
-
-int sec_st;
-if(prefs.n_stencil<10)
-{sec_st=(prefs.n_stencil-1)/2-1;}
-else
-{sec_st=3;}
-
     int i, j;
     int n_entries = 0;
     int n_points = nq[0] * nq[1];
@@ -119,70 +111,111 @@ else
         exit(1);
     }
 
+// variables needed for the calculation of the Watson Hamiltonian rotational terms
+    int m, n;
+    double   prefactor = 0.0;
+
+//  derivative stencils for the calculation of rotational terms
+    double * nothing   = NULL;  // "nothing" ensures the differentiation is only applied to one row/column/etc.
+    double * fst_deriv = NULL;  // first derivative stencil
+    double * sec_deriv = NULL;  // second derivative stencil
+
+
+    if(prefs.coriolis_file != NULL){
+    // allocate memory for derivative stencils
+        nothing   = calloc(prefs.n_stencil,  sizeof(double));
+        fst_deriv = malloc(prefs.n_stencil * sizeof(double));
+        sec_deriv = malloc(prefs.n_stencil * sizeof(double));
+        if(nothing == NULL || fst_deriv == NULL || sec_deriv == NULL){
+            fprintf(stderr,
+                "\n (-) Error in memory allocation of derivative stencils"
+                "\n     Aborting..."
+                "\n\n"
+            );
+            exit(1);
+        }
+    //  set central point of "nothing" to 1.0
+        nothing[prefs.n_stencil/2] = 1.0;
+
+    //  fill first and second derivative stencils
+        m = FirstDerivative (prefs.n_stencil, fst_deriv);
+        n = SecondDerivative(prefs.n_stencil, sec_deriv);
+        if(m != 0 || n != 0){
+            fprintf(stderr,
+                "\n (-) Error initialising derivative stencil parameters."
+                "\n     Aborting..."
+                "\n\n"
+            );
+            exit(1);
+        }
+    }
+
+
 // fill Numerov's A matrix
 //  determine the non zero elements and store their positions in rows_A and cols_A
 //  as well as their values in vals_A
-    for(i = 0; i < nq[0]; i++)
-    {
-        for(j = 0; j < nq[1]; j++)
-       {
+    for(i = 0; i < nq[0]; ++i){
+        for(j = 0; j < nq[1]; ++j){
+            for(xsh = -prefs.n_stencil/2; xsh < prefs.n_stencil/2 + 1; ++xsh){
 
-            for(xsh = -prefs.n_stencil/2; xsh < prefs.n_stencil/2 + 1; xsh++)
-        {
-                if( (i+xsh > -1) && (i+xsh < nq[0]) )
-            {
+                if( (i+xsh > -1) && (i+xsh < nq[0]) ){
+                    for(ysh = -prefs.n_stencil/2; ysh < prefs.n_stencil/2 + 1; ++ysh){
 
-                    for(ysh = -prefs.n_stencil/2; ysh < prefs.n_stencil/2 + 1; ysh++)
-            {
-                        if( (j+ysh > -1) && ( j+ysh < nq[1]) )
-            {
-
+                        if( (j+ysh > -1) && (j+ysh < nq[1]) ){
                             element = (i + xsh)*nq[1] + j+ysh;
                             (*cols_A)[n_entries] = element+1; // wieso +1? weil intel!!
 
 
                         // stencil entries have to be divided by 2 to get the right result.
                         //  in three dimensions it should be a division by 4
-                            vorfaktor=0.0;
+                            (*vals_A)[n_entries] = ekin_param * stencil[(xsh + prefs.n_stencil/2)*prefs.n_stencil + ysh + prefs.n_stencil/2]/2.0;
 
-                              for (n=0;n<3;n++)
-                                 {
-                                 for(m=0;m<3;m++)
-                                 {
+                        // enable second term of Watson Hamiltonian when Coriolis file is set
+                        //####################################################################################################
+                            if(prefs.coriolis_file != NULL){
+                            // calculate pre-factor
+                                for(n = 0, prefactor = 0.0; n < 3; ++n){
+                                    for(m = 0; m < 3; ++m){
+                                      prefactor -= zeta[n][0]*zeta[m][0] * mu[n][m][i*nq[1] + j];
+                                    }
+                                }
+                            //  zeta is normalized      =>          non-dimensional
+                            //  mu                  is given in     g/mol/angstrom^2
+                            //  prefs.mu_factor     is given in     kJ/mol / [mu]
+                            //  prefs.ekin_factor   is given in     (output unit of energy) / (kJ/mol)
+                                prefactor *= ((prefs.mu_factor * prefs.ekin_factor)/2.0);
 
-                                  vorfaktor -= zeta[n][0]*zeta[m][0]*mu[n][m][i*nq[1]+j];
-
-                                 }// for m
-                                }// for n
-
-
-                              (*vals_A)[n_entries] = ekin_param * stencil[(xsh+prefs.n_stencil/2)*prefs.n_stencil+ysh+prefs.n_stencil/2]/2.0;
-
-     (*vals_A)[n_entries] -= ((prefs.mu_factor * prefs.ekin_factor)/2.0) * vorfaktor * (q[0][i*nq[1]+j] *                   onestencil[sec_st*13+6+xsh] * nothing[6+ysh]              / dq
-                                                                                   + q[1][i*nq[1]+j] *                   onestencil[sec_st*13+6+ysh] * nothing[6+xsh]              / dq
-                                                                                   - q[0][i*nq[1]+j] * q[0][i*nq[1]+j] * second_der[sec_st*13+6+ysh] * nothing[6+xsh]              / dq / dq
-                                                                                   - q[1][i*nq[1]+j] * q[1][i*nq[1]+j] * second_der[sec_st*13+6+xsh] * nothing[6+ysh]              / dq / dq
-                                                                                +2.0*q[0][i*nq[1]+j] * q[1][i*nq[1]+j] * onestencil[sec_st*13+6+xsh] * onestencil[sec_st*13+6+ysh] / dq / dq);
+                                (*vals_A)[n_entries] -= prefactor * (
+                                            q[0][i*nq[1]+j] *                   fst_deriv[(prefs.n_stencil/2) + xsh] *   nothing[(prefs.n_stencil/2) + ysh]    / dq
+                                          + q[1][i*nq[1]+j] *                   fst_deriv[(prefs.n_stencil/2) + ysh] *   nothing[(prefs.n_stencil/2) + xsh]    / dq
+                                          - q[0][i*nq[1]+j] * q[0][i*nq[1]+j] * sec_deriv[(prefs.n_stencil/2) + ysh] *   nothing[(prefs.n_stencil/2) + xsh]    / dq / dq
+                                          - q[1][i*nq[1]+j] * q[1][i*nq[1]+j] * sec_deriv[(prefs.n_stencil/2) + xsh] *   nothing[(prefs.n_stencil/2) + ysh]    / dq / dq
+                                    + 2.0 * q[0][i*nq[1]+j] * q[1][i*nq[1]+j] * fst_deriv[(prefs.n_stencil/2) + xsh] * fst_deriv[(prefs.n_stencil/2) + ysh]    / dq / dq
+                                );
+                            }
+                        //####################################################################################################
 
 
-                                if(xsh == 0 && ysh ==0)                        // add potential to diagonal element
-                                {
-                                 (*vals_A)[n_entries] += v[i*nq[1]+j];
+                        // add potential to diagonal element
+                            if(xsh == 0 && ysh == 0){
+                                (*vals_A)[n_entries] += v[i*nq[1] + j];
+                            }
 
-                                 }// end if xsh=ysh=0
-
-
-                            n_entries ++;
-                        }// end if 0<=ysh<nq[1]
-                    }// end for ysh
-                } // end if 0<=xsh<nq[0]
-            }// end for xsh
+                            n_entries++;
+                        }
+                    }
+                }
+            }
       // after inserting all entries in a row the total number of entries is inserted in the CSR format.
-        (*rows_A)[i*nq[1]+j+1] = n_entries+1;
-        } // end for j
-    }//end for i
+        (*rows_A)[i*nq[1] + j + 1] = n_entries + 1;
+        }
+    }
     (*rows_A)[0] = 1;
 
+// free memory
+    free(nothing);   nothing   = NULL;
+    free(fst_deriv); fst_deriv = NULL;
+    free(sec_deriv); sec_deriv = NULL;
 
     return 0;
 }

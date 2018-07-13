@@ -37,6 +37,7 @@
     OBJ += MetaGetStencil.o
     OBJ += FillStencil1D.o
     OBJ += FillStencil2D.o
+    OBJ += FillDerivativeStencils.o
     OBJ += MetaEigensolver.o
     OBJ += Help.o
     OBJ += MetaInterpolation.o
@@ -46,7 +47,6 @@
   # MKL objects
     ifeq ($(findstring HAVE_MKL_INSTALLED, $(PPF)), HAVE_MKL_INSTALLED)
       MKLOBJ += Fill_MKL.o
-      MKLOBJ += Fill_MKL_norot.o
       MKLOBJ += SolverFEAST_MKL.o
     endif
   # Armadillo objects (require C++)

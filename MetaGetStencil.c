@@ -14,18 +14,6 @@ int MetaGetStencil(double* stencil, int n_stencil, int dimension){
 
     int control = -1;
 
-// stencil has to have an odd number of entries (at least in current implementation)
-    if(n_stencil%2 == 0){
-        fprintf(stderr,
-            "\n (-) Stencil size is given as even (%d), but must be an odd number."
-            "\n     Aborting - please check your input..."
-            "\n\n"
-            , n_stencil
-        );
-        exit(-1);
-    }
-
-
 // Assignment of stencil functions
     switch(dimension){
 
