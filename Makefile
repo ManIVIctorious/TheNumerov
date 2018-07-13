@@ -35,8 +35,7 @@
     OBJ += InputCoriolisCoefficients.o
     OBJ += OutputSettings.o
     OBJ += MetaGetStencil.o
-    OBJ += FillStencil1D.o
-    OBJ += FillStencil2D.o
+    OBJ += FillNumerovStencils.o
     OBJ += FillDerivativeStencils.o
     OBJ += MetaEigensolver.o
     OBJ += Help.o
