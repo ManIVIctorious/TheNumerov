@@ -26,7 +26,7 @@ settings GetSettingsGetopt(settings defaults, int argc, char** argv){
 
     // optstring contains a list of all short option indices,
     //  indices followed by a colon are options requiring an argument.
-    const char         * optstring = "hm:k:v:n:l:u:N:s:ac:i:dPo:t:TM:D:";
+    const char         * optstring = "hm:k:v:n:l:u:N:s:ac:i:dPo:t:TM:D:f:";
     const struct option longopts[] = {
     //  *name:      option name,
     //  has_arg:    if option requires argument,
@@ -34,27 +34,34 @@ settings GetSettingsGetopt(settings defaults, int argc, char** argv){
     //              else it returns 0 and flag points to a variable set to val
     //  val:        value to return
         {"help",                   no_argument, 0, 'h'},
-        {"masses",           required_argument, 0, 'm'},
-        {"fkin",             required_argument, 0, 'k'},
-        {"fmu",              required_argument, 0, 'M'},
-        {"fpot",             required_argument, 0, 'v'},
-        {"n-stencil",        required_argument, 0, 'n'},
-        {"lower-bound",      required_argument, 0, 'l'},
-        {"upper-bound",      required_argument, 0, 'u'},
-        {"nout",             required_argument, 0, 'N'},
-        {"dq-threshold",     required_argument, 0, 't'},
-        {"no-spacing-check",       no_argument, 0, 'T'},
-        {"spline",           required_argument, 0, 's'},
+        {"pipe",                   no_argument, 0, 'P'},
+    // Boolian values:
         {"analyze",                no_argument, 0, 'a'},
         {"dipole",                 no_argument, 0, 'd'},
+        {"no-spacing-check",       no_argument, 0, 'T'},
+    // integer values:
         {"dimension",        required_argument, 0, 'D'},
-        {"pipe",                   no_argument, 0, 'P'},
+        {"n-stencil",        required_argument, 0, 'n'},
+        {"spline",           required_argument, 0, 's'},
+        {"n-out",            required_argument, 0, 'N'},
+    // double values:
+        {"fkin",             required_argument, 0, 'k'},
+        {"fpot",             required_argument, 0, 'v'},
+        {"fdipole",          required_argument, 0, 'f'},
+        {"fmu",              required_argument, 0, 'M'},
+        {"dq-threshold",     required_argument, 0, 't'},
+        {"lower-bound",      required_argument, 0, 'l'},
+        {"upper-bound",      required_argument, 0, 'u'},
+    // string values:
+        {"masses",           required_argument, 0, 'm'},
         {"input-file",       required_argument, 0, 'i'},
-        {"coriolis-input",   required_argument, 0, 'c'},
         {"output-file",      required_argument, 0, 'o'},
+        {"coriolis-input",   required_argument, 0, 'c'},
+    // flags:
         {"mkl",                    no_argument, &preferences.Eigensolver, 1},
         {"armadillo",              no_argument, &preferences.Eigensolver, 2},
-        { 0, 0, 0, 0 }
+    // requires zero termination
+        { 0 , 0 , 0 , 0 }
     };
 
     optind = 1; // option index starting by 1, provided by <getopt.h>
@@ -66,60 +73,19 @@ settings GetSettingsGetopt(settings defaults, int argc, char** argv){
 
     // iterate over options control
         switch(control){
+
+        // print help messages
             case 'h':
                 Help(argv[0], defaults);
                 exit(0);
 
-            case 'm':
-            // copy optarg to string and ensure zero termination
-                strncpy(preferences.masses_string, optarg, _MaxSettingsStringLength_);
-                preferences.masses_string[_MaxSettingsStringLength_ - 1] = '\0';
-                break;
-
-            case 'k':
-                preferences.ekin_factor = atof(optarg);
-                break;
-
-            case 'M':
-                preferences.mu_factor = atof(optarg);
-                break;
-
-            case 'v':
-                preferences.epot_factor = atof(optarg);
-                break;
-
-            case 'n':
-                preferences.n_stencil = atoi(optarg);
-                break;
-
-            case 'l':
-                preferences.e_min = atof(optarg);
-                break;
-
-            case 'u':
-                preferences.e_max = atof(optarg);
-                break;
-
-            case 'N':
-                preferences.n_out = atoi(optarg);
-                break;
-
+        // Pipe: read input from stdin
             case 'P':
                 strncpy(preferences.input_file, "/dev/stdin", _MaxSettingsStringLength_);
                 break;
 
-            case 's':
-                preferences.n_spline = atoi(optarg);
-                break;
 
-            case 't':
-                preferences.threshold = atof(optarg);
-                break;
-
-            case 'T':
-                preferences.check_spacing = 0;
-                break;
-
+        // Boolian values
             case 'a':
                 preferences.analyze = 1;
                 break;
@@ -128,8 +94,64 @@ settings GetSettingsGetopt(settings defaults, int argc, char** argv){
                 preferences.dipole = 1;
                 break;
 
+            case 'T':
+                preferences.check_spacing = 0;
+                break;
+
+
+        // integer values
             case 'D':
-                preferences.dimension = atoi(optarg);
+                preferences.dimension   = atoi(optarg);
+                break;
+
+            case 'n':
+                preferences.n_stencil   = atoi(optarg);
+                break;
+
+            case 's':
+                preferences.n_spline    = atoi(optarg);
+                break;
+
+            case 'N':
+                preferences.n_out       = atoi(optarg);
+                break;
+
+
+        // double values
+            case 'k':
+                preferences.ekin_factor = atof(optarg);
+                break;
+
+            case 'v':
+                preferences.epot_factor = atof(optarg);
+                break;
+
+            case 'f':
+                preferences.DipToAsm    = atof(optarg);
+                break;
+
+            case 'M':
+                preferences.mu_factor   = atof(optarg);
+                break;
+
+            case 't':
+                preferences.threshold   = atof(optarg);
+                break;
+
+            case 'l':
+                preferences.e_min       = atof(optarg);
+                break;
+
+            case 'u':
+                preferences.e_max       = atof(optarg);
+                break;
+
+
+        // string values
+            case 'm':
+            // copy optarg to string and ensure zero termination
+                strncpy(preferences.masses_string, optarg, _MaxSettingsStringLength_);
+                preferences.masses_string[_MaxSettingsStringLength_ - 1] = '\0';
                 break;
 
             case 'i':
@@ -150,9 +172,10 @@ settings GetSettingsGetopt(settings defaults, int argc, char** argv){
                 preferences.output_file[_MaxSettingsStringLength_ - 1] = '\0';
                 break;
 
+
         }
     }
 
-// return settings struct "preferences"
+// return new settings struct "preferences"
     return preferences;
 }

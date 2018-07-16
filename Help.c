@@ -46,6 +46,15 @@ int Help(char* filename, settings defaults){
     );
 
     printf("\n"
+           "\n\t-f, --fdipole"
+           "\n\t    Conversion factor of the \"dipole moment\"."
+           "\n\t    The conversion is performed from the input dimension to Asm"
+           "\n\t    (Ampere Second Meter), further conversions are handled by the"
+           "\n\t    kinetic energy factor [-k, --fkin]."
+           "\n\t    Default:\t% lf", defaults.DipToAsm
+    );
+
+    printf("\n"
            "\n\t-M, --fmu"
            "\n\t    Conversion factor for the \"effective reciprocal inertia tensor\"."
            "\n\t    The conversion is performed from the input dimension to kJ/mol,"
@@ -164,7 +173,7 @@ int Help(char* filename, settings defaults){
 
     printf("\n"
            "\n\t    --armadillo         Use the Armadillo ARPACK eigen solver"
-           "\n\t    -N, --nout          Set number of eigenstates to be calculated"
+           "\n\t    -N, --n-out         Set number of eigenstates to be calculated"
     );
 #endif
 
