@@ -1,6 +1,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <getopt.h>
 
 #include "typedefinitions.h"
@@ -70,7 +71,9 @@ settings GetSettingsGetopt(settings defaults, int argc, char** argv){
                 exit(0);
 
             case 'm':
-                preferences.masses_string = optarg;
+            // copy optarg to string and ensure zero termination
+                strncpy(preferences.masses_string, optarg, _MaxSettingsStringLength_);
+                preferences.masses_string[_MaxSettingsStringLength_ - 1] = '\0';
                 break;
 
             case 'k':
@@ -102,7 +105,7 @@ settings GetSettingsGetopt(settings defaults, int argc, char** argv){
                 break;
 
             case 'P':
-                preferences.input_file = "/dev/stdin";
+                strncpy(preferences.input_file, "/dev/stdin", _MaxSettingsStringLength_);
                 break;
 
             case 's':
@@ -130,15 +133,21 @@ settings GetSettingsGetopt(settings defaults, int argc, char** argv){
                 break;
 
             case 'i':
-                preferences.input_file = optarg;
+            // copy optarg to string and ensure zero termination
+                strncpy(preferences.input_file, optarg, _MaxSettingsStringLength_);
+                preferences.input_file[_MaxSettingsStringLength_ - 1] = '\0';
                 break;
 
             case 'c':
-                preferences.coriolis_file = optarg;
+            // copy optarg to string and ensure zero termination
+                strncpy(preferences.coriolis_file, optarg, _MaxSettingsStringLength_);
+                preferences.coriolis_file[_MaxSettingsStringLength_ - 1] = '\0';
                 break;
 
             case 'o':
-                preferences.output_file = optarg;
+            // copy optarg to string and ensure zero termination
+                strncpy(preferences.output_file, optarg, _MaxSettingsStringLength_);
+                preferences.output_file[_MaxSettingsStringLength_ - 1] = '\0';
                 break;
 
         }

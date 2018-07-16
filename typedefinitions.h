@@ -1,12 +1,14 @@
 #ifndef _TYPEDEFINITIONS_H
 #define _TYPEDEFINITIONS_H
 
+#define _MaxSettingsStringLength_ 1024
+
 typedef struct settings {
   int dimension;      // dimension of the problem
   int n_stencil;      // 1D stencil size
   int n_spline;       // Number of interpolation points
 
-  char * masses_string; // String containing reduced masses
+  char masses_string[_MaxSettingsStringLength_]; // String containing reduced masses
   double * masses;      // Actual reduced masses array
 
   double ekin_factor; // Kinetic     energy factor
@@ -27,9 +29,9 @@ typedef struct settings {
   double e_max;     // Maximal energy of eigenstates (FEAST)
 
 // Files
-  char * input_file;
-  char * coriolis_file;
-  char * output_file;
+  char input_file[_MaxSettingsStringLength_];
+  char coriolis_file[_MaxSettingsStringLength_];
+  char output_file[_MaxSettingsStringLength_];
 } settings;
 
 #endif

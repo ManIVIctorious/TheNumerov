@@ -35,7 +35,7 @@ int main(int argc, char* argv[]){
         .n_spline  = 0,     // number of interpolation points
 
     // double precision values
-        .masses_string = NULL,
+        .masses_string = "",
         .masses        = NULL,    // g/mol
 
         .ekin_factor = 1.0/4.184,       // (kcal/mol) / (kJ/mol)
@@ -57,8 +57,8 @@ int main(int argc, char* argv[]){
         .e_max  = 400.0,    // maximal energy in output energy unit (FEAST)
 
     // file names
-        .input_file    = NULL,
-        .coriolis_file = NULL,
+        .input_file    = "",
+        .coriolis_file = "",
         .output_file   = "/dev/stdout",
     };
 
@@ -145,12 +145,14 @@ int main(int argc, char* argv[]){
     }
 
 // get reduced masses from masses_string
-    if(prefs.masses_string != NULL){
+    if(strlen(prefs.masses_string) > 0){
+    // point pos to beginning of prefs.masses_string for further processing
+        char *pos = prefs.masses_string;
 
         for(i = 0; i < prefs.dimension; ++i){
 
         // masses string is separated by colon => split at colon position
-            if( (prefs.masses[i] = atof(strsep(&prefs.masses_string, ":"))) == 0.0 ){
+            if( (prefs.masses[i] = atof(strsep(&pos, ":"))) == 0.0 ){
 
             // if prefs.masses[i] is zero (error value of atof) throw an error
             //  this is possible since a reduced mass of zero doesn't make much sense on molecular scale
@@ -175,8 +177,11 @@ int main(int argc, char* argv[]){
 // open output file
     fd = fopen(prefs.output_file, "w");
     if(fd == NULL){
-        printf("\n\n (-) Error opening output-file: '%s'", prefs.output_file);
-        printf(  "\n     Exiting ... \n\n");
+        fprintf(stderr,
+            "\n (-) Error opening output-file: '%s'"
+            "\n     Aborting... \n\n"
+            , prefs.output_file
+        );
         exit(1);
     }
 
@@ -191,7 +196,7 @@ int main(int argc, char* argv[]){
 //  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input
 //------------------------------------------------------------------------------------------------------------
 // check input argument if the file is not present give a silly statement
-    if(prefs.input_file == NULL){
+    if(strlen(prefs.input_file) < 1){
         fprintf(stderr, "\n (-) Please specify input file...\n\n");
         exit (1);
     }
@@ -246,7 +251,7 @@ int main(int argc, char* argv[]){
 
 
 // input Coriolis coefficients file
-    if(prefs.coriolis_file != NULL){
+    if(strlen(prefs.coriolis_file) > 0){
 
     // initialize q_coriolis 2D [D][data] double array
         q_coriolis = malloc(prefs.dimension * sizeof(double*));
@@ -387,7 +392,7 @@ int main(int argc, char* argv[]){
 
 
     // if coriolis file is set also interpolate mu
-        if(prefs.coriolis_file != NULL){
+        if(strlen(prefs.coriolis_file) > 0){
             control = MetaInterpolation(&(mu[0][0]), nq, dq, prefs.dimension, prefs.n_spline);
             element = MetaInterpolation(&(mu[0][1]), nq, dq, prefs.dimension, prefs.n_spline);
             i       = MetaInterpolation(&(mu[0][2]), nq, dq, prefs.dimension, prefs.n_spline);
@@ -502,7 +507,7 @@ int main(int argc, char* argv[]){
 //  mu                  is given in     g/mol/angstrom^2
 //  prefs.mu_factor     is given in     kJ/mol / [mu]
 //  prefs.ekin_factor   is given in     (output unit of energy) / (kJ/mol)
-    if(prefs.coriolis_file != NULL){
+    if(strlen(prefs.coriolis_file) > 0){
         for(i = 0; i < n_points; ++i){
             v[i] -= ((mu[0][0][i] + mu[1][1][i] + mu[2][2][i]) / 8.0 * (prefs.mu_factor * prefs.ekin_factor));
         }
@@ -551,8 +556,11 @@ int main(int argc, char* argv[]){
 // open output file
     fd = fopen(prefs.output_file, "a");
     if(fd == NULL){
-        printf("\n\n (-) Error opening output-file: '%s'", prefs.output_file);
-        printf(  "\n     Exiting ... \n\n");
+        fprintf(stderr,
+            "\n (-) Error opening output-file: '%s'"
+            "\n     Aborting... \n\n"
+            , prefs.output_file
+        );
         exit(1);
     }
 
@@ -591,8 +599,11 @@ int main(int argc, char* argv[]){
     // open output file
         fd = fopen(prefs.output_file, "a");
         if(fd == NULL){
-            printf("\n\n (-) Error opening output-file: '%s'", prefs.output_file);
-            printf(  "\n     Exiting ... \n\n");
+            fprintf(stderr,
+                "\n (-) Error opening output-file: '%s'"
+                "\n     Aborting... \n\n"
+                , prefs.output_file
+            );
             exit(1);
         }
     // check for ortho-normality of evaluated wave functions:
@@ -700,8 +711,11 @@ int main(int argc, char* argv[]){
     // open output file
         fd = fopen(prefs.output_file, "a");
         if(fd == NULL){
-            printf("\n\n (-) Error opening output-file: '%s'", prefs.output_file);
-            printf(  "\n     Exiting ... \n\n");
+            fprintf(stderr,
+                "\n (-) Error opening output-file: '%s'"
+                "\n     Aborting... \n\n"
+                , prefs.output_file
+            );
             exit(1);
         }
 
@@ -721,8 +735,11 @@ int main(int argc, char* argv[]){
 // open output file
     fd = fopen(prefs.output_file, "a");
     if(fd == NULL){
-        printf("\n\n (-) Error opening output-file: '%s'", prefs.output_file);
-        printf(  "\n     Exiting ... \n\n");
+        fprintf(stderr,
+            "\n (-) Error opening output-file: '%s'"
+            "\n     Aborting... \n\n"
+            , prefs.output_file
+        );
         exit(1);
     }
 
@@ -749,7 +766,7 @@ int main(int argc, char* argv[]){
         fprintf(fd, "\t          dip_z         ");
     }
 
-    if(prefs.coriolis_file != NULL){
+    if(strlen(prefs.coriolis_file) > 0){
         fprintf(fd, "\tv(q) - sum_i(mu[i][i])/8");
     }
 
@@ -773,7 +790,7 @@ int main(int argc, char* argv[]){
         for(j = 0; j < prefs.dimension; ++j){
             fprintf(fd, "\t% 24.16lf", q[j][i]);
         }
-        if(prefs.coriolis_file != NULL){
+        if(strlen(prefs.coriolis_file) > 0){
             fprintf(fd, "\t% 24.16lf", v[i] + ((mu[0][0][i] + mu[1][1][i] + mu[2][2][i])/8.0 * (prefs.mu_factor * prefs.ekin_factor)));
         }else{
             fprintf(fd, "\t% 24.16lf", v[i]);
@@ -788,7 +805,7 @@ int main(int argc, char* argv[]){
 
 
     // output potential after addition of Watson potential term
-        if(prefs.coriolis_file != NULL){
+        if(strlen(prefs.coriolis_file) > 0){
             fprintf(fd, "\t% 24.16lf", v[i]);
         }
 

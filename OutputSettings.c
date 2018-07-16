@@ -110,7 +110,7 @@ fprintf(fd,
 fprintf(fd,
 "## Files:\n");
     fprintf(fd, "#\tInput_File     = %s;\n", prefs.input_file);
-    if(prefs.coriolis_file != NULL){
+    if(strlen(prefs.coriolis_file) > 0){
         fprintf(fd, "#\tCoriolis_File  = %s;\n", prefs.coriolis_file);
     }
     fprintf(fd, "#\tOutput_File    = %s;\n", prefs.output_file);
