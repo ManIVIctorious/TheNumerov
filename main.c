@@ -8,8 +8,7 @@
 
 // input functions
 settings GetSettingsGetopt(settings defaults, int argc, char** argv);
-int InputFunction(char* inputfile, double** *q, int* nq, double* *V, int dimension);
-int InputFunctionDipole(char* inputfile, double** *q, int* nq, double* *V, double** *mu, int dimension);
+int InputFunction(char* inputfile, double** *q, int* nq, double* *v, double** *mu, int dimension, int dipole_flag);
 int InputCoriolisCoefficients(char* inputfile, double** *q, double** zeta, double*** *mu, int dimension);
 double CheckCoordinateSpacing(double** q, int* nq, double threshold, int dimension);
 
@@ -151,9 +150,10 @@ int main(int argc, char* argv[]){
         for(i = 0; i < prefs.dimension; ++i){
 
         // masses string is separated by colon => split at colon position
-            if( (prefs.masses[i] = atof(strsep(&prefs.masses_string, ":"))) == 0.0){
+            if( (prefs.masses[i] = atof(strsep(&prefs.masses_string, ":"))) == 0.0 ){
 
-            // if prefs.masses[i] is 0.0 (error value of atof) throw an error and abort
+            // if prefs.masses[i] is zero (error value of atof) throw an error
+            //  this is possible since a reduced mass of zero doesn't make much sense on molecular scale
                 fprintf(stderr,
                     "\n (-) Error in input of reduced masses."
                     "\n     The reduced masses have to be passed as a colon separated array"
@@ -199,13 +199,13 @@ int main(int argc, char* argv[]){
 // create 2D array q[dimension][entries] containing coordinates
 //  array nq, containing number of entries for each dimension
 //  and array v, containing all energy values
+    nq = calloc(prefs.dimension,  sizeof(int));
     q  = malloc(prefs.dimension * sizeof(double*));
     for(i = 0; i < prefs.dimension; ++i){
         q[i] = malloc(sizeof(double));
     }
-    nq = calloc(prefs.dimension, sizeof(int));
     v  = malloc(sizeof(double));
-    if(q == NULL || v  == NULL){
+    if(q == NULL || v  == NULL || nq == NULL){
         fprintf(stderr,
             "\n (-) Error in memory allocation for q or v"
             "\n     Aborting...\n\n"
@@ -228,10 +228,9 @@ int main(int argc, char* argv[]){
                 exit(1);
             }
         }
-        n_points = InputFunctionDipole(prefs.input_file, &q, nq, &v, &dip, prefs.dimension);
-    }else{
-        n_points = InputFunction(prefs.input_file, &q, nq, &v, prefs.dimension);
     }
+
+    n_points = InputFunction(prefs.input_file, &q, nq, &v, &dip, prefs.dimension, prefs.dipole);
 
 // check if the "N nq[0] ... nq[dimension-1]" line in input file matches the number of data points
     for(i = 0, control = 1; i < prefs.dimension; ++i){

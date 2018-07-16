@@ -8,156 +8,241 @@
 #include <ctype.h>
 
 // provided prototypes
-int InputFunction(char* inputfile, double** *q, int* nq, double* *V, int dimension);
+int InputFunction(char* inputfile, double** *q, int* nq, double* *v, double** *mu, int dimension, int dipole_flag);
 
-int InputFunction(char* inputfile, double** *q, int* nq, double* *V, int dimension){
 
-    int linenumber;
-    int rows, comment_flag;
-    int n;
-    unsigned int i;
-    char * comment = "#%\n";
-    char * line    = NULL;
-    char * token = NULL;
-    char   buffer[_MaxLineLength_] = "";
+int InputFunction(char* inputfile, double** *q, int* nq, double* *v, double** *mu, int dimension, int dipole_flag){
+
     FILE * fd;
+    char *token, *pos;
+    char * buffer  = NULL;
+    const char * comment   = "#%\n";
+    const char * delimiter = " \t";
 
+    int i, control;
+    int linenumber;
+    int entry_rows;
+
+// open input file read only
     fd = fopen(inputfile, "r");
     if(fd == NULL){
         fprintf(stderr,
-            "\n(-) ERROR opening input-file: \"%s\""
-            "\n    Exiting..."
+            "\n (-) Error opening input-file: \"%s\""
+            "\n     Aborting..."
             "\n\n"
             , inputfile
         );
         exit(1);
     }
 
-    rows = 0;
+// allocate memory of size _MaxLineLength_ for buffer
+    buffer = malloc((_MaxLineLength_) * sizeof(char));
+    if(buffer == NULL){
+        fprintf(stderr,
+            "\n (-) Error in memory allocation of buffer in input function"
+            "\n     Aborting...\n\n"
+        );
+        exit(2);
+    }
+
+// start parsing of file
+    entry_rows = 0;
     linenumber = 0;
-    while(fgets(buffer, sizeof(buffer), fd) != NULL){
+    while( fgets(buffer, _MaxLineLength_, fd) != NULL ){
 
-        ++linenumber;
+        linenumber++;
 
-    // check if the first character in buffer is a comment char,
-    //  if yes jump to next line
-        comment_flag = 0;
-        for(i=0; i<strlen(comment); ++i){
-            if(buffer[0] == comment[i]){
-                comment_flag = 1;
-                break;
+    // check for existence of newline character. If not found the line is not
+    //  fully inside of the buffer and, therefore exceeding maximum line length
+        for(i = 0, control = 0; i < (int)strlen(buffer); ++i){
+            if(buffer[i] == '\n'){
+                control = 1;
             }
         }
-        if(comment_flag == 1) continue;
+        if(control == 0){
+            fprintf(stderr,
+                "\n (-) Error in input file \"%s\", line \"%d\" is too long."
+                "\n     Aborting..."
+                "\n\n", inputfile, linenumber
+            );
+            exit(1);
+        }
 
-    // copy "buffer" with stripped comments to new buffer "line"
-        line = strtok(buffer, comment);
-        if(line == NULL) continue;
+    // strip buffer from comments
+        token = buffer;
+        pos = strsep(&token, comment);
+        if(pos == NULL) continue;
 
-    // remove leading white spaces and tabulators
-    //  and skip empty lines
-        while(isspace(*line)) line++;
-        if(strlen(line) == 0) continue;
+    // remove leading white spaces and empty lines
+        while(isspace(*pos) != 0 && *pos != '\0') { pos++; }
+        if(strlen(pos) < 1) continue;
 
-    // At this point the requested input line is stripped of
-    //  comments and blank lines. From here on the parsing starts:
-    //    printf("%s\n", line);
-//-----------------------------------------------------------------------------------
+// buffer now contains a full (non empty) line of the input file, stripped of
+//  comments and *pos points to the first, non white space character of buffer
+//--------------------------------------------------------------------------------
 
-    // If the first non-white-space char of a line is either n or N get number of coordinate entries
-        if(strcasestr(line, "N") != NULL){
-        // Tokenize line, get first entry which ain't a white space
-            token = strtok(line, " \t");
+    // point token to buffer
+        token = pos;
 
-        // read the first <dimension> entries after the N flag
-            for(n = 0; n < dimension; ++n){
-                token = strtok(NULL, " \t");
-            // if there are less than <dimension> entries print an error
-                if(token == NULL){
+    // if the first non-white-space char of a line is either n or N:
+    //  get the number of coordinate entries
+        if( *pos == 'N' || *pos == 'n' ){
+
+        // tokenize buffer, get first entry which ain't a white space (the N)
+            pos = strsep(&token, delimiter);
+
+        // there must be <dimension> entries after the N flag:
+            i = 0;
+            while(i < dimension){
+                pos = strsep(&token, delimiter);
+
+            // print an error if less than <dimension> entries are found
+                if(pos == NULL){
                     fprintf(stderr,
-                        "\n(-) ERROR reading data from input-file \"%s\"."
-                        "\n    The N line doesn't contain %d entries."
-                        "\n    Aborting - please check your input..."
+                        "\n (-) Error reading data from input-file \"%s\"."
+                        "\n     The N line doesn't contain %d entries."
+                        "\n     Aborting - please check your input..."
                         "\n\n"
                         , inputfile, dimension
                     );
                     exit(1);
                 }
-                nq[n] = atoi(token);
+
+            // ignore adjacent delimiting characters
+                if(*pos == '\0'){ continue; }
+
+            // store data in integer array
+                nq[i] = atoi(pos);
+                ++i;
             }
             continue;
         }
 
 
     // Start reading data:
-    //  Break down string array "line" to <dimension + 3> string tokens "token"
-
-    // Get first token, convert it to double and store it in q[0]
-        token = strtok(line, " \t");
-        if(token != NULL){
-        // reallocate memory for q array
-            for(n = 0; n < dimension; ++n){
-                (*q)[n] = realloc((*q)[n], (rows + 1)*sizeof(double));
-                if( (*q)[n] == NULL){
-                    fprintf(stderr,
-                        "\n(-) ERROR in reallocation of %s"
-                        "\n    Aborting...\n\n"
-                        "\n\n"
-                        , "coordinate"
-                    );
-                    exit(2);
-                }
+    // coordinates:
+    //  first reallocate memory for coordinates q
+        for(i = 0; i < dimension; ++i){
+            (*q)[i] = realloc( (*q)[i], (entry_rows + 1) * sizeof(double) );
+            if( (*q)[i] == NULL){
+                fprintf(stderr,
+                    "\n (-) Error in reallocation of %s"
+                    "\n     Aborting...\n\n"
+                    , "coordinate"
+                );
+                exit(2);
             }
-            (*q)[0][rows] = atof(token);
         }
 
-    // store the other <dimension - 1> coordinate entries
-        for(n = 1; n < dimension; ++n){
-            token = strtok(NULL, " \t");
-            if(token == NULL){
+    // read data from input file and store it in coordinates
+        i = 0;
+        while(i < dimension){
+            pos = strsep(&token, delimiter);
+
+        // throw an error if no data found
+            if(pos == NULL){
                 fprintf(stderr,
-                    "\n(-) ERROR reading data from input-file \"%s\"."
-                    "\n    Too few entries in input line number %d"
-                    "\n    Aborting - please check your input..."
-                    "\n\n"
-                    , inputfile, linenumber
+                    "\n (-) Error reading data from input-file \"%s\"."
+                    "\n     Too few entries in input line number %d (only found %d of the expected %d columns)"
+                    "\n     Aborting - please check your input...\n\n"
+                    , inputfile, linenumber, i, (dipole_flag == 1) ? dimension+4 : dimension+1
                 );
                 exit(1);
             }
-            (*q)[n][rows] = atof(token);
+
+        // ignore adjacent delimiting characters
+            if(*pos == '\0'){ continue; }
+
+            (*q)[i][entry_rows] = atof(pos);
+            ++i;
         }
 
-    // store potential values:
-    //  increase array size:
-        (*V) = realloc((*V), (rows + 1)*sizeof(double));
-        if( (*V) == NULL){
+
+    // potential:
+    //  reallocate memory for potential v
+        (*v) = realloc( (*v), (entry_rows + 1) * sizeof(double) );
+        if( (*v) == NULL ){
             fprintf(stderr,
-                "\n(-) ERROR in reallocation of %s"
-                "\n    Aborting..."
-                "\n\n"
+                "\n (-) Error in reallocation of %s"
+                "\n     Aborting...\n\n"
                 , "potential"
             );
             exit(2);
         }
+
     // get token and convert to double
-        token = strtok(NULL, " \t");
-        if(token == NULL){
-            fprintf(stderr,
-                "\n(-) ERROR reading data from input-file \"%s\"."
-                "\n    Too few entries in input line number %d"
-                "\n    Aborting - please check your input..."
-                "\n\n"
-                , inputfile, linenumber
-            );
-            exit(1);
+        i = 0;
+        while(i < 1){
+            pos = strsep(&token, delimiter);
+
+        // throw an error if no data found
+            if(pos == NULL){
+                fprintf(stderr,
+                    "\n (-) Error reading data from input-file \"%s\"."
+                    "\n     Too few entries in input line number %d (only found %d of the expected %d columns)"
+                    "\n     Aborting - please check your input...\n\n"
+                    , inputfile, linenumber, i+dimension, (dipole_flag == 1) ? dimension+4 : dimension+1
+                );
+                exit(1);
+            }
+
+        // ignore adjacent delimiting characters
+            if(*pos == '\0'){ continue; }
+
+            (*v)[entry_rows] = atof(pos);
+            ++i;
         }
-        (*V)[rows] = atof(token);
 
-    // increment number of rows by 1
-        ++rows;
 
+    // if no dipole data is requested increment number of entry rows and move on to next line
+        if(dipole_flag != 1){
+            ++entry_rows;
+            continue;
+        }else{
+
+        // dipole:
+        //  reallocate memory for mu[0] to mu[2]
+            for(i = 0; i < 3; ++i){
+                (*mu)[i] = realloc( (*mu)[i], (entry_rows + 1) * sizeof(double) );
+                if( (*mu)[i] == NULL){
+                    fprintf(stderr,
+                        "\n (-) Error in reallocation of %s"
+                        "\n     Aborting...\n\n"
+                        , "dipole moment"
+                    );
+                    exit(2);
+                }
+            }
+
+        // get tokens and convert to double
+            i = 0;
+            while(i < 3){
+                pos = strsep(&token, delimiter);
+
+            // throw an error if no data found
+                if(pos == NULL){
+                    fprintf(stderr,
+                        "\n (-) Error reading data from input-file \"%s\"."
+                        "\n     Too few entries in input line number %d (only found %d of the expected %d columns)"
+                        "\n     Aborting - please check your input...\n\n"
+                        , inputfile, linenumber, i+dimension+1, (dipole_flag == 1) ? dimension+4 : dimension+1
+                    );
+                    exit(1);
+                }
+
+            // ignore adjacent delimiting characters
+                if(*pos == '\0'){ continue; }
+
+                (*mu)[i][entry_rows] = atof(pos);
+                ++i;
+            }
+
+        // increment number of entry rows and move on to next line
+            ++entry_rows;
+        }
     }
-    fclose(fd); fd = NULL;
+    free(buffer); buffer = NULL;
+    fclose(fd);   fd     = NULL;
 
-    return rows;
+    return entry_rows;
 }

@@ -31,7 +31,6 @@
     OBJ += GetSettingsGetopt.o
     OBJ += CheckCoordinateSpacing.o
     OBJ += InputFunction.o
-    OBJ += InputFunctionDipole.o
     OBJ += InputCoriolisCoefficients.o
     OBJ += OutputSettings.o
     OBJ += MetaGetStencil.o
