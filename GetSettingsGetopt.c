@@ -26,7 +26,7 @@ settings GetSettingsGetopt(settings defaults, int argc, char** argv){
 
     // optstring contains a list of all short option indices,
     //  indices followed by a colon are options requiring an argument.
-    const char         * optstring = "hm:k:v:n:l:u:N:s:ac:i:dPo:t:TM:D:f:C:";
+    const char         * optstring = "hPC:a::d::T::D:n:s:N:k:v:f:M:t:l:u:m:i:o:c:";
     const struct option longopts[] = {
     //  *name:      option name,
     //  has_arg:    if option requires argument,
@@ -36,9 +36,9 @@ settings GetSettingsGetopt(settings defaults, int argc, char** argv){
         {"help",                   no_argument, 0, 'h'},
         {"pipe",                   no_argument, 0, 'P'},
     // Boolian values:
-        {"analyze",                no_argument, 0, 'a'},
-        {"dipole",                 no_argument, 0, 'd'},
-        {"no-spacing-check",       no_argument, 0, 'T'},
+        {"analyze",          optional_argument, 0, 'a'},
+        {"dipole",           optional_argument, 0, 'd'},
+        {"no-spacing-check", optional_argument, 0, 'T'},
     // integer values:
         {"dimension",        required_argument, 0, 'D'},
         {"n-stencil",        required_argument, 0, 'n'},
@@ -87,15 +87,36 @@ settings GetSettingsGetopt(settings defaults, int argc, char** argv){
 
         // Boolian values
             case 'a':
-                preferences.analyze = 1;
+                if(optarg == NULL){ preferences.analyze = 1; }
+                else{
+                    preferences.analyze     = atoi(optarg);
+                    if(preferences.analyze == 0){
+                        if(strncasecmp("true", optarg, 4) == 0) { preferences.analyze = 1; }
+                        else                                    { preferences.analyze = 0; }
+                    }
+                }
                 break;
 
             case 'd':
-                preferences.dipole = 1;
+                if(optarg == NULL){ preferences.dipole = 1; }
+                else{
+                    preferences.dipole      = atoi(optarg);
+                    if(preferences.dipole == 0){
+                        if(strncasecmp("true", optarg, 4) == 0) { preferences.dipole = 1; }
+                        else                                    { preferences.dipole = 0; }
+                    }
+                }
                 break;
 
             case 'T':
-                preferences.check_spacing = 0;
+                if(optarg == NULL){ preferences.check_spacing = 0; }
+                else{
+                    preferences.check_spacing = atoi(optarg);
+                    if(preferences.check_spacing == 0){
+                        if(strncasecmp("true", optarg, 4) == 0) { preferences.check_spacing = 0; }
+                        else                                    { preferences.check_spacing = 1; }
+                    }
+                }
                 break;
 
 
