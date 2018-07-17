@@ -26,7 +26,7 @@ settings GetSettingsGetopt(settings defaults, int argc, char** argv){
 
     // optstring contains a list of all short option indices,
     //  indices followed by a colon are options requiring an argument.
-    const char         * optstring = "hm:k:v:n:l:u:N:s:ac:i:dPo:t:TM:D:f:";
+    const char         * optstring = "hm:k:v:n:l:u:N:s:ac:i:dPo:t:TM:D:f:C:";
     const struct option longopts[] = {
     //  *name:      option name,
     //  has_arg:    if option requires argument,

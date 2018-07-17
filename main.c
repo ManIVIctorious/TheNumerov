@@ -7,7 +7,10 @@
 #include "constants.h"
 
 // input functions
+//  settings input
+settings GetSettingsControlFile(char* inputfile, settings defaults);
 settings GetSettingsGetopt(settings defaults, int argc, char** argv);
+//  data input
 int InputFunction(char* inputfile, double** *q, int* nq, double* *v, double** *mu, int dimension, int dipole_flag);
 int InputCoriolisCoefficients(char* inputfile, double** *q, double** zeta, double*** *mu, int dimension);
 double CheckCoordinateSpacing(double** q, int* nq, double threshold, int dimension);
@@ -19,6 +22,7 @@ int MetaEigensolver(settings prefs, int* nq, double* v, double ekin_param, doubl
 double Integrate(int dimension, int* nq, double dx, double* integrand);
 
 // output functions
+int Help(char* filename, settings defaults);
 int OutputSettings(FILE* fd, settings preferences);
 int OutputDipoleIntegration(settings prefs, int* nq, int n_out, double dq, double** dip, double* E, double* X, FILE* fd);
 
@@ -62,8 +66,29 @@ int main(int argc, char* argv[]){
         .output_file   = "/dev/stdout",
     };
 
-// get preferences out of command line flags and defaults struct
-    prefs = GetSettingsGetopt(defaults, argc, argv);
+    int i;
+// check for help tag
+    for(i = 1; i < argc; ++i){
+        if(strncmp(argv[i], "-h", 2) == 0 || strncmp(argv[i], "--help", 6) == 0){
+            Help(argv[0], defaults);
+            exit(0);
+        }
+    }
+
+// get preferences out of command line flags, control file and defaults struct:
+//  first set prefs to defaults
+//  then search in **argv for the "-C" flag
+//  if it exists pass the following argument to the GetSettingsControlFile() function
+    prefs = defaults;
+    for(i = 1; i < (argc-1); ++i){
+        if(strncmp(argv[i], "-C", 2) == 0 || strncmp(argv[i], "--control-file", 14) == 0){
+            prefs = GetSettingsControlFile(argv[i+1], prefs);
+        }
+    }
+//  afterwards use the new settings struct prefs as an input for GetSettingsGetopt()
+//  This allows to set all settings in a control file (passed by the -C parameter)
+//  and afterwards overwrite all settings with the corresponding command line flags
+    prefs = GetSettingsGetopt(prefs, argc, argv);
 
 
 //------------------------------------------------------------------------------------------------------------
@@ -90,7 +115,7 @@ int main(int argc, char* argv[]){
 // Input
   // standard file
     int control;
-    int i, j, k, l;
+    int j, k, l;
     long long int n_out = -1;
     int n_points  = 0;          // total number of entries per dimension
     int     * nq  = NULL;       // number of unique entries per dimension
@@ -260,9 +285,11 @@ int main(int argc, char* argv[]){
         }
 
     // create zeta 2D [3][(D*D-D)/2] double array
-        zeta = malloc(3 * sizeof(double*));
-        for(i = 0; i < 3; ++i){
-            zeta[i] = calloc((prefs.dimension*(prefs.dimension - 1))/2, sizeof(double));
+        if(strlen(prefs.coriolis_file) > 0){
+            zeta = malloc(3 * sizeof(double*));
+            for(i = 0; i < 3; ++i){
+                zeta[i] = calloc((prefs.dimension*(prefs.dimension - 1))/2, sizeof(double));
+            }
         }
 
     // initialize mu 3D [3][3][data] double array

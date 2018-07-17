@@ -3,3 +3,4 @@ gitversion.h
 *.o
 *.*~
 bin/*
+**/tags

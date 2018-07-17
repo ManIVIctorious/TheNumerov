@@ -28,6 +28,8 @@
 # List of resulting object files
 # Standard objects
     OBJ += main.o
+    OBJ += GetSettingsControlFile.o
+    OBJ += ParseControlFile.o
     OBJ += GetSettingsGetopt.o
     OBJ += CheckCoordinateSpacing.o
     OBJ += InputFunction.o

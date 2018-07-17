@@ -16,6 +16,16 @@ int Help(char* filename, settings defaults){
            "\n\t    Show this help dialogue"
     );
 
+// Control file
+    printf("\n"
+           "\n\t-C, --control-file"
+           "\n\t    Define a control file, containing keyword-value pairs of the form"
+           "\n\t    <keyword>=<value>;. Used command line flags will always overwrite"
+           "\n\t    the settings presented in the control file."
+           "\n\t    This allows to use the control file as basis to pass local defaults,"
+           "\n\t    but preserves the flexibility introduced with the command line flags."
+    );
+
 // Numerov
     printf("\n"
            "\n\t-m, --masses"
