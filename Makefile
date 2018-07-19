@@ -13,6 +13,7 @@
  #CFLAGS = -g -w#                   # Disable all warnings
 
 # Preprocessor flags (compile time flags)
+  PPF += -D HAVE_GSL_INSTALLED#     # gnu scientific library support
   PPF += -D HAVE_MKL_INSTALLED#     # intel math kernel library support
  #PPF += -D HAVE_ARMA_INSTALLED#    # Armadillo C++ linear algebra library
 
@@ -44,6 +45,10 @@
     OBJ += nx1dInterpolation.o
     OBJ += Integrators.o
     OBJ += OutputDipoleIntegration.o
+  # GSL objects
+    ifeq ($(findstring HAVE_GSL_INSTALLED, $(PPF)), HAVE_GSL_INSTALLED)
+      GSLOBJ += GenFiniteDifferenceStencils.o
+    endif
   # MKL objects
     ifeq ($(findstring HAVE_MKL_INSTALLED, $(PPF)), HAVE_MKL_INSTALLED)
       MKLOBJ += Fill_MKL.o
@@ -56,6 +61,14 @@
 
 
 # Additional linked libraries, library paths and include directories
+  # GNU scientific library
+    ifeq ($(findstring HAVE_GSL_INSTALLED, $(PPF)), HAVE_GSL_INSTALLED)
+      GSLINC = `pkg-config --cflags gsl`
+
+    # additional libraries
+      LIB += `pkg-config --libs gsl`
+    endif
+
   # Armadillo ARPACK
     ifeq ($(findstring HAVE_ARMA_INSTALLED, $(PPF)), HAVE_ARMA_INSTALLED)
       ARMAINC = `pkg-config --cflags armadillo`
@@ -97,6 +110,12 @@ gitversion.h:
 %.o : %.c Makefile gitversion.h
 	$(CC) $(CFLAGS) $(PPF) -c $<
 
+# Build GNU GSL objects
+ifeq ($(findstring HAVE_GSL_INSTALLED, $(PPF)), HAVE_GSL_INSTALLED)
+$(GSLOBJ): $(GSLOBJ:.o=.c)
+	$(CC) $(CFLAGS) $(PPF) $(GSLINC) -c $?
+endif
+
 # Build Intel MKL objects
 ifeq ($(findstring HAVE_MKL_INSTALLED, $(PPF)), HAVE_MKL_INSTALLED)
 $(MKLOBJ): $(MKLOBJ:.o=.c)
@@ -111,8 +130,8 @@ endif
 
 
 # link all objects to create the executable
-$(EXE): $(OBJ) $(MKLOBJ) $(ARMAOBJ)
-	$(CC) $(CFLAGS) $(LIB) $(OBJ) $(MKLOBJ) $(ARMAOBJ) -o $@
+$(EXE): $(OBJ) $(GSLOBJ) $(MKLOBJ) $(ARMAOBJ)
+	$(CC) $(CFLAGS) $(LIB) $(OBJ) $(GSLOBJ) $(MKLOBJ) $(ARMAOBJ) -o $@
 
 
 # allows to print out makefile variables, just type make print-VARIABLE
@@ -122,4 +141,4 @@ print-%:
 
 # remove all generated binary files
 clean:
-	rm -f $(OBJ) $(MKLOBJ) $(ARMAOBJ) $(EXE) gitversion.h
+	rm -f $(OBJ) $(GSLOBJ) $(MKLOBJ) $(ARMAOBJ) $(EXE) gitversion.h

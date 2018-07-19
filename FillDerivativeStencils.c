@@ -2,12 +2,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// Dependencies
+#ifdef HAVE_GSL_INSTALLED
+int FiniteDifferenceStencil(double* stencil, unsigned int size, unsigned int derivative);
+#endif
+
 // provided prototypes
 int FirstDerivative (int n_stencil, double*  first_derivative);
 int SecondDerivative(int n_stencil, double* second_derivative);
 
 
 int FirstDerivative(int n_stencil, double* first_derivative){
+
+    int i;
 
 // fill first derivative stencil
     switch(n_stencil){
@@ -90,6 +97,14 @@ int FirstDerivative(int n_stencil, double* first_derivative){
             first_derivative[12] = -first_derivative[0];
             return 0;
 
+#ifdef HAVE_GSL_INSTALLED
+        default:
+            for(i = -(n_stencil-1)/2; i < (n_stencil-1)/2; ++i){
+                first_derivative[i + (n_stencil-1)/2] = (double)i;
+            }
+            FiniteDifferenceStencil(first_derivative, n_stencil, 1);
+            return 0;
+#else
         default:
         // if stencil is not implemented print an error message and exit program
             fprintf(stderr,
@@ -99,11 +114,14 @@ int FirstDerivative(int n_stencil, double* first_derivative){
                 , n_stencil
             );
             return (-1);
+#endif
     }
 }
 
 
 int SecondDerivative(int n_stencil, double* second_derivative){
+
+    int i;
 
 // fill second derivative stencil
     switch(n_stencil){
@@ -186,6 +204,14 @@ int SecondDerivative(int n_stencil, double* second_derivative){
             second_derivative[12] = second_derivative[0];
             return 0;
 
+#ifdef HAVE_GSL_INSTALLED
+        default:
+            for(i = -(n_stencil-1)/2; i < (n_stencil-1)/2; ++i){
+                second_derivative[i + (n_stencil-1)/2] = (double)i;
+            }
+            FiniteDifferenceStencil(second_derivative, n_stencil, 2);
+            return 0;
+#else
         default:
         // if stencil is not implemented print an error message and exit program
             fprintf(stderr,
@@ -195,5 +221,6 @@ int SecondDerivative(int n_stencil, double* second_derivative){
                 , n_stencil
             );
             return (-1);
+#endif
     }
 }
