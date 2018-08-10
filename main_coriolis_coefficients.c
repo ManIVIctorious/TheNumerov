@@ -92,10 +92,8 @@ int main(int argc, char **argv){
                 ++dimension;
             // set number of entries in modelist to dimension
                 modelist              = realloc(modelist, dimension * sizeof(char*));
-            // allocate memory for the new entry
-                modelist[dimension-1] =  malloc(strlen(optarg) * sizeof(char));
-            // copy the content of optarg into the newly allocated char array
-                strncpy(modelist[dimension-1], optarg, strlen(optarg));
+            // point newly generated pointer to optarg
+                modelist[dimension-1] =  optarg;
                 break;
 
             case 'o':
