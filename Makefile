@@ -18,13 +18,10 @@
  #PPF += -D HAVE_ARMA_INSTALLED#    # Armadillo C++ linear algebra library
 
 
-
 # Resulting executable
-  EXE = bin/TheNumerov
+  EXEPATH = $(if ${MyLocalPath}, ${MyLocalPath}, bin)
+  EXE = $(EXEPATH)/TheNumerov
 
-
-# List of linked libraries
-  LIB += -lm
 
 # List of resulting object files
 # Standard objects
@@ -60,6 +57,9 @@
     endif
 
 
+# List of linked libraries
+  LIB += -lm
+
 # Additional linked libraries, library paths and include directories
   # GNU scientific library
     ifeq ($(findstring HAVE_GSL_INSTALLED, $(PPF)), HAVE_GSL_INSTALLED)
@@ -80,25 +80,10 @@
 
   # Intel MKL
     ifeq ($(findstring HAVE_MKL_INSTALLED, $(PPF)), HAVE_MKL_INSTALLED)
-      MKLPATH = /usr/local/intel
-
-    # MKL includes
-      MKLINC += -I$(MKLPATH)/mkl/include
-      MKLINC += -DMKL_ILP64
-      MKLINC += -m64
+      MKLINC += `pkg-config --cflags mkl`
 
     # additional libraries
-    # Library directories
-      LIB += -L$(MKLPATH)/mkl/lib/intel64
-      LIB += -L$(MKLPATH)/compilers_and_libraries_2018.0.128/linux/compiler/lib/intel64_lin
-     #LIB += -L$(MKLPATH)/compilers_and_libraries_2017.0.098/linux/compiler/lib/intel64_lin
-    # Libraries
-      LIB += -lmkl_core
-      LIB += -lmkl_intel_ilp64
-      LIB += -lmkl_intel_thread
-      LIB += -liomp5
-      LIB += -lpthread
-      LIB += -ldl
+      LIB += `pkg-config --libs mkl`
     endif
 
 
