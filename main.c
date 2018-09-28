@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <string.h>
 #include <math.h>
 
@@ -24,7 +25,11 @@ double Integrate(int dimension, int* nq, double dx, double* integrand);
 // output functions
 int Help(char* filename, settings defaults);
 int OutputSettings(FILE* fd, settings preferences);
-int OutputDipoleIntegration(settings prefs, int* nq, int n_out, double dq, double** dip, double* E, double* X, FILE* fd);
+int    TextOut_Frequencies(FILE* fd, settings prefs, int n_out, double* E);
+int TextOut_Orthonormality(FILE* fd, settings prefs, int n_out, int n_points, int* nq, double* integrand, double dq, double* X);
+int      TextOut_Potential(FILE* fd, settings prefs, int n_out, int n_points, int* nq, double* integrand, double dq, double* X, double* v);
+int         TextOut_Dipole(FILE* fd, settings prefs, int n_out, int n_points, int* nq, double* integrand, double dq, double* E, double* X, double** dip);
+int   TextOut_Eigenvectors(FILE* fd, settings prefs, int n_out, int n_points, int* nq, double** q, double* v, double*** mu, double* X, double** dip);
 
 
 int main(int argc, char* argv[]){
@@ -71,7 +76,7 @@ int main(int argc, char* argv[]){
     for(i = 1; i < argc; ++i){
         if(strncmp(argv[i], "-h", 2) == 0 || strncmp(argv[i], "--help", 6) == 0){
             Help(argv[0], defaults);
-            exit(0);
+            exit(EXIT_SUCCESS);
         }
     }
 
@@ -104,7 +109,7 @@ int main(int argc, char* argv[]){
         "\n         -D HAVE_ARMA_INSTALLED"
         "\n\n"
     );
-    exit(-1);
+    exit(EXIT_FAILURE);
 #endif
 #endif
 
@@ -133,7 +138,6 @@ int main(int argc, char* argv[]){
 // kinetic energy factor:   - hbar^2/2 * 10^20          * 1000 * avogadro^2 / 1000 = -10^20 * hbar^2/2 * avogadro^2
 //                            J kg m^2 * angstrom^2/m^2 * g/kg * (1/mol)^2  / kJ/J =  kJ/mol * g * angstrom^2 / mol
     double ekin_param = -1.0E20 * avogadro*avogadro * planck*planck/(8.0*M_PI*M_PI); // kJ/mol / (mol/g/angstrom^2)
-    double kJmolToWavenumber = 10.0 / (avogadro*planck*lightspeed);              // cm^-1 / (kJ/mol)
 
 // Eigenvalues and Eigenvectors
     double *E = NULL;   // eigenvalues
@@ -143,7 +147,6 @@ int main(int argc, char* argv[]){
 
 
 // Output
-    double freq;
     FILE * fd = NULL;
 
     double * stencil   = NULL;
@@ -190,7 +193,7 @@ int main(int argc, char* argv[]){
                     "\n     Aborting..."
                     "\n\n"
                 );
-                exit(1);
+                exit(EXIT_FAILURE);
             }
         }
     }
@@ -199,21 +202,10 @@ int main(int argc, char* argv[]){
 //------------------------------------------------------------------------------------------------------------
 //       Output all settings for verification purpose      Output all settings for verification purpose
 //------------------------------------------------------------------------------------------------------------
-// open output file
+// open output file, output all settings and close file
     fd = fopen(prefs.output_file, "w");
-    if(fd == NULL){
-        fprintf(stderr,
-            "\n (-) Error opening output-file: '%s'"
-            "\n     Aborting... \n\n"
-            , prefs.output_file
-        );
-        exit(1);
-    }
-
-// output all available settings
+    if(fd == NULL){ perror(prefs.output_file); exit(errno); }
     OutputSettings(fd, prefs);
-
-// close output file
     fclose(fd); fd = NULL;
 
 
@@ -223,55 +215,51 @@ int main(int argc, char* argv[]){
 // check input argument if the file is not present give a silly statement
     if(strlen(prefs.input_file) < 1){
         fprintf(stderr, "\n (-) Please specify input file...\n\n");
-        exit (1);
+        exit(EXIT_FAILURE);
     }
 
 // create 2D array q[dimension][entries] containing coordinates
 //  array nq, containing number of entries for each dimension
 //  and array v, containing all energy values
     nq = calloc(prefs.dimension,  sizeof(int));
+    if(nq == NULL){ perror("nq"); exit(errno); }
+
     q  = malloc(prefs.dimension * sizeof(double*));
+    if( q == NULL){ perror( "q"); exit(errno); }
+
     for(i = 0; i < prefs.dimension; ++i){
         q[i] = malloc(sizeof(double));
+        if(q[i] == NULL){ perror("q[i]"); exit(errno); }
     }
+
     v  = malloc(sizeof(double));
-    if(q == NULL || v  == NULL || nq == NULL){
-        fprintf(stderr,
-            "\n (-) Error in memory allocation for q or v"
-            "\n     Aborting...\n\n"
-        );
-        exit(1);
-    }
+    if( v == NULL){ perror( "v"); exit(errno); }
 
 // if dipole flag is set use different input routine,
 //  expecting 3 additional columns (dip_x, dip_y and dip_z)
-    if(prefs.dipole == 1){
-        dip = malloc(3 * sizeof(double*));
-        for(i = 0; i < 3; ++i){
-            dip[i] = malloc(sizeof(double));
+    if(prefs.dipole){
+        dip    = malloc(3 * sizeof(double*));
+        if(dip == NULL){ perror("dip"); exit(errno); }
 
-            if(dip[i] == NULL){
-                fprintf(stderr,
-                    "\n (-) Error in memory allocation for dipole array"
-                    "\n     Aborting...\n\n"
-                );
-                exit(1);
-            }
-        }
+        dip[0] = malloc(sizeof(double));
+        dip[1] = malloc(sizeof(double));
+        dip[2] = malloc(sizeof(double));
+
+        if(dip[0] == NULL){ perror("dip[0]"); exit(errno); }
+        if(dip[1] == NULL){ perror("dip[1]"); exit(errno); }
+        if(dip[2] == NULL){ perror("dip[2]"); exit(errno); }
     }
 
     n_points = InputFunction(prefs.input_file, &q, nq, &v, &dip, prefs.dimension, prefs.dipole);
 
 // check if the "N nq[0] ... nq[dimension-1]" line in input file matches the number of data points
-    for(i = 0, control = 1; i < prefs.dimension; ++i){
-        control *= nq[i];
-    }
+    for(i = 0, control = 1; i < prefs.dimension; ++i){ control *= nq[i]; }
     if(n_points != control){
         fprintf(stderr, "\n (-) Error reading data from input-file: '%s'", prefs.input_file);
         fprintf(stderr, "\n     Number of Data points (\"%d\") doesn't match \"%d", n_points, nq[0]);
         for(i = 1; i < prefs.dimension; ++i){ fprintf(stderr, "*%d", nq[i]); } fprintf(stderr, "\"");
         fprintf(stderr, "\n     Aborting - please check your input...\n\n");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
 
@@ -280,24 +268,35 @@ int main(int argc, char* argv[]){
 
     // initialize q_coriolis 2D [D][data] double array
         q_coriolis = malloc(prefs.dimension * sizeof(double*));
+        if(q_coriolis == NULL){ perror("q_coriolis"); exit(errno); }
+
         for(i = 0; i < prefs.dimension; ++i){
             q_coriolis[i] = malloc(sizeof(double));
+            if(q_coriolis[i] == NULL){ perror("q_coriolis[i]"); exit(errno); }
         }
 
     // create zeta 2D [3][(D*D-D)/2] double array
         if(strlen(prefs.coriolis_file) > 0){
             zeta = malloc(3 * sizeof(double*));
+            if(zeta == NULL){ perror("zeta"); exit(errno); }
+
             for(i = 0; i < 3; ++i){
                 zeta[i] = calloc((prefs.dimension*(prefs.dimension - 1))/2, sizeof(double));
+                if(zeta[i] == NULL){ perror("zeta[i]"); exit(errno); }
             }
         }
 
     // initialize mu 3D [3][3][data] double array
         mu = malloc(3 * sizeof(double**));
+        if(mu == NULL){ perror("mu"); exit(errno); }
+
         for(i = 0; i < 3; ++i){
             mu[i] = malloc(sizeof(double*));
+            if(mu[i] == NULL){ perror("mu[i]"); exit(errno); }
+
             for(j = 0; j < 3; ++j){
                 mu[i][j] = malloc(sizeof(double));
+                if(mu[i][j] == NULL){ perror("mu[i][j]"); exit(errno); }
             }
         }
 
@@ -313,7 +312,7 @@ int main(int argc, char* argv[]){
                 "\n\n"
                 , prefs.coriolis_file, control, prefs.input_file, n_points
             );
-            exit(1);
+            exit(EXIT_FAILURE);
         }
 
     // check if coordinates are the same
@@ -328,16 +327,14 @@ int main(int argc, char* argv[]){
                         "\n\n"
                         , prefs.coriolis_file, prefs.input_file
                     );
-                    exit(-1);
-
+                    exit(EXIT_FAILURE);
                 }
             }
         }
 
     // free memory of q_coriolis
         for(i = 0; i < prefs.dimension; ++i){
-            free(q_coriolis[i]);
-            q_coriolis[i] = NULL;
+            free(q_coriolis[i]); q_coriolis[i] = NULL;
         }
         free(q_coriolis); q_coriolis = NULL;
     }
@@ -366,7 +363,7 @@ int main(int argc, char* argv[]){
 //------------------------------------------------------------------------------------------------------------
 //  Interpolation  Interpolation  Interpolation  Interpolation  Interpolation  Interpolation  Interpolation
 //------------------------------------------------------------------------------------------------------------
-    if(prefs.n_spline > 0){
+    if(prefs.n_spline){
 
     // Interpolation
         n_points = MetaInterpolation(&v, nq, dq, prefs.dimension, prefs.n_spline);
@@ -381,22 +378,13 @@ int main(int argc, char* argv[]){
                 "\n     Aborting..."
                 "\n\n"
             );
-            exit(1);
+            exit(EXIT_FAILURE);
         }
 
     // update memory allocation to new n_points for all coordinates
         for(i = 0; i < prefs.dimension; ++i){
             q[i] = realloc(q[i], n_points * sizeof(double));
-
-            if(q[i] == NULL){
-                fprintf(stderr,
-                    "\n (-) Error in memory reallocation of q%d"
-                    "\n     Aborting..."
-                    "\n\n"
-                    , i
-                );
-                exit(1);
-            }
+            if(q[i] == NULL){ perror("reallocation of q[i]"); exit(errno); }
         }
 
 
@@ -413,13 +401,15 @@ int main(int argc, char* argv[]){
                     "\n     Aborting..."
                     "\n\n"
                 );
-                exit(1);
+                exit(EXIT_FAILURE);
             }
         }
 
 
-    // if coriolis file is set also interpolate mu
+    // if Coriolis file is set also interpolate mu
         if(strlen(prefs.coriolis_file) > 0){
+        // mu is a symmetric 3 times 3 matrix, so an interpolation of the upper or
+        //  lower triangle should be identical to a full interpolation
             control = MetaInterpolation(&(mu[0][0]), nq, dq, prefs.dimension, prefs.n_spline);
             element = MetaInterpolation(&(mu[0][1]), nq, dq, prefs.dimension, prefs.n_spline);
             i       = MetaInterpolation(&(mu[0][2]), nq, dq, prefs.dimension, prefs.n_spline);
@@ -434,10 +424,15 @@ int main(int argc, char* argv[]){
                     "\n     Aborting..."
                     "\n\n"
                 );
-                exit(1);
+                exit(EXIT_FAILURE);
             }
 
-        // make mu symmetric again
+        // make mu symmetric again:
+        //  free memory of lower triangle
+            free(mu[1][0]); mu[1][0] = NULL;
+            free(mu[2][0]); mu[2][0] = NULL;
+            free(mu[2][1]); mu[2][1] = NULL;
+        // point lower triangle to upper
             mu[1][0] = mu[0][1];
             mu[2][0] = mu[0][2];
             mu[2][1] = mu[1][2];
@@ -473,14 +468,8 @@ int main(int argc, char* argv[]){
 // Allocate memory of n_stencil ** dimension for stencil
     for(i = 0, control = 1; i < prefs.dimension; ++i){ control *= prefs.n_stencil; }
     stencil = calloc(control, sizeof(double));
-    if(stencil == NULL){
-        fprintf(stderr,
-            "\n (-) Error in memory allocation for stencil"
-            "\n     Aborting..."
-            "\n\n"
-        );
-        exit(1);
-    }
+    if(stencil == NULL){ perror("Stencil"); exit(errno); }
+
 // The number of data points (n_points) must be at least as big as the number of
 //  stencil points (n_stencil ** dimension)
     if(n_points < control){
@@ -491,7 +480,7 @@ int main(int argc, char* argv[]){
             "\n\n"
             , prefs.input_file, n_points, prefs.n_stencil, control
         );
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
 // Get stencil through meta function
@@ -502,7 +491,7 @@ int main(int argc, char* argv[]){
             "\n     Aborting - please check your input..."
             "\n\n"
         );
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
 
@@ -529,8 +518,7 @@ int main(int argc, char* argv[]){
     ekin_param *= (prefs.ekin_factor / dq / dq);
 
 
-// if Coriolis file is set apply third term of the Watson Hamiltonian ( -1/8 sum_{i=0}^2 mu_ii )
-//  to the potential:
+// if Coriolis file is set apply potential term of the Watson Hamiltonian ( -1/8 sum_{i=0}^2 mu_ii )
 //  mu                  is given in     g/mol/angstrom^2
 //  prefs.mu_factor     is given in     kJ/mol / [mu]
 //  prefs.ekin_factor   is given in     (output unit of energy) / (kJ/mol)
@@ -546,13 +534,10 @@ int main(int argc, char* argv[]){
 //------------------------------------------------------------------------------------------------------------
 
 // allocate memory for eigenvalues E and eigenvectors X
-    E = calloc(n_points, sizeof(double));
+    E = calloc(n_points         , sizeof(double));
     X = calloc(n_points*n_points, sizeof(double));
-    if(E == NULL || X == NULL){
-        fprintf(stderr, "\n (-) Error in memory allocation for Eigenstates E and/or X");
-        fprintf(stderr, "\n     Aborting...\n\n");
-        exit(1);
-    }
+    if(E == NULL){ perror("Eigenvalues" ); exit(errno); }
+    if(X == NULL){ perror("Eigenvectors"); exit(errno); }
 
 // Solve the matrix problem
 // MetaEigensolver forwards all arguments to the Eigensolver_<EigensolverName>
@@ -562,7 +547,8 @@ int main(int argc, char* argv[]){
 
 
 // Normalize eigen vectors
-    integrand = calloc(n_points, sizeof(double));
+    integrand = malloc(n_points * sizeof(double));
+    if(integrand == NULL){ perror("Integrand"); exit(errno); }
 
     for(i = 0; i < n_out; i++){
         for (j = 0; j < n_points; j++){
@@ -580,106 +566,26 @@ int main(int argc, char* argv[]){
 //------------------------------------------------------------------------------------------------------------
 //   Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output
 //------------------------------------------------------------------------------------------------------------
-// open output file
     fd = fopen(prefs.output_file, "a");
-    if(fd == NULL){
-        fprintf(stderr,
-            "\n (-) Error opening output-file: '%s'"
-            "\n     Aborting... \n\n"
-            , prefs.output_file
-        );
-        exit(1);
-    }
+    if(fd == NULL){ perror(prefs.output_file); exit(errno); }
 
-// output eigenvalues
-    fprintf(fd, "# Eigenvalues:");
-    for(i = 0; i < n_out; i++){
-        fprintf(fd, " %24.16lf", E[i]);
-    }
-
-// and output frequencies
-    fprintf(fd, "\n#\n# Frequencies:\n#\n#");
-    for(i = 0; i < (n_out - 1); i++){
-        fprintf(fd, "       %7d", i);
-    }
-    for(i = 1; i < n_out; i++){
-        fprintf(fd, "\n# %3d",i);
-
-        for(j = 0; j < i; j++){
-            freq = (E[i] - E[j]) * kJmolToWavenumber / prefs.ekin_factor;
-            fprintf(fd, "  % 12.5e", freq);
-        }
-    }
-    fprintf(fd, "\n#\n#");
-
-// close output file
+// output eigenvalues and frequencies (in cm^-1)
+    TextOut_Frequencies(fd, prefs, n_out, E);
     fclose(fd); fd = NULL;
 
-
-//------------------------------------------------------------------------------------------------------------
-//   Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output
-//------------------------------------------------------------------------------------------------------------
-// Analyze  Analyze  Analyze  Analyze  Analyze  Analyze  Analyze  Analyze  Analyze  Analyze  Analyze  Analyze
-//------------------------------------------------------------------------------------------------------------
-// additional output information
-    if(prefs.analyze == 1){
-    // open output file
+// Analyze section
+    if(prefs.analyze){
         fd = fopen(prefs.output_file, "a");
-        if(fd == NULL){
-            fprintf(stderr,
-                "\n (-) Error opening output-file: '%s'"
-                "\n     Aborting... \n\n"
-                , prefs.output_file
-            );
-            exit(1);
-        }
-    // check for ortho-normality of evaluated wave functions:
-    //  calculate int Psi_i*Psi_j dτ (i.e. <X[i]|X[j]>)
-        fprintf(fd, "\n# Orthonormality:\n#\n#");
+        if(fd == NULL){ perror(prefs.output_file); exit(errno); }
 
-        for(i = 0; i < n_out; i++){
-            fprintf(fd, "       %7d", i);
-        }
-        for(i = 0; i < n_out; i++){
-            fprintf(fd, "\n# %3d",i);
+    // output ortho-normality check (i.e. <X[i]|X[j]>)
+        TextOut_Orthonormality(fd, prefs, n_out, n_points, nq, integrand, dq, X);
 
-            for(j = 0; j < (i+1); j++){
-                for(k = 0; k < n_points; k++){
-                // generate integrand
-                    integrand[k] = X[k + i*n_points]*X[k + j*n_points];
-                }
+    // output potential energy (i.e. <X[i]|V|X[j]>)
+        TextOut_Potential(fd, prefs, n_out, n_points, nq, integrand, dq, X, v);
 
-                integral = Integrate(prefs.dimension, nq, dq, integrand);
-                fprintf(fd, "  % 12.5e", integral);
-            }
-        }
-        fprintf(fd, "\n#\n#");
-
-
-    // Potential energy output
-    //  calculate int Psi_i*V*Psi_j dτ (i.e. <X[i]|V|X[j]>)
-        fprintf(fd, "\n# Potential Energy:\n#\n#");
-
-        for(i = 0; i < n_out; i++){
-            fprintf(fd, "       %7d", i);
-        }
-        for(i = 0; i < n_out; i++){
-            fprintf(fd, "\n# %3d", i);
-
-            for(j = 0; j < (i+1); j++){
-                for(k = 0; k < n_points; k++){
-                // generate integrand
-                    integrand[k] = X[k + i*n_points]*X[k + j*n_points] * v[k];
-                }
-
-                integral = Integrate(prefs.dimension, nq, dq, integrand);
-                fprintf(fd, "  % 12.5e", integral);
-            }
-        }
-        fprintf(fd, "\n#\n#");
-
-
-    // Kinetic energy output
+//---------------------------------------------------------------------------------------------------------------
+    // output kinetic energy (i.e. <X[i]|ħ² * d²/dx²|X[j]>)
         fprintf(fd, "\n# Kinetic Energy:\n#\n#");
 
         for(i = 0; i < n_out; i++){
@@ -693,7 +599,7 @@ int main(int argc, char* argv[]){
                 for(k = 0; k < nq[0]; k++){
                     for(l = 0; l < nq[1]; l++){
                         integrand[k*nq[1] + l] = 0;
-//------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------
                         for(xsh = -prefs.n_stencil/2; xsh < (prefs.n_stencil/2 + 1); xsh++){
 
                             if( (k+xsh > -1) && (k+xsh < nq[0]) ){
@@ -709,7 +615,7 @@ int main(int argc, char* argv[]){
                                 }
                             }
                         }
-//------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------
                         integrand[k*nq[1] + l] *= X[(k*nq[1] + l) + j*n_points];
                     }
                 }
@@ -719,147 +625,77 @@ int main(int argc, char* argv[]){
             }
         }
         fprintf(fd,"\n#\n#");
+//---------------------------------------------------------------------------------------------------------------
 
-    // close output file
+
+
         fclose(fd); fd = NULL;
     }// end if(prefs.analyze == 1)
 
 // free memory
-    free(integrand); integrand = NULL;
     free(stencil);     stencil = NULL;
 
 
-//------------------------------------------------------------------------------------------------------------
-//   Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output
-//------------------------------------------------------------------------------------------------------------
-// Dipole   Dipole   Dipole   Dipole   Dipole   Dipole   Dipole   Dipole   Dipole   Dipole   Dipole   Dipole
-//------------------------------------------------------------------------------------------------------------
-    if(prefs.dipole == 1){
-    // open output file
+// dipole section
+    if(prefs.dipole){
         fd = fopen(prefs.output_file, "a");
-        if(fd == NULL){
-            fprintf(stderr,
-                "\n (-) Error opening output-file: '%s'"
-                "\n     Aborting... \n\n"
-                , prefs.output_file
-            );
-            exit(1);
-        }
+        if(fd == NULL){ perror(prefs.output_file); exit(errno); }
 
-    // calculate transition dipole moments and write them to output file
-        OutputDipoleIntegration(prefs, nq, n_out, dq, dip, E, X, fd);
-
-    // close output file
+    // Intensities and oscillator strength
+        TextOut_Dipole(fd, prefs, n_out, n_points, nq, integrand, dq, E, X, dip);
         fclose(fd); fd = NULL;
     }
+// free memory
+    free(integrand); integrand = NULL;
 
 
-//------------------------------------------------------------------------------------------------------------
-//   Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output
-//------------------------------------------------------------------------------------------------------------
-//   Eigenvectors   Eigenvectors   Eigenvectors   Eigenvectors   Eigenvectors   Eigenvectors   Eigenvectors
-//------------------------------------------------------------------------------------------------------------
-// open output file
+// Eigenvectors
     fd = fopen(prefs.output_file, "a");
-    if(fd == NULL){
-        fprintf(stderr,
-            "\n (-) Error opening output-file: '%s'"
-            "\n     Aborting... \n\n"
-            , prefs.output_file
-        );
-        exit(1);
-    }
+    if(fd == NULL){ perror(prefs.output_file); exit(errno); }
 
-// print header
-    fprintf(fd, "\n# Potential and Eigenfunctions: %d data-points", n_points);
-
-// output size per dimension
-    fprintf(fd, "\n  N");
-    for(i = 0; i < prefs.dimension; ++i){
-        fprintf(fd, " %4d", nq[i]);
-    }
-    fprintf(fd, "\n");
-
-// output key
-    fprintf(fd, "\n#");
-    for(i = 0; i < prefs.dimension; ++i){
-        fprintf(fd, "\t          q[%d]          ", i);
-    }
-        fprintf(fd, "\t           v(q)         ");
-
-    if(prefs.dipole != 0){
-        fprintf(fd, "\t          dip_x         ");
-        fprintf(fd, "\t          dip_y         ");
-        fprintf(fd, "\t          dip_z         ");
-    }
-
-    if(strlen(prefs.coriolis_file) > 0){
-        fprintf(fd, "\tv(q) - sum_i(mu[i][i])/8");
-    }
-
-    for(i = 0; i < n_out; ++i){
-        fprintf(fd, "\t        Psi[%d]          ", i);
-    }
-    fprintf(fd, "\n");
-
-
-// output data
-    for(i = 0; i < n_points; ++i){
-    // add a newline every time a index jumps (from max to min)
-        for(j = (prefs.dimension - 1), k = 1; j >= 1; --j){
-            k *= nq[j];
-            if(i%k == 0){
-                fprintf(fd, "\n");
-            }
-        }
-
-    // output coordinates q[j][i] and potential v[i]
-        for(j = 0; j < prefs.dimension; ++j){
-            fprintf(fd, "\t% 24.16lf", q[j][i]);
-        }
-        if(strlen(prefs.coriolis_file) > 0){
-            fprintf(fd, "\t% 24.16lf", v[i] + ((mu[0][0][i] + mu[1][1][i] + mu[2][2][i])/8.0 * (prefs.mu_factor * prefs.ekin_factor)));
-        }else{
-            fprintf(fd, "\t% 24.16lf", v[i]);
-        }
-
-    // output dipole moment components
-        if(prefs.dipole != 0){
-            fprintf(fd, "\t% 24.16lf", dip[0][i]);
-            fprintf(fd, "\t% 24.16lf", dip[1][i]);
-            fprintf(fd, "\t% 24.16lf", dip[2][i]);
-        }
-
-
-    // output potential after addition of Watson potential term
-        if(strlen(prefs.coriolis_file) > 0){
-            fprintf(fd, "\t% 24.16lf", v[i]);
-        }
-
-    // output wave functions
-        for(j = 0; j < n_out; ++j){
-            fprintf(fd, "\t% 24.16lf", X[i + j*n_points]);
-        }
-
-        fprintf(fd, "\n");
-    }
-
-
-// close file and free memory
+    TextOut_Eigenvectors(fd, prefs, n_out, n_points, nq, q, v, mu, X, dip);
     fclose(fd); fd = NULL;
+
+
+//------------------------------------------------------------------------------------------------------------
+//  free memory    free memory    free memory    free memory    free memory    free memory    free memory
+//------------------------------------------------------------------------------------------------------------
     for(i = 0; i < prefs.dimension; ++i){
         free(q[i]); q[i] = NULL;
     }
-    free(q);    q  = NULL;
-    if(prefs.dipole == 1){
-        for(i = 0; i < 3; ++i){
-            free(dip[i]); dip[i] = NULL;
-        }
-        free(dip); dip = NULL;
+    free(q);  q  = NULL;
+    free(nq); nq = NULL;
+    free(v);  v  = NULL;
+    free(X);  X  = NULL;
+    free(E);  E  = NULL;
+    if(prefs.dipole){
+        free(dip[0]); dip[0] = NULL;
+        free(dip[1]); dip[1] = NULL;
+        free(dip[2]); dip[2] = NULL;
+        free(dip);    dip    = NULL;
     }
-    free(v);    v  = NULL;
-    free(X);    X  = NULL;
-    free(E);    E  = NULL;
+    if(strlen(prefs.coriolis_file) > 0){
+    // free mu: the interpolation routine already frees the lower
+    //  triangle part and points it to the upper one, to prevent a
+    //  double free a conditional free has to be used
+        if(!prefs.n_spline){
+            free(mu[1][0]); mu[1][0] = NULL;
+            free(mu[2][0]); mu[2][0] = NULL;
+            free(mu[2][1]); mu[2][1] = NULL;
+        }
+        for(i = 0; i < 3; ++i){
+            for(j = i; j < 3; ++j){
+                free(mu[i][j]); mu[i][j] = NULL;
+            }
+            free(mu[i]); mu[i] = NULL;
+        }
+        free(mu); mu = NULL;
+    // free zeta
+        free(zeta[0]); zeta[0] = NULL;
+        free(zeta[1]); zeta[1] = NULL;
+        free(zeta[2]); zeta[2] = NULL;
+        free(zeta);    zeta    = NULL;
+    }
 
     return 0;
 }

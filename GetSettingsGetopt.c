@@ -22,7 +22,7 @@ settings GetSettingsGetopt(settings defaults, int argc, char** argv){
 //---------------------------------------------------------------------------------
 //  FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS
 //---------------------------------------------------------------------------------
-    if(argc == 1){ exit(Help(argv[0], defaults)); }
+    if(argc == 1){ Help(argv[0], defaults); exit(EXIT_SUCCESS); }
 
     // optstring contains a list of all short option indices,
     //  indices followed by a colon are options requiring an argument.
@@ -77,7 +77,7 @@ settings GetSettingsGetopt(settings defaults, int argc, char** argv){
         // print help messages
             case 'h':
                 Help(argv[0], defaults);
-                exit(0);
+                exit(EXIT_SUCCESS);
 
         // Pipe: read input from stdin
             case 'P':

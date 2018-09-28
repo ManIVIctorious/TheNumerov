@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -13,9 +14,10 @@ int InputFunction(char* inputfile, double** *q, int* nq, double* *v, double** *m
 
 int InputFunction(char* inputfile, double** *q, int* nq, double* *v, double** *mu, int dimension, int dipole_flag){
 
-    FILE * fd;
-    char *token, *pos;
-    char * buffer  = NULL;
+    FILE * fd     = NULL;
+    char * token  = NULL;
+    char * pos    = NULL;
+    char * buffer = NULL;
     const char * comment   = "#%\n";
     const char * delimiter = " \t";
 
@@ -25,25 +27,11 @@ int InputFunction(char* inputfile, double** *q, int* nq, double* *v, double** *m
 
 // open input file read only
     fd = fopen(inputfile, "r");
-    if(fd == NULL){
-        fprintf(stderr,
-            "\n (-) Error opening input-file: \"%s\""
-            "\n     Aborting..."
-            "\n\n"
-            , inputfile
-        );
-        exit(1);
-    }
+    if(fd == NULL){ perror(inputfile); exit(errno); }
 
 // allocate memory of size _MaxLineLength_ for buffer
     buffer = malloc((_MaxLineLength_) * sizeof(char));
-    if(buffer == NULL){
-        fprintf(stderr,
-            "\n (-) Error in memory allocation of buffer in input function"
-            "\n     Aborting...\n\n"
-        );
-        exit(2);
-    }
+    if(buffer == NULL){ perror("Input function buffer"); exit(errno); }
 
 // start parsing of file
     entry_rows = 0;
@@ -65,7 +53,7 @@ int InputFunction(char* inputfile, double** *q, int* nq, double* *v, double** *m
                 "\n     Aborting..."
                 "\n\n", inputfile, linenumber
             );
-            exit(1);
+            exit(EXIT_FAILURE);
         }
 
     // strip buffer from comments
@@ -105,7 +93,7 @@ int InputFunction(char* inputfile, double** *q, int* nq, double* *v, double** *m
                         "\n\n"
                         , inputfile, dimension
                     );
-                    exit(1);
+                    exit(EXIT_FAILURE);
                 }
 
             // ignore adjacent delimiting characters
@@ -124,14 +112,7 @@ int InputFunction(char* inputfile, double** *q, int* nq, double* *v, double** *m
     //  first reallocate memory for coordinates q
         for(i = 0; i < dimension; ++i){
             (*q)[i] = realloc( (*q)[i], (entry_rows + 1) * sizeof(double) );
-            if( (*q)[i] == NULL){
-                fprintf(stderr,
-                    "\n (-) Error in reallocation of %s"
-                    "\n     Aborting...\n\n"
-                    , "coordinate"
-                );
-                exit(2);
-            }
+            if( (*q)[i] == NULL){ perror("Input function q[i]"); exit(errno); }
         }
 
     // read data from input file and store it in coordinates
@@ -147,7 +128,7 @@ int InputFunction(char* inputfile, double** *q, int* nq, double* *v, double** *m
                     "\n     Aborting - please check your input...\n\n"
                     , inputfile, linenumber, i, (dipole_flag == 1) ? dimension+4 : dimension+1
                 );
-                exit(1);
+                exit(EXIT_FAILURE);
             }
 
         // ignore adjacent delimiting characters
@@ -161,14 +142,7 @@ int InputFunction(char* inputfile, double** *q, int* nq, double* *v, double** *m
     // potential:
     //  reallocate memory for potential v
         (*v) = realloc( (*v), (entry_rows + 1) * sizeof(double) );
-        if( (*v) == NULL ){
-            fprintf(stderr,
-                "\n (-) Error in reallocation of %s"
-                "\n     Aborting...\n\n"
-                , "potential"
-            );
-            exit(2);
-        }
+        if( (*v) == NULL){ perror("Input function v"); exit(errno); }
 
     // get token and convert to double
         i = 0;
@@ -183,7 +157,7 @@ int InputFunction(char* inputfile, double** *q, int* nq, double* *v, double** *m
                     "\n     Aborting - please check your input...\n\n"
                     , inputfile, linenumber, i+dimension, (dipole_flag == 1) ? dimension+4 : dimension+1
                 );
-                exit(1);
+                exit(EXIT_FAILURE);
             }
 
         // ignore adjacent delimiting characters
@@ -204,14 +178,7 @@ int InputFunction(char* inputfile, double** *q, int* nq, double* *v, double** *m
         //  reallocate memory for mu[0] to mu[2]
             for(i = 0; i < 3; ++i){
                 (*mu)[i] = realloc( (*mu)[i], (entry_rows + 1) * sizeof(double) );
-                if( (*mu)[i] == NULL){
-                    fprintf(stderr,
-                        "\n (-) Error in reallocation of %s"
-                        "\n     Aborting...\n\n"
-                        , "dipole moment"
-                    );
-                    exit(2);
-                }
+                if( (*mu)[i] == NULL ){ perror("Input function mu[i]"); exit(errno); }
             }
 
         // get tokens and convert to double
@@ -227,7 +194,7 @@ int InputFunction(char* inputfile, double** *q, int* nq, double* *v, double** *m
                         "\n     Aborting - please check your input...\n\n"
                         , inputfile, linenumber, i+dimension+1, (dipole_flag == 1) ? dimension+4 : dimension+1
                     );
-                    exit(1);
+                    exit(EXIT_FAILURE);
                 }
 
             // ignore adjacent delimiting characters

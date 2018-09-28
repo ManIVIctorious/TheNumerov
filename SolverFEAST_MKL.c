@@ -1,6 +1,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <mkl_solvers_ee.h>
 #include "typedefinitions.h"
 
@@ -48,19 +49,12 @@ int SolverFEAST_MKL(settings prefs, int* nq, double* v, double ekin_param, doubl
                 "\n     Please check your input. Aborting...\n\n"
                 ,prefs.dimension
             );
-            exit(-1);
+            exit(EXIT_FAILURE);
     }
 
 // Start eigenstate calculation
     double * res = calloc(n_points, sizeof(double));    // Residual
-    if(res == NULL){
-        fprintf(stderr,
-            "\n (-) Error in memory allocation of residual array"
-            "\n     Aborting..."
-            "\n\n"
-        );
-        exit(1);
-    }
+    if(res == NULL){ perror("SolverFEAST_MKL \"residue\""); exit(errno); }
 
     char           UPLO     = 'F';
     const MKL_INT  N        = n_points;
@@ -92,13 +86,11 @@ int SolverFEAST_MKL(settings prefs, int* nq, double* v, double ekin_param, doubl
         &info           // OUT: Error code
     );
 
-    // Error output
+// Error output
     if( info != 0 ){
         fprintf(stderr,
-            "\n (-) Error in routine sfeast_scsrev"
-            "\n     Return code of ERROR: %d"
-            "\n     Aborting..."
-            "\n\n"
+            "\n (-) Error, \"sfeast_scsrev\" returned code of error: %d"
+            "\n     Aborting...\n\n"
             , (int)info
         );
         exit((int)info);

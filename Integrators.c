@@ -38,7 +38,7 @@ double Integrate(int dimension, int* nq, double dx, double* integrand){
                 "\n (-) Error: The requested integration routine is not implemented"
                 "\n     at the moment, Aborting...\n\n"
             );
-            exit(1);
+            exit(EXIT_FAILURE);
     }
 
     return integral;

@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -12,174 +13,182 @@ int InputCoriolisCoefficients(char* inputfile, double** *q, double** zeta, doubl
 
 int InputCoriolisCoefficients(char* inputfile, double** *q, double** zeta, double*** *mu, int dimension){
 
+    FILE * fd      = NULL;
+    char * buffer  = NULL;
+    char * stringp = NULL;
+    char * pos     = NULL;
+    const char * comment   = "#%\n";
+    const char * delimiter = " \t";
+
+    int i, m, n, control;
     int linenumber;
-    int rows, comment_flag;
-    int m, n;
-    unsigned int i;
-    char * comment = "#%\n";
-    char * line    = NULL;
-    char * token = NULL;
-    char   buffer[_MaxLineLength_] = "";
-    FILE * fd;
+    int entry_rows;
 
+// open input file
     fd = fopen(inputfile, "r");
-    if(fd == NULL){
-        fprintf(stderr,
-            "\n(-) ERROR opening input-file: \"%s\""
-            "\n    Exiting..."
-            "\n\n"
-            , inputfile
-        );
-        exit(1);
-    }
+    if(fd == NULL){ perror(inputfile); exit(errno); }
 
-    rows = 0;
+// allocate memory for buffer
+    buffer = malloc((_MaxLineLength_) * sizeof(char));
+    if(buffer == NULL){ perror("Input Coriolis file buffer"); exit(errno); }
+
+// start file parsing
+    entry_rows = 0;
     linenumber = 0;
-    while(fgets(buffer, sizeof(buffer), fd) != NULL){
+    while( fgets(buffer, _MaxLineLength_, fd) != NULL ){
 
-        ++linenumber;
+        linenumber++;
 
-    // check if the first character in buffer is a comment char,
-    //  if yes jump to next line
-        comment_flag = 0;
-        for(i = 0; i < strlen(comment); ++i){
-            if(buffer[0] == comment[i]){
-                comment_flag = 1;
-                break;
+    // check for existence of newline character, if not found the line
+    //  exceeds maximum line length
+        for(i = 0, control = 0; i < (int)strlen(buffer); ++i){
+            if(buffer[i] == '\n'){
+                control = 1;
             }
         }
-        if(comment_flag == 1) continue;
+        if(control == 0){
+            fprintf(stderr,
+                "\n (-) Error in Coriolis input file \"%s\", line \"%d\" is too long."
+                "\n     Aborting..."
+                "\n\n", inputfile, linenumber
+            );
+            exit(EXIT_FAILURE);
+        }
 
-    // copy "buffer" with stripped comments to new buffer "line"
-        line = strtok(buffer, comment);
-        if(line == NULL) continue;
+    // strip buffer from comments
+        stringp = buffer;
+        pos = strsep(&stringp, comment);
+        if(pos == NULL){ continue; }
 
-    // remove leading white spaces and tabulators
-    //  and skip empty lines
-        while(isspace(*line)) line++;
-        if(strlen(line) == 0) continue;
+    // remove leading white spaces and skip empty lines
+        while( isspace(*pos) && *pos != '\0' ){ pos++; }
+        if(strlen(pos) == 0) continue;
 
-    // At this point the requested input line is stripped of
-    //  comments and blank lines. From here on the parsing starts:
-    //    printf("%s\n", line);
+// buffer now contains a (non empty) line of the input file, stripped from comments
+//  and *pos points to the first non white space character of buffer
 //-----------------------------------------------------------------------------------
 
-    // Start reading data:
-    //  Break down string array "line" to <dimension + 3> string tokens "token"
+    // point stringp to first non white space character in buffer
+        stringp = pos;
 
-    // Get first token, convert it to double and store it in q[0]
-        token = strtok(line, " \t");
-        if(token != NULL){
-        // reallocate memory for q array
-            for(n = 0; n < dimension; ++n){
-                (*q)[n] = realloc((*q)[n], (rows + 1)*sizeof(double));
-                if( (*q)[n] == NULL){
-                    fprintf(stderr,
-                        "\n (-) ERROR in reallocation of %s"
-                        "\n     Aborting..."
-                        "\n\n"
-                        , "coordinate"
-                    );
-                    exit(2);
-                }
-            }
-            (*q)[0][rows] = atof(token);
+    // Coordinates:
+    //  reallocate memory
+        for(i = 0; i < dimension; ++i){
+            (*q)[i] = realloc((*q)[i], (entry_rows + 1)*sizeof(double));
+            if( (*q)[i] == NULL){ perror("Coriolis input function q[i]"); exit(errno); }
         }
 
-    // store the other <dimension - 1> coordinate entries
-        for(m = 1; m < dimension; ++m){
-            token = strtok(NULL, " \t");
-            if(token == NULL){
+    //  read data from input file and store it in coordinates
+        i = 0;
+        while(i < dimension){
+            pos = strsep(&stringp, delimiter);
+
+        // throw an error if no data found
+            if(pos == NULL){
                 fprintf(stderr,
-                    "\n (-) ERROR reading data from input-file \"%s\"."
-                    "\n     Too few entries in input line number %d"
-                    "\n     Aborting - please check your input..."
-                    "\n\n"
-                    , inputfile, linenumber
+                    "\n (-) Error reading data from input-file \"%s\"."
+                    "\n     Too few entries in input line number %d (only found %d of expected %d columns)"
+                    "\n     Aborting, please check your input...\n\n"
+                    , inputfile, linenumber, i, (dimension + 3 * ((dimension * (dimension - 1))/2) + 6)
                 );
-                exit(1);
+                exit(EXIT_FAILURE);
             }
-            (*q)[m][rows] = atof(token);
+
+        // ignore adjacent delimiting characters
+            if(*pos == '\0'){ continue; }
+
+            (*q)[i][entry_rows] = atof(pos);
+            ++i;
         }
+        n = i;
 
 
     // Zeta values:
-    // get token and convert to double
+    //  read data from input file and store it in zeta
         for(m = 0; m < 3; ++m){
-            for(n = 0; n < ((dimension*(dimension - 1))/2); ++n){
-                token = strtok(NULL, " \t");
-                if(token == NULL){
+
+            i = 0;
+            while(i < (dimension*(dimension - 1)) / 2){
+
+                pos = strsep(&stringp, delimiter);
+
+            // throw an error if no data found
+                if(pos == NULL){
                     fprintf(stderr,
-                        "\n (-) ERROR reading data from input-file \"%s\"."
-                        "\n     Too few entries in input line number %d"
-                        "\n     Aborting - please check your input..."
-                        "\n\n", inputfile, linenumber
+                        "\n (-) Error reading data from input-file \"%s\"."
+                        "\n     Too few entries in input line number %d (only found %d of expected %d columns)"
+                        "\n     Aborting, please check your input...\n\n"
+                        , inputfile, linenumber, n, (dimension + 3 * ((dimension * (dimension - 1))/2) + 6)
                     );
-                    exit(1);
+                    exit(EXIT_FAILURE);
                 }
-                if(zeta[m][n] == 0.0){
-                    zeta[m][n] = atof(token);
-                }else{
-                    if(zeta[m][n] != atof(token)){
 
-                        fprintf(stderr,
-                            "\n (-) ERROR reading data from input-file \"%s\"."
-                            "\n     The zeta parameters are only dependent on the"
-                            "\n     mode files and not the deviation from minimum"
-                            "\n     => they are not allowed to change with q"
-                            "\n     Line %d:"
-                            "\n         old zeta: % .12le"
-                            "\n         new zeta: % .12le"
-                            "\n     Aborting - please check your input..."
-                            "\n\n", inputfile, linenumber, zeta[m][n], atof(token)
-                        );
-                        exit(1);
+            // ignore adjacent delimiting characters
+                if(*pos == '\0'){ continue; }
 
-                    }
+                if(zeta[m][i] == 0.0){
+                    zeta[m][i] = atof(pos);
+
+                }else if( zeta[m][i] != atof(pos) ){
+                    fprintf(stderr,
+                        "\n (-) Error reading data from input-file \"%s\"."
+                        "\n     Since the zeta parameters are only dependent on the mode files"
+                        "\n     they have to be constant in regard of the deviation from minimum"
+                        "\n     Line\told zeta\tnew zeta:"
+                        "\n      %d \t% .12le \t% .12le"
+                        "\n     Aborting - please check your input..."
+                        "\n\n", inputfile, linenumber, zeta[m][i], atof(pos)
+                    );
+                    exit(EXIT_FAILURE);
                 }
+                ++i;
+                ++n;
             }
         }
 
-    // store the "effective reciprocal inertia tensor" mu
-    //  increase array size:
-        for(m = 0; m < 3; ++m){
-            for(n = 0; n < 3; ++n){
-                (*mu)[m][n] = realloc((*mu)[m][n], (rows + 1) * sizeof(double));
 
-                if( (*mu)[m][n] == NULL){
-                    fprintf(stderr,
-                        "\n (-) ERROR in reallocation of %s"
-                        "\n     Aborting..."
-                        "\n\n"
-                        , "effective reciprocal inertia tensor"
-                    );
-                    exit(2);
-                }
+    // "Effective reciprocal inertia tensor" mu:
+    //  reallocate memory
+        for(i = 0; i < 3; ++i){
+            for(m = 0; m < 3; ++m){
+                (*mu)[i][m] = realloc((*mu)[i][m], (entry_rows + 1) * sizeof(double));
+                if( (*mu)[i][m] == NULL){ perror("Coriolis input function mu[m][n]"); exit(errno); }
             }
         }
-    // get token and convert to double
+
+    //  read data from input file and store it in mu
         for(m = 0; m < 3; ++m){
-            for(n = m; n < 3; ++n){
-                token = strtok(NULL, " \t");
-                if(token == NULL){
+
+            i = 0;
+            while( (i+m) < 3 ){
+
+                pos = strsep(&stringp, delimiter);
+
+            // throw an error if no data found
+                if(pos == NULL){
                     fprintf(stderr,
-                        "\n (-) ERROR reading data from input-file \"%s\"."
-                        "\n     Too few entries in input line number %d"
-                        "\n     Aborting - please check your input..."
-                        "\n\n", inputfile, linenumber
+                        "\n (-) Error reading data from input-file \"%s\"."
+                        "\n     Too few entries in input line number %d (only found %d of expected %d columns)"
+                        "\n     Aborting, please check your input...\n\n"
+                        , inputfile, linenumber, n, (dimension + 3 * ((dimension * (dimension - 1))/2) + 6)
                     );
-                    exit(1);
+                    exit(EXIT_FAILURE);
                 }
-                (*mu)[m][n][rows] = atof(token);
-                (*mu)[n][m][rows] = atof(token);
+
+            // ignore adjacent delimiting characters
+                if(*pos == '\0'){ continue; }
+
+                (*mu)[m][i+m][entry_rows] = atof(pos);
+                (*mu)[i+m][m][entry_rows] = (*mu)[m][i+m][entry_rows];
+                ++i;
+                ++n;
             }
         }
 
     // increment number of rows by 1
-        ++rows;
-
+        ++entry_rows;
     }
     fclose(fd); fd = NULL;
 
-    return rows;
+    return entry_rows;
 }

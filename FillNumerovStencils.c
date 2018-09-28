@@ -84,7 +84,7 @@ int FillStencil1D(double* stencil, int n_stencil){
                 "\n\n"
                 , n_stencil
             );
-            exit(-1);
+            exit(EXIT_FAILURE);
     }
 }
 
@@ -621,6 +621,6 @@ int FillStencil2D(double* stencil, int n_stencil){
                 "\n\n"
                 , n_stencil
             );
-            exit(-1);
+            exit(EXIT_FAILURE);
     }
 }

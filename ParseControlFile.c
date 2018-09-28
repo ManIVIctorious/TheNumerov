@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <ctype.h>
 
 #include "typedefinitions.h"
@@ -19,7 +20,7 @@ int ControlFileParser(char* filename, struct keywords* keywordlist, int verbosit
     FILE * fd     = NULL;
     char * buffer = NULL;
     const char * comment = "%#\n";
-    char *token, *pos1, *pos2, *pos3;
+    char *stringp, *pos1, *pos2, *pos3;
 
     int recognized_keyword;
     int n_keywords_set;
@@ -27,25 +28,10 @@ int ControlFileParser(char* filename, struct keywords* keywordlist, int verbosit
     int control;
 
     fd = fopen(filename, "r");
-    if(fd == NULL){
-        fprintf(stderr,
-            "\n (-) Error opening input-file: \"%s\""
-            "\n     Aborting..."
-            "\n\n"
-            , filename
-        );
-        exit(EXIT_FAILURE);
-    }
+    if(fd == NULL){ perror(filename); exit(errno); }
 
     buffer = malloc((_MaxLineLength_) * sizeof(char));
-    if(buffer == NULL){
-        fprintf(stderr,
-            "\n (-) Error in memory allocation of buffer in control file input"
-            "\n     Aborting..."
-            "\n\n"
-        );
-        exit(EXIT_FAILURE);
-    }
+    if(buffer == NULL){ perror("Control file parser buffer"); exit(errno); }
 
 
     linenumber = 0;
@@ -55,8 +41,7 @@ int ControlFileParser(char* filename, struct keywords* keywordlist, int verbosit
         linenumber++;
 
     // check for existence of newline character,
-    //  if not found the line is not fully inside of the buffer
-    //  and therefore exceeding maximum line length
+    //  if not found line length is exceeding buffer
         for(i = 0, control = 0; i < strlen(buffer); ++i){
             if(buffer[i] == '\n'){
                 control = 1;
@@ -68,12 +53,12 @@ int ControlFileParser(char* filename, struct keywords* keywordlist, int verbosit
                 "\n     Aborting..."
                 "\n\n", filename, linenumber
             );
-            exit(1);
+            exit(EXIT_FAILURE);
         }
 
     // strip buffer from comments
-        token  = buffer;
-        pos1 = strsep(&token, comment);
+        stringp  = buffer;
+        pos1 = strsep(&stringp, comment);
         if(pos1 == NULL) continue;
 
     // remove leading white spaces and empty lines
@@ -86,12 +71,12 @@ int ControlFileParser(char* filename, struct keywords* keywordlist, int verbosit
 
 
     // split at every occurrence of semi colon
-    //  &token --> token --> char array;
+    //  &stringp --> stringp --> char array;
     //                       ↑
     //                      pos1
-        token = pos1;
+        stringp = pos1;
 
-        while( (pos1 = strsep(&token, ";")) != NULL ){
+        while( (pos1 = strsep(&stringp, ";")) != NULL ){
 
         // remove leading white spaces
             while(isspace(*pos1) != 0) { pos1++; }
@@ -103,11 +88,11 @@ int ControlFileParser(char* filename, struct keywords* keywordlist, int verbosit
                 while( *pos3 != '=' && strlen(pos3) > 0 ){
                 // first set pos2 to start of word and iterate to its end
                     pos2 = pos1;
-                    while( isspace(*pos2) == 0 && *pos2 != '=' && *pos2 != '\0') { pos2++; }
+                    while( !isspace(*pos2) && *pos2 != '=' && *pos2 != '\0') { pos2++; }
 
                 // then move pos3 forwards over eventual white spaces
                     pos3 = pos2;
-                    while( isspace(*pos3) != 0 && *pos3 != '=' && *pos3 != '\0') { pos3++; }
+                    while(  isspace(*pos3) && *pos3 != '=' && *pos3 != '\0') { pos3++; }
 
                 // and check if pos3 now points to an equality sign
                 //  if not ignore the word and check if there is a keyword
@@ -143,18 +128,17 @@ int ControlFileParser(char* filename, struct keywords* keywordlist, int verbosit
 
                             // remove leading and trailing white spaces from value:
                                 if(strlen(pos3) > 0){
-                                // trailing: point pos2 to end of pos3, iterate backwards
-                                //  until non white space is found (since pos3 points to an
-                                //  equality sign a non white space character must exist)
-                                //  and set the next char to \0
+                                // trailing: point pos2 to end of pos3, iterate backwards until non white space
+                                //  is found (since pos3 points to an equality sign a non white space character
+                                //  must exist) and set the next char to \0
                                     pos2 = pos3 + strlen(pos3) - 1;
-                                    while( isspace(*pos2) != 0 && pos2 > pos3 ) { pos2--; }
+                                    while( isspace(*pos2) && pos2 > pos3 ) { pos2--; }
                                     ++pos2;
                                     *pos2 = '\0';
 
                                 // leading: move pos3 to start of value
                                     ++pos3;
-                                    while( isspace(*pos3) != 0 && *pos3 != '\0' ) { pos3++; }
+                                    while( isspace(*pos3) && *pos3 != '\0' ) { pos3++; }
 
                                 }
 
@@ -167,13 +151,13 @@ int ControlFileParser(char* filename, struct keywords* keywordlist, int verbosit
                                         "\n     Aborting..."
                                         "\n\n", filename, linenumber, keywordlist[i].keyword
                                     );
-                                    exit(1);
+                                    exit(EXIT_FAILURE);
                                 }
 
 
                             // check if <value> contains any white spaces and throw a warning if true
                                 for(j = 0, control = 0; j < strlen(pos3); ++j){
-                                    if(isspace(pos3[j]) != 0){
+                                    if(isspace(pos3[j])){
                                         control = 1;
                                     }
                                 }
@@ -191,7 +175,7 @@ int ControlFileParser(char* filename, struct keywords* keywordlist, int verbosit
 
 
                             // if verbosity flag is set: output found keywords and values
-                                if(verbosity_flag != 0){
+                                if(verbosity_flag){
                                     fprintf(stderr, "\t%s\t\t= \"%s\"\n", pos1, pos3);
                                 }
 
@@ -209,7 +193,7 @@ int ControlFileParser(char* filename, struct keywords* keywordlist, int verbosit
                     }
 
                 // check if keyword was recognized, else throw a warning
-                    if(recognized_keyword == 0){
+                    if(!recognized_keyword){
                         fprintf(stderr,
                             " (-) Warning: Control file \"%s\", line \"%d\": Ignoring unrecognized keyword \"%s\"\n"
                             , filename, linenumber, pos1

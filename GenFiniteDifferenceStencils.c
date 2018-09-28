@@ -1,5 +1,5 @@
 
-/*  Finite differnce stencils:
+/*  Finite difference stencils:
 //{{{
     
     For the calculation of the finite difference stencils of e.g. the fourth derivative
@@ -78,25 +78,18 @@ int FiniteDifferenceStencil(double* stencil, unsigned int size, unsigned int der
             "\n     as the requested derivative order (%d)."
             "\n     Aborting...\n\n", size, derivative
         );
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     int signum;
     unsigned int i, j;
-    gsl_matrix      * A;
-    gsl_matrix      * invA;
-    gsl_permutation * p;
+    gsl_matrix      * A     = NULL;
+    gsl_matrix      * invA  = NULL;
+    gsl_permutation * p     = NULL;
 
+// gsl has its own error handling
     A = gsl_matrix_alloc(size, size);
     p = gsl_permutation_alloc(size);
-    if(A == NULL || p == NULL){
-        fprintf(stderr,
-            "\n (-) Error in memory allocation of matrix A or permutation p"
-            "\n     Aborting...\n\n"
-        );
-        exit(1);
-    }
-
 
 // set values of first and second column
     for(i = 0; i < size; ++i){
@@ -118,13 +111,6 @@ int FiniteDifferenceStencil(double* stencil, unsigned int size, unsigned int der
 
 // allocate memory for inverse of matrix A
     invA = gsl_matrix_alloc(size,size);
-    if(invA == NULL){
-        fprintf(stderr,
-            "\n (-) Error in memory allocation of matrix invA"
-            "\n     Aborting...\n\n"
-        );
-        exit(1);
-    }
 
 // compute the inverse of matrix A from its LU decomposition (LU, p)
 //  The inverse is computed by solving the system A x = b for each column of

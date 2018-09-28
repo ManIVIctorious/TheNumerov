@@ -10,7 +10,7 @@ double CheckCoordinateSpacing(double** q, int* nq, double threshold, int dimensi
     int i, j, k, l;
     int n_points;
     double dq;
-    double dq_new = 0;          // new dq to check dq against (in coordinate check)
+    double dq_new = 0;          // new dq to check dq against
     int n_blocks, block_size;   // integers for coordinate spacing
     int index1, index2;         // indices for better readability
 
@@ -128,11 +128,10 @@ for(i = 0, n_points = 1; i < dimension; ++i){
                             "\n     Coordinate spacing (check no. 1) not equivalent:"
                             "\n     \ttarget = % .12lf"
                             "\n     \tvalue  = % .12lf"
-                            "\n     Aborting - please check your input..."
-                            "\n\n"
-                            ,dq, dq_new
+                            "\n     Aborting - please check your input...\n\n"
+                            , dq, dq_new
                         );
-                        exit(-1);
+                        exit(EXIT_FAILURE);
                     }
 
                 }
@@ -161,11 +160,10 @@ for(i = 0, n_points = 1; i < dimension; ++i){
                         "\n     Coordinate spacing (check no. 2) not equivalent:"
                         "\n     \ttarget = % .12lf"
                         "\n     \tvalue  = % .12lf"
-                        "\n     Aborting - please check your input..."
-                        "\n\n"
-                        ,dq, dq_new
+                        "\n     Aborting - please check your input...\n\n"
+                        , dq, dq_new
                     );
-                    exit(-1);
+                    exit(EXIT_FAILURE);
                 }
 
             }
@@ -185,11 +183,10 @@ for(i = 0, n_points = 1; i < dimension; ++i){
                 "\n     Coordinate spacing (check no. 3) not equivalent:"
                 "\n     \ttarget = % .12lf"
                 "\n     \tvalue  = % .12lf"
-                "\n     Aborting - please check your input..."
-                "\n\n"
-                ,dq, dq_new
+                "\n     Aborting - please check your input...\n\n"
+                , dq, dq_new
             );
-            exit(-1);
+            exit(EXIT_FAILURE);
         }
 
     }

@@ -30,7 +30,7 @@ int MetaEigensolver(settings prefs, int* nq, double* v, double ekin_param, doubl
                 "\n     Please make sure it exists, also check your compile time flags."
                 "\n     Aborting...\n\n"
             );
-            exit(-1);
+            exit(EXIT_FAILURE);
     }
 
     return n_out;

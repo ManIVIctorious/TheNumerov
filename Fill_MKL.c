@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <mkl_solvers_ee.h>
 
 #include "typedefinitions.h"
@@ -38,14 +39,11 @@ int FillMKL_1D(double* v, int* nq, double ekin_param, double* stencil, int n_ste
     (*rows_A) = calloc(n_points + 1, sizeof(MKL_INT));
     (*cols_A) = calloc(max_entries,  sizeof(MKL_INT));
     (*vals_A) = calloc(max_entries,  sizeof(double));
-    if((*rows_A) == NULL || (*cols_A) == NULL || (*vals_A) == NULL){
-        fprintf(stderr,
-            "\n (-) Error in memory allocation for row, column and/or value arrays"
-            "\n     Aborting..."
-            "\n\n"
-        );
-        exit(1);
-    }
+
+    if( (*rows_A) == NULL ){ perror("1D MKL Fill rows_A"); exit(errno); }
+    if( (*cols_A) == NULL ){ perror("1D MKL Fill cols_A"); exit(errno); }
+    if( (*vals_A) == NULL ){ perror("1D MKL Fill vals_A"); exit(errno); }
+
 
 // fill Numerov's A matrix
 //  determine the non zero elements and store their positions in rows_A and cols_A
@@ -103,14 +101,11 @@ int FillMKL_2D(settings prefs, int* nq, double* v, double ekin_param, double* st
     (*rows_A) = calloc(n_points + 1, sizeof(MKL_INT));
     (*cols_A) = calloc(max_entries,  sizeof(MKL_INT));
     (*vals_A) = calloc(max_entries,  sizeof(double));
-    if((*rows_A) == NULL || (*cols_A) == NULL || (*vals_A) == NULL){
-        fprintf(stderr,
-            "\n (-) Error in memory allocation for row, column and/or value arrays"
-            "\n     Aborting..."
-            "\n\n"
-        );
-        exit(1);
-    }
+
+    if( (*rows_A) == NULL ){ perror("2D MKL Fill rows_A"); exit(errno); }
+    if( (*cols_A) == NULL ){ perror("2D MKL Fill cols_A"); exit(errno); }
+    if( (*vals_A) == NULL ){ perror("2D MKL Fill vals_A"); exit(errno); }
+
 
 // variables needed for the calculation of the Watson Hamiltonian rotational terms
     int m, n;
@@ -127,14 +122,12 @@ int FillMKL_2D(settings prefs, int* nq, double* v, double ekin_param, double* st
         nothing   = calloc(prefs.n_stencil,  sizeof(double));
         fst_deriv = malloc(prefs.n_stencil * sizeof(double));
         sec_deriv = malloc(prefs.n_stencil * sizeof(double));
-        if(nothing == NULL || fst_deriv == NULL || sec_deriv == NULL){
-            fprintf(stderr,
-                "\n (-) Error in memory allocation of derivative stencils"
-                "\n     Aborting..."
-                "\n\n"
-            );
-            exit(1);
-        }
+
+        if(nothing   == NULL){ perror("2D MKL \"nothing\""  ); exit(errno); }
+        if(fst_deriv == NULL){ perror("2D MKL \"fst_deriv\""); exit(errno); }
+        if(sec_deriv == NULL){ perror("2D MKL \"sec_deriv\""); exit(errno); }
+
+
     //  set central point of "nothing" to 1.0
         nothing[prefs.n_stencil/2] = 1.0;
 
@@ -147,7 +140,7 @@ int FillMKL_2D(settings prefs, int* nq, double* v, double ekin_param, double* st
                 "\n     Aborting..."
                 "\n\n"
             );
-            exit(1);
+            exit(EXIT_FAILURE);
         }
     }
 
@@ -177,7 +170,7 @@ int FillMKL_2D(settings prefs, int* nq, double* v, double ekin_param, double* st
                             // calculate pre-factor
                                 for(n = 0, prefactor = 0.0; n < 3; ++n){
                                     for(m = 0; m < 3; ++m){
-                                      prefactor -= zeta[n][0]*zeta[m][0] * mu[n][m][i*nq[1] + j];
+                                        prefactor -= zeta[n][0]*zeta[m][0] * mu[n][m][i*nq[1] + j];
                                     }
                                 }
                             //  zeta is normalized      =>          non-dimensional

@@ -1,6 +1,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 
 // provided prototypes
 int nx1dInterpolation(double** v, int* nq_in, double dq, int dimension, int n_spline);
@@ -171,8 +172,15 @@ int nx1dInterpolation(double** v, int* nq_in, double dq, int dimension, int n_sp
     yy       = malloc(nn_points  * sizeof(double)); // freed
     aux_yy   = malloc(nn_points  * sizeof(double)); // points to new *v (old is freed by freeing aux_v)
 
+    if(matrix_c == NULL){ perror("matrix_c"); exit(errno); }
+    if(matrix_d == NULL){ perror("matrix_d"); exit(errno); }
+    if(inter_c  == NULL){ perror("inter_c" ); exit(errno); }
+    if(yy       == NULL){ perror("yy"      ); exit(errno); }
+    if(aux_yy   == NULL){ perror("aux_yy"  ); exit(errno); }
+
 //  allocate memory for nq and fill it with nq_in values
     nq = malloc(dimension * sizeof(int));
+    if(nq == NULL){ perror("nq"); exit(errno); }
     for(i = 0; i < dimension; ++i){
         nq[i] = nq_in[i];
     }

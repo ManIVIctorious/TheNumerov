@@ -32,6 +32,7 @@
     OBJ += CheckCoordinateSpacing.o
     OBJ += InputFunction.o
     OBJ += InputCoriolisCoefficients.o
+    OBJ += TextOut.o
     OBJ += OutputSettings.o
     OBJ += MetaGetStencil.o
     OBJ += FillNumerovStencils.o
@@ -41,7 +42,6 @@
     OBJ += MetaInterpolation.o
     OBJ += nx1dInterpolation.o
     OBJ += Integrators.o
-    OBJ += OutputDipoleIntegration.o
   # GSL objects
     ifeq ($(findstring HAVE_GSL_INSTALLED, $(PPF)), HAVE_GSL_INSTALLED)
       GSLOBJ += GenFiniteDifferenceStencils.o

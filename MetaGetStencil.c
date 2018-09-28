@@ -32,7 +32,7 @@ int MetaGetStencil(double* stencil, int n_stencil, int dimension){
                 "\n\n"
                 , dimension
             );
-            exit(-1);
+            exit(EXIT_FAILURE);
             break;
     }
 
