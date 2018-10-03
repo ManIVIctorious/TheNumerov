@@ -28,8 +28,7 @@ int MetaGetStencil(double* stencil, int n_stencil, int dimension){
         default:
             fprintf(stderr,
                 "\n (-) Error currently there is no stencil of dimension %d implemented"
-                "\n     Aborting..."
-                "\n\n"
+                "\n     Aborting...\n\n"
                 , dimension
             );
             exit(EXIT_FAILURE);

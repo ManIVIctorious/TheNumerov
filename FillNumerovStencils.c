@@ -80,8 +80,7 @@ int FillStencil1D(double* stencil, int n_stencil){
         // if stencil is not implemented print an error message and exit program
             fprintf(stderr,
                 "\n (-) Error no data for %d-point stencil available."
-                "\n     Aborting - please check your input..."
-                "\n\n"
+                "\n     Aborting - please check your input...\n\n"
                 , n_stencil
             );
             exit(EXIT_FAILURE);
@@ -617,8 +616,7 @@ int FillStencil2D(double* stencil, int n_stencil){
         // if stencil is not implemented print an error message and exit program
             fprintf(stderr,
                 "\n (-) Error no data for %d-point stencil available."
-                "\n     Aborting - please check your input..."
-                "\n\n"
+                "\n     Aborting - please check your input...\n\n"
                 , n_stencil
             );
             exit(EXIT_FAILURE);
