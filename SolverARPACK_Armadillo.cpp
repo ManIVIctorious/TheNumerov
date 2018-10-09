@@ -50,38 +50,19 @@ extern "C"{
                 exit(EXIT_FAILURE);
         }
 
-// start eigenstate calculation
-    arma::mat eigvec;
-    arma::vec eigval;
+    // start eigenstate calculation
+        bool success = true;
+        arma::mat eigvec;
+        arma::vec eigval;
 
-// In recent versions of armadillo the ARPACK is directly included
-//  The eigendecomposition can either be invoked by the armadillo "high-level" eigs routine
-//  or by using the underlying ARPACK implementation directly
-//  To use the underlying ARPACK implementation some objects/classes have to be put into scope:
-    using arma::newarp::SparseGenMatProd;
-    using arma::newarp::SymEigsSolver;
-    using arma::newarp::EigsSelect;
-
-// Construct matrix operation object using the wrapper class SparseGenMatProd
-    SparseGenMatProd<double> op(A);
-
-// Construct eigen solver object, requesting the largest <prefs.n_out> eigenvalues
-    SymEigsSolver< double, EigsSelect::SMALLEST_MAGN, SparseGenMatProd<double> > eigs(op, prefs.n_out, 4*prefs.n_out);
-
-// Initialize and compute
-    eigs.init();
-    int n_conv = eigs.compute(10000, 1.0e-14);
-
-    if(n_conv > 0){
-        eigval = eigs.eigenvalues();
-        eigvec = eigs.eigenvectors();
-    }else{
-        fprintf(stderr,
-            "\n (-) Error: Failed eigen decomposition.\n"
-            "\n     Aborting...\n\n"
-        );
-        exit(EXIT_FAILURE);
-    }
+        success = eigs_sym(eigval, eigvec, A, prefs.n_out, "sm");
+        if(!success){
+            fprintf(stderr,
+                "\n (-) Error: Failed eigen decomposition.\n"
+                "\n     Aborting...\n\n"
+            );
+            exit(EXIT_FAILURE);
+        }
 
     // fill eigenvalue E and eigenvector arrays X
         for(i = 0; i < eigvec.n_cols; ++i){
