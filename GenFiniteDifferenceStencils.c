@@ -1,12 +1,12 @@
 
 /*  Finite difference stencils:
 //{{{
-    
+
     For the calculation of the finite difference stencils of e.g. the fourth derivative
     one starts with the expansion to a Taylor series
 
     Taylor series:
-    
+
         f(b) = ∑_{n=0}^∞ f⁽ⁿ⁾(a) / n! · (b-a)^n = f(a) + f'(a)·(b-a) + f''(a)/2 · (b-a)^2 + f'''(a)/6 · (b-a)^3 +···
 
     Example:
@@ -53,7 +53,7 @@
     beginning with the identity (zeroth derivative) to the n-1th derivative.
     In the particular example of the matrix contains the identity, first, second, third and fourth derivative stencils.
     For its application each stencil has to be divided by h^<derivative>
-    
+
 //}}}*/
 
 #include <stdio.h>

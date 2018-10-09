@@ -8,7 +8,7 @@
 int SolverFEAST_MKL(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double* E, double* X, double** q, double dq, double*** mu, double** zeta);
 #endif
 #ifdef HAVE_ARMA_INSTALLED
-int SolverARPACK_Armadillo(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double* E, double* X);
+int SolverARPACK_Armadillo(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double* E, double* X, double** q, double dq, double*** mu, double** zeta);
 #endif
 
 // provided prototypes
@@ -29,9 +29,7 @@ int MetaEigensolver(settings prefs, int* nq, double* v, double ekin_param, doubl
 
 #ifdef HAVE_ARMA_INSTALLED
         case 2:
-            n_out = dq * **q * ***mu * **zeta; 
-            n_out = SolverARPACK_Armadillo(prefs, nq, v, ekin_param, stencil, E, X);
-
+            n_out = SolverARPACK_Armadillo(prefs, nq, v, ekin_param, stencil, E, X, q, dq, mu, zeta);
             break;
 #endif
 

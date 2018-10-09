@@ -1,6 +1,6 @@
 # Compiler
   CC   = gcc
-  CppC = g++
+  CppC = g++ -Wno-unused-parameter
 # List of compiler flags
   CFLAGS += -g#                     # Enable debug symbols
   CFLAGS += -Og#                    # Set optimisation level, should be g if debug symbols are enabled
@@ -53,6 +53,7 @@
     endif
   # Armadillo objects (require C++)
     ifeq ($(findstring HAVE_ARMA_INSTALLED, $(PPF)), HAVE_ARMA_INSTALLED)
+      ARMAOBJ += Fill_Armadillo.o
       ARMAOBJ += SolverARPACK_Armadillo.o
     endif
 
