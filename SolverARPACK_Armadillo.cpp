@@ -8,12 +8,12 @@ arma::sp_mat FillArmadillo_1D(int* nq, double* v, double ekin_param, double* ste
 arma::sp_mat FillArmadillo_2D(settings prefs, int* nq, int n_points, double* v, double ekin_param, double* stencil, double** q, double dq, double*** mu, double** zeta);
 
 // Provided Prototypes
-extern "C" int SolverARPACK_Armadillo(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double* E, double* X, double** q, double dq, double*** mu, double** zeta);
+extern "C" int SolverARPACK_Armadillo(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double** E, double** X, double** q, double dq, double*** mu, double** zeta);
 
 
 extern "C"{
 
-    int SolverARPACK_Armadillo(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double* E, double* X, double** q, double dq, double*** mu, double** zeta){
+    int SolverARPACK_Armadillo(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double** E, double** X, double** q, double dq, double*** mu, double** zeta){
 
         unsigned int i, j;
         int n_points;
@@ -64,12 +64,18 @@ extern "C"{
             exit(EXIT_FAILURE);
         }
 
+
+    // allocate memory for eigenvalues E and eigenvectors X
+        (*E) = (double*) malloc(eigval.n_elem                 * sizeof(double));
+        (*X) = (double*) malloc(eigvec.n_rows * eigvec.n_cols * sizeof(double));
+        if((*E) == NULL){ perror("Eigenvalues" ); exit(errno); }
+        if((*X) == NULL){ perror("Eigenvectors"); exit(errno); }
     // fill eigenvalue E and eigenvector arrays X
         for(i = 0; i < eigvec.n_cols; ++i){
-            E[i] = eigval[i];
+            (*E)[i] = eigval[i];
 
             for(j = 0; j < eigvec.n_rows; ++j){
-                X[i*n_points + j] = eigvec(j,i);
+                (*X)[i*n_points + j] = eigvec(j,i);
             }
         }
 

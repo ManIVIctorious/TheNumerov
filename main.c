@@ -19,7 +19,7 @@ double CheckCoordinateSpacing(double** q, int* nq, double threshold, int dimensi
 // meta functions
 int MetaGetStencil(double* stencil, int n_stencil, int dimension);
 int MetaInterpolation(double* *v, int* nq, double dq, int dimension, int n_spline);
-int MetaEigensolver(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double* E, double* X, double** q, double dq, double*** mu, double** zeta);
+int MetaEigensolver(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double* *E, double* *X, double** q, double dq, double*** mu, double** zeta);
 double Integrate(int dimension, int* nq, double dx, double* integrand);
 
 // output functions
@@ -490,16 +490,10 @@ int main(int argc, char* argv[]){
     double * integrand = NULL;
     double   integral;
 
-// allocate memory for eigenvalues E and eigenvectors X
-    E = calloc(n_points         , sizeof(double));
-    X = calloc(n_points*n_points, sizeof(double));
-    if(E == NULL){ perror("Eigenvalues" ); exit(errno); }
-    if(X == NULL){ perror("Eigenvectors"); exit(errno); }
-
 // Solve the matrix eigenvalue problem
 //  MetaEigensolver() forwards all arguments to the Solver<EigensolverName>() function.
 //  This function calls an adequate matrix fill routine and then solves the matrix problem
-    n_out = MetaEigensolver(prefs, nq, v, ekin_param, stencil, E, X, q, dq, mu, zeta);
+    n_out = MetaEigensolver(prefs, nq, v, ekin_param, stencil, &E, &X, q, dq, mu, zeta);
 
 // Normalize eigen vectors
     integrand = malloc(n_points * sizeof(double));

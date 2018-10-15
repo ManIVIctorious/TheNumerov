@@ -10,10 +10,10 @@ int FillMKL_1D(double* v, int* nq, double ekin_param, double* stencil, int n_ste
 int FillMKL_2D(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double** q, double dq, double*** mu, double** zeta, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A);
 
 // provided prototypes
-int SolverFEAST_MKL(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double* E, double* X, double** q, double dq, double*** mu, double** zeta);
+int SolverFEAST_MKL(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double** E, double** X, double** q, double dq, double*** mu, double** zeta);
 
 
-int SolverFEAST_MKL(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double* E, double* X, double** q, double dq, double*** mu, double** zeta){
+int SolverFEAST_MKL(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double** E, double** X, double** q, double dq, double*** mu, double** zeta){
 
     int i;
     int n_points;
@@ -52,6 +52,12 @@ int SolverFEAST_MKL(settings prefs, int* nq, double* v, double ekin_param, doubl
             exit(EXIT_FAILURE);
     }
 
+// allocate memory for eigenvalues E and eigenvectors X
+    (*E) = malloc(n_points          * sizeof(double));
+    (*X) = malloc(n_points*n_points * sizeof(double));
+    if((*E) == NULL){ perror("Eigenvalues" ); exit(errno); }
+    if((*X) == NULL){ perror("Eigenvectors"); exit(errno); }
+
 // Start eigenstate calculation
     double * res = calloc(n_points, sizeof(double));    // Residual
     if(res == NULL){ perror("SolverFEAST_MKL \"residue\""); exit(errno); }
@@ -79,8 +85,8 @@ int SolverFEAST_MKL(settings prefs, int* nq, double* v, double ekin_param, doubl
         &prefs.e_min,   // IN: Lower bound of search interval
         &prefs.e_max,   // IN: Upper bound of search interval
         &M0,            // IN: The initial guess for subspace dimension to be used.
-        E,              // OUT: The first M entries of Eigenvalues
-        X,              // IN/OUT: The first M entries of Eigenvectors
+        (*E),              // OUT: The first M entries of Eigenvalues
+        (*X),              // IN/OUT: The first M entries of Eigenvectors
         &n_out,         // OUT: The total number of eigenvalues found in the interval
         res,            // OUT: The first n_out components contain the relative residual vector
         &info           // OUT: Error code
@@ -96,12 +102,18 @@ int SolverFEAST_MKL(settings prefs, int* nq, double* v, double ekin_param, doubl
         exit((int)info);
     }
 
+// reallocate to actual required memory amount
+    (*E) = realloc( (*E), n_out          * sizeof(double));
+    (*X) = realloc( (*X), n_out*n_points * sizeof(double));
+    if((*E) == NULL){ perror("Eigenvalues" ); exit(errno); }
+    if((*X) == NULL){ perror("Eigenvectors"); exit(errno); }
+    
+
 // free memory of arrays which are not needed anymore
     free(res);      res     = NULL;
     free(rows_A);   rows_A  = NULL;
     free(cols_A);   cols_A  = NULL;
     free(vals_A);   vals_A  = NULL;
-
 
     return n_out;
 }
