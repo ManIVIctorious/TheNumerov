@@ -14,7 +14,7 @@
 
 # Preprocessor flags (compile time flags)
   PPF += -D HAVE_GSL_INSTALLED#     # gnu scientific library support
-# PPF += -D HAVE_MKL_INSTALLED#     # intel math kernel library support
+  PPF += -D HAVE_MKL_INSTALLED#     # intel math kernel library support
   PPF += -D HAVE_ARMA_INSTALLED#    # Armadillo C++ linear algebra library
 
 
@@ -110,7 +110,7 @@ endif
 
 # Build Armadillo ARPACK objects (require C++)
 ifeq ($(findstring HAVE_ARMA_INSTALLED, $(PPF)), HAVE_ARMA_INSTALLED)
-$(ARMAOBJ): $(subst .o,.cpp,$(ARMAOBJ))
+$(ARMAOBJ): $(ARMAOBJ:.o=.cpp)
 	$(CppC) $(CFLAGS) $(PPF) $(ARMAINC) -c $?
 endif
 

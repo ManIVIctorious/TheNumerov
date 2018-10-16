@@ -1,4 +1,5 @@
 
+#define ARMA_BLAS_LONG
 #include <armadillo>
 #include <stdio.h>
 #include "typedefinitions.h"
