@@ -113,7 +113,7 @@ int FirstDerivative(int n_stencil, double* first_derivative){
                 "\n\n"
                 , n_stencil
             );
-            return (-1);
+            return EXIT_FAILURE;
 #endif
     }
 }
@@ -220,7 +220,7 @@ int SecondDerivative(int n_stencil, double* second_derivative){
                 "\n\n"
                 , n_stencil
             );
-            return (-1);
+            return EXIT_FAILURE;
 #endif
     }
 }

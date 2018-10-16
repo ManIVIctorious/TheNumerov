@@ -4,8 +4,9 @@
 #include <string.h>
 #include <math.h>
 
-#include "typedefinitions.h"
 #include "constants.h"
+#include "typedefinitions.h"
+#include "default_settings.h"
 
 // input functions
 //  settings input
@@ -23,7 +24,7 @@ int MetaEigensolver(settings prefs, int* nq, double* v, double ekin_param, doubl
 double Integrate(int dimension, int* nq, double dx, double* integrand);
 
 // output functions
-int Help(char* filename, settings defaults);
+int Help();
 int OutputSettings(FILE* fd, settings preferences);
 int    TextOut_Frequencies(FILE* fd, settings prefs, int n_out, double* E);
 int TextOut_Orthonormality(FILE* fd, settings prefs, int n_out, int n_points, int* nq, double* integrand, double dq, double* X);
@@ -36,46 +37,13 @@ int   TextOut_Eigenvectors(FILE* fd, settings prefs, int n_out, int n_points, in
 int main(int argc, char* argv[]){
 
     int i, j, k, l, control;
-    settings defaults, prefs;
-
-// fill defaults struct with default values
-    defaults = (struct settings) {
-    // integer values
-        .dimension = 2,     // dimension of the problem
-        .n_stencil = 9,     // 1D stencil size
-        .n_spline  = 0,     // number of interpolation points
-
-    // double precision values
-        .masses_string = "",
-        .masses        = NULL,    // g/mol
-
-        .ekin_factor = 1.0/4.184,       // (kcal/mol) / (kJ/mol)
-        .epot_factor = 1.0,             // (output unit) / (input unit)
-        .mu_factor   = 1.0E20 * avogadro*avogadro * planck*planck/(4.0*M_PI*M_PI), // kJ/mol / (mol/g/angstrom^2)
-        .DipToAsm    = 3.33564E-30,     // A.s.m / Debye
-        .threshold   = 1.0E-10,         // abs(q[i] - q[i+1])
-
-    // Flags
-        .analyze = 0,
-        .dipole  = 0,
-        .check_spacing = 1,
-
-    // Eigensolver specific values
-        .Eigensolver = 1,   // 1 = MKL FEAST; 2 = ARMADILLO ARPACK
-        .n_out  = 8,        // Number of output eigenstates (ARPACK)
-        .e_min  = 0.0,      // minimal energy in output energy unit (FEAST)
-        .e_max  = 400.0,    // maximal energy in output energy unit (FEAST)
-
-    // file names
-        .input_file    = "",
-        .coriolis_file = "",
-        .output_file   = "/dev/stdout",
-    };
+    settings prefs;
 
 // check for help tag
+    if(argc == 1){ Help(); exit(EXIT_SUCCESS); }
     for(i = 1; i < argc; ++i){
         if(strncmp(argv[i], "-h", 2) == 0 || strncmp(argv[i], "--help", 6) == 0){
-            Help(argv[0], defaults);
+            Help();
             exit(EXIT_SUCCESS);
         }
     }
@@ -135,7 +103,7 @@ int main(int argc, char* argv[]){
 // kinetic energy parameter:    [ekin_param] = kJ/mol / (mol/g/angstrom^2)
 //  - hbar^2/2 * 10^20          * 1000 * avogadro^2 / 1000 = -10^20 * hbar^2/2 * avogadro^2
 //    J kg m^2 * angstrom^2/m^2 * g/kg * (1/mol)^2  / kJ/J =  kJ/mol * g * angstrom^2 / mol
-    double ekin_param = -1.0E20 * avogadro*avogadro * planck*planck/(8.0*M_PI*M_PI);
+    double ekin_param = -1.0E20 * AVOGADRO*AVOGADRO * PLANCK*PLANCK/(8.0*M_PI*M_PI);
 
     int element;
     int jump;           // needed to respect coordinate jumps between dimensions
@@ -154,12 +122,13 @@ int main(int argc, char* argv[]){
 
 // allocate memory for prefs.masses array and initialize all entries to 1.0 g/mol
     prefs.masses = malloc(prefs.dimension * sizeof(double));
+    if(prefs.masses == NULL){ perror("prefs.masses"); exit(errno); }
     for(i = 0; i < prefs.dimension; ++i){
         prefs.masses[i] = 1.0;
     }
 
 // get reduced masses from masses_string
-    if(strlen(prefs.masses_string) > 0){
+    if(prefs.masses_string_set){
 
         char * stringp = prefs.masses_string;
         char * token   = NULL;
@@ -201,7 +170,7 @@ int main(int argc, char* argv[]){
 //------------------------------------------------------------------------------------------------------------
 //  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input
 //------------------------------------------------------------------------------------------------------------
-    if(strlen(prefs.input_file) == 0){
+    if(!prefs.input_file_set){
         fprintf(stderr, "\n (-) Error: No input file specified.\n     Aborting...\n\n");
         exit(EXIT_FAILURE);
     }
@@ -244,7 +213,7 @@ int main(int argc, char* argv[]){
 
 // Input Coriolis coefficients file
 //------------------------------------------------------------------------------------------------------------
-    if(strlen(prefs.coriolis_file) > 0){
+    if(prefs.coriolis_file_set){
     // initialize arrays:
     //  2D array q_coriolis[dimension][entries] analogue to q
         q_coriolis = malloc(prefs.dimension * sizeof(double*));
@@ -372,7 +341,7 @@ int main(int argc, char* argv[]){
 
 
     // if Coriolis file is set also interpolate mu
-        if(strlen(prefs.coriolis_file) > 0){
+        if(prefs.coriolis_file_set){
         // mu is a symmetric 3 times 3 matrix, so an interpolation of the upper or
         //  lower triangle should be identical to a full interpolation
             control = MetaInterpolation(&(mu[0][0]), nq, dq, prefs.dimension, prefs.n_spline);
@@ -475,7 +444,7 @@ int main(int argc, char* argv[]){
 //  mu                  is given in     g/mol/angstrom^2
 //  prefs.mu_factor     is given in     kJ/mol / [mu]
 //  prefs.ekin_factor   is given in     (output unit of energy) / (kJ/mol)
-    if(strlen(prefs.coriolis_file) > 0){
+    if(prefs.coriolis_file_set){
         for(i = 0; i < n_points; ++i){
             v[i] -= ((mu[0][0][i] + mu[1][1][i] + mu[2][2][i]) / 8.0 * (prefs.mu_factor * prefs.ekin_factor));
         }
@@ -584,7 +553,7 @@ int main(int argc, char* argv[]){
         free(dip[2]); dip[2] = NULL;
         free(dip);    dip    = NULL;
     }
-    if(strlen(prefs.coriolis_file) > 0){
+    if(prefs.coriolis_file_set){
     // free mu: the interpolation routine already frees the lower triangle part and points it to the upper
     //          one. To prevent a double free a conditional free of the lower triangle has to be used.
         if(!prefs.n_spline){

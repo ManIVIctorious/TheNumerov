@@ -8,14 +8,14 @@
         explanation of struct entries:
           keyword:
             The actual keyword string
-          identifier:
-            Can be used to individually identify the given struct
-            by using integer values or chars (e.g. 'a')
-            or to group a set of them, e.g. all integer values
           set:
             An integer which should be initialized to 0. The control
             file parsing function will increment this value every time
             the given keyword was set
+          identifier:
+            Can be used to individually identify the given struct
+            by using integer values or chars (e.g. 'a')
+            or to group a set of them, e.g. all integer values
           value:
             A char array of MaxLineLength. The values corresponding
             to the given keyword will be stored in this array for

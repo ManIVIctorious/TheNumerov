@@ -8,8 +8,9 @@ typedef struct settings {
   int n_stencil;      // 1D stencil size
   int n_spline;       // Number of interpolation points
 
-  char masses_string[_MaxSettingsStringLength_]; // String containing reduced masses
-  double * masses;      // Actual reduced masses array
+  char   * masses_string;   // String containing reduced masses
+  int      masses_string_set;
+  double * masses;          // Actual reduced masses array
 
   double ekin_factor; // Kinetic     energy factor
   double epot_factor; // Potential   energy factor
@@ -29,9 +30,15 @@ typedef struct settings {
   double e_max;     // Maximal energy of eigenstates (FEAST)
 
 // Files
-  char input_file[_MaxSettingsStringLength_];
-  char coriolis_file[_MaxSettingsStringLength_];
-  char output_file[_MaxSettingsStringLength_];
+  char * input_file;
+  int    input_file_set;
+
+  char * coriolis_file;
+  int    coriolis_file_set;
+
+  char * output_file;
+  int    output_file_set;
+
 } settings;
 
 #endif

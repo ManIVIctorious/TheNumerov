@@ -27,7 +27,7 @@ int OutputSettings(FILE* fd, settings prefs){
             break;
 
         case 2:
-            Eigensolver = "ARMADILLO_ARPACK";
+            Eigensolver = "Armadillo_ARPACK";
             break;
 
         default:
@@ -110,7 +110,7 @@ fprintf(fd,
 fprintf(fd,
 "## Files:\n");
     fprintf(fd, "#\tInput_File     = %s;\n", prefs.input_file);
-    if(strlen(prefs.coriolis_file) > 0){
+    if(prefs.coriolis_file_set){
         fprintf(fd, "#\tCoriolis_File  = %s;\n", prefs.coriolis_file);
     }
     fprintf(fd, "#\tOutput_File    = %s;\n", prefs.output_file);

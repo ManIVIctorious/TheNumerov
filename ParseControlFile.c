@@ -7,7 +7,6 @@
 #include <errno.h>
 #include <ctype.h>
 
-#include "typedefinitions.h"
 #include "controlfile.h"
 
 // Provided prototypes

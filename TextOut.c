@@ -23,7 +23,7 @@ int   TextOut_Eigenvectors(FILE* fd, settings prefs, int n_out, int n_points, in
 int TextOut_Frequencies(FILE* fd, settings prefs, int n_out, double* E){
 
     int i, j;
-    double kJmolToWavenumber = 10.0 / (avogadro*planck*lightspeed); // cm^-1 / (kJ/mol)
+    const double kJpermolToWavenumber = 10.0 / (AVOGADRO*PLANCK*LIGHTSPEED); // cm^-1 / (kJ/mol)
 
 // output eigenvalues
     fprintf(fd, "# Eigenvalues:");
@@ -40,7 +40,7 @@ int TextOut_Frequencies(FILE* fd, settings prefs, int n_out, double* E){
         fprintf(fd, "\n# %3d", i);
 
         for(j = 0; j < i; j++){
-            fprintf(fd, "  % 12.5e", (E[i] - E[j]) * kJmolToWavenumber / prefs.ekin_factor);
+            fprintf(fd, "  % 12.5e", (E[i] - E[j]) * kJpermolToWavenumber / prefs.ekin_factor);
         }
     }
     fprintf(fd, "\n#\n#");
@@ -158,6 +158,8 @@ int TextOut_Dipole(FILE* fd, settings prefs, int n_out, int n_points, int* nq, d
 //          * || sum_k { <Psi_i|mu_k|Psi_j> } ||^2 * DipToAsm^2     // * A^2 s^2 m^2
 //          * (E_j - E_i) / (planck * avogadro / 1000)              // * 1 / s
 //
+const double f_osc_prefactor = (8000.0/3.0 * M_PI*M_PI * ELMASS) * prefs.DipToAsm*prefs.DipToAsm
+                             / (PLANCK*PLANCK * AVOGADRO * ELEMENTARYCHARGE*ELEMENTARYCHARGE);
 
 // print header and index line
     fprintf(fd, "\n# Oscillator strength:\n#\n#");
@@ -173,14 +175,11 @@ int TextOut_Dipole(FILE* fd, settings prefs, int n_out, int n_points, int* nq, d
 
             fprintf(fd, "  % 12.5e",
 
-                  (4*M_PI * elmass) / (3 * planck/(2*M_PI) * elementarycharge*elementarycharge)
-                * prefs.DipToAsm*prefs.DipToAsm
-                * (
-                      ts_dip[0][shift+j]*ts_dip[0][shift+j]
-                    + ts_dip[1][shift+j]*ts_dip[1][shift+j]
-                    + ts_dip[2][shift+j]*ts_dip[2][shift+j]
-                  )
-                * ((E[i] - E[j]) / prefs.ekin_factor) / (planck * avogadro / 1000)
+                f_osc_prefactor * ((E[i] - E[j]) / prefs.ekin_factor) * (
+                      ts_dip[0][shift+j]*ts_dip[0][shift+j] // <psi|mu_x|psi>
+                    + ts_dip[1][shift+j]*ts_dip[1][shift+j] // <psi|mu_y|psi>
+                    + ts_dip[2][shift+j]*ts_dip[2][shift+j] // <psi|mu_z|psi>
+                )
 
             );
         }
@@ -199,7 +198,6 @@ int TextOut_Dipole(FILE* fd, settings prefs, int n_out, int n_points, int* nq, d
 }
 
 
-#include <string.h>
 int TextOut_Eigenvectors(FILE* fd, settings prefs, int n_out, int n_points, int* nq, double** q, double* v, double*** mu, double* X, double** dip){
 
     int i, j, k;
@@ -227,7 +225,7 @@ int TextOut_Eigenvectors(FILE* fd, settings prefs, int n_out, int n_points, int*
         fprintf(fd, "\t          dip_z         ");
     }
 
-    if(strlen(prefs.coriolis_file) > 0){
+    if(prefs.coriolis_file_set){
         fprintf(fd, "\tv(q) - sum_i(mu[i][i])/8");
     }
 
@@ -251,7 +249,7 @@ int TextOut_Eigenvectors(FILE* fd, settings prefs, int n_out, int n_points, int*
         for(j = 0; j < prefs.dimension; ++j){
             fprintf(fd, "\t% 24.16lf", q[j][i]);
         }
-        if(strlen(prefs.coriolis_file) > 0){
+        if(prefs.coriolis_file_set){
             fprintf(fd, "\t% 24.16lf", v[i] + ((mu[0][0][i] + mu[1][1][i] + mu[2][2][i])/8.0 * (prefs.mu_factor * prefs.ekin_factor)));
         }else{
             fprintf(fd, "\t% 24.16lf", v[i]);
@@ -266,7 +264,7 @@ int TextOut_Eigenvectors(FILE* fd, settings prefs, int n_out, int n_points, int*
 
 
     // output potential after addition of Watson potential term
-        if(strlen(prefs.coriolis_file) > 0){
+        if(prefs.coriolis_file_set){
             fprintf(fd, "\t% 24.16lf", v[i]);
         }
 

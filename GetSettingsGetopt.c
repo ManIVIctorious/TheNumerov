@@ -7,23 +7,20 @@
 #include "typedefinitions.h"
 
 // Dependencies
-int Help(char* filename, settings defaults);
+int Help();
 
 
 // provided prototypes
-settings GetSettingsGetopt(settings defaults, int argc, char** argv);
+settings GetSettingsGetopt(settings preferences, int argc, char** argv);
 
-settings GetSettingsGetopt(settings defaults, int argc, char** argv){
+settings GetSettingsGetopt(settings preferences, int argc, char** argv){
 
     int control = 0;
     int * longindex = NULL;
-    settings preferences = defaults;
 
 //---------------------------------------------------------------------------------
 //  FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS
 //---------------------------------------------------------------------------------
-    if(argc == 1){ Help(argv[0], defaults); exit(EXIT_SUCCESS); }
-
     // optstring contains a list of all short option indices,
     //  indices followed by a colon are options requiring an argument.
     const char         * optstring = "hPC:a::d::T::D:n:s:N:k:v:f:M:t:l:u:m:i:o:c:";
@@ -76,12 +73,13 @@ settings GetSettingsGetopt(settings defaults, int argc, char** argv){
 
         // print help messages
             case 'h':
-                Help(argv[0], defaults);
+                Help();
                 exit(EXIT_SUCCESS);
 
         // Pipe: read input from stdin
             case 'P':
-                strncpy(preferences.input_file, "/dev/stdin", _MaxSettingsStringLength_);
+                preferences.input_file = "/dev/stdin";
+                ++preferences.input_file_set;
                 break;
 
 
@@ -171,26 +169,30 @@ settings GetSettingsGetopt(settings defaults, int argc, char** argv){
         // string values
             case 'm':
             // copy optarg to string and ensure zero termination
-                strncpy(preferences.masses_string, optarg, _MaxSettingsStringLength_);
-                preferences.masses_string[_MaxSettingsStringLength_ - 1] = '\0';
+                if(preferences.masses_string_set){ free(preferences.masses_string); }
+                preferences.masses_string = optarg;
+                ++preferences.masses_string_set;
                 break;
 
             case 'i':
             // copy optarg to string and ensure zero termination
-                strncpy(preferences.input_file, optarg, _MaxSettingsStringLength_);
-                preferences.input_file[_MaxSettingsStringLength_ - 1] = '\0';
+                if(preferences.input_file_set){ free(preferences.input_file); }
+                preferences.input_file = optarg;
+                ++preferences.input_file_set;
                 break;
 
             case 'c':
             // copy optarg to string and ensure zero termination
-                strncpy(preferences.coriolis_file, optarg, _MaxSettingsStringLength_);
-                preferences.coriolis_file[_MaxSettingsStringLength_ - 1] = '\0';
+                if(preferences.coriolis_file_set){ free(preferences.coriolis_file); }
+                preferences.coriolis_file = optarg;
+                ++preferences.coriolis_file_set;
                 break;
 
             case 'o':
             // copy optarg to string and ensure zero termination
-                strncpy(preferences.output_file, optarg, _MaxSettingsStringLength_);
-                preferences.output_file[_MaxSettingsStringLength_ - 1] = '\0';
+                if(preferences.output_file_set){ free(preferences.output_file); }
+                preferences.output_file = optarg;
+                ++preferences.output_file_set;
                 break;
 
 

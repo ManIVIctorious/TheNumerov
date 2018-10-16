@@ -1,7 +1,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <errno.h>
 #include <mkl_solvers_ee.h>
 
@@ -117,7 +116,7 @@ int FillMKL_2D(settings prefs, int* nq, double* v, double ekin_param, double* st
     double * sec_deriv = NULL;  // second derivative stencil
 
 
-    if(strlen(prefs.coriolis_file) > 0){
+    if(prefs.coriolis_file_set){
     // allocate memory for derivative stencils
         nothing   = calloc(prefs.n_stencil,  sizeof(double));
         fst_deriv = malloc(prefs.n_stencil * sizeof(double));
@@ -166,7 +165,7 @@ int FillMKL_2D(settings prefs, int* nq, double* v, double ekin_param, double* st
 
                         // enable second term of Watson Hamiltonian when Coriolis file is set
                         //####################################################################################################
-                            if(strlen(prefs.coriolis_file) > 0){
+                            if(prefs.coriolis_file_set){
                             // calculate pre-factor
                                 for(n = 0, prefactor = 0.0; n < 3; ++n){
                                     for(m = 0; m < 3; ++m){

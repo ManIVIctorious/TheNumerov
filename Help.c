@@ -1,14 +1,30 @@
 
+#define _GNU_SOURCE
 #include <stdio.h>
+#include <errno.h>
 #include "typedefinitions.h"
+#include "gitversion.h"
+
+extern settings defaults;
 
 // provided prototypes
-int Help(char* filename, settings defaults);
+int Help();
 
 
-int Help(char* filename, settings defaults){
+int Help(){
 
-    printf("\n%s\t [OPTIONS] -i INPUT-FILENAME [-o OUTPUT-FILENAME]", filename);
+    printf("\n  %s\t[OPTIONS] -i INPUT-FILENAME [-o OUTPUT-FILENAME]", program_invocation_short_name);
+
+// Description
+    printf("\n"
+           "\n    Numerical solver for the time independent Schrödinger equation based on the"
+           "\n    well known Numerov procedure for the calculation of second order differential"
+           "\n    without any terms of first order."
+           "\n    This implementation is specifically designed for the use in computational chemistry"
+           "\n    enhancing the original procedure by the inclusion of higher dimensions as well as"
+           "\n    the consideration of the molecular Hamiltonian first described by Watson."
+           "\n\n    Version: \"%s\"\n", gitversion
+    );
 
 // Help flag
     printf("\n"
@@ -42,7 +58,7 @@ int Help(char* filename, settings defaults){
            "\n\t    e.g. 1.0/4.184 (kcal/kJ) gives output in kcal/mol (default)"
            "\n\t    assuming the mass input is given in g/mol and the coordinate"
            "\n\t    input is given in angstrom"
-           "\n\t    Default:\t% lf", defaults.ekin_factor
+           "\n\t    Default:\t% le", defaults.ekin_factor
     );
 
     printf("\n"
@@ -52,7 +68,7 @@ int Help(char* filename, settings defaults){
            "\n\t    Be aware that for output energy units different from kcal/mol the"
            "\n\t    kinetic energy factor [-k, -fkin] has to be set too."
            "\n\t    E.g. above example requires the option \"-k 1.0\"."
-           "\n\t    Default:\t% lf", defaults.epot_factor
+           "\n\t    Default:\t% le", defaults.epot_factor
     );
 
     printf("\n"
@@ -61,7 +77,7 @@ int Help(char* filename, settings defaults){
            "\n\t    The conversion is performed from the input dimension to Asm"
            "\n\t    (Ampere Second Meter), further conversions are handled by the"
            "\n\t    kinetic energy factor [-k, --fkin]."
-           "\n\t    Default:\t% lf", defaults.DipToAsm
+           "\n\t    Default:\t% le", defaults.DipToAsm
     );
 
     printf("\n"
@@ -70,7 +86,7 @@ int Help(char* filename, settings defaults){
            "\n\t    The conversion is performed from the input dimension to kJ/mol,"
            "\n\t    further conversion to the desired output unit of energy is handled"
            "\n\t    by the kinetic energy factor [-k, --fkin]."
-           "\n\t    Default:\t% lf", defaults.mu_factor
+           "\n\t    Default:\t% le", defaults.mu_factor
     );
 
     printf("\n"
