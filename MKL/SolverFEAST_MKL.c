@@ -107,7 +107,7 @@ int SolverFEAST_MKL(settings prefs, int* nq, double* v, double ekin_param, doubl
     (*X) = realloc( (*X), n_out*n_points * sizeof(double));
     if((*E) == NULL){ perror("Eigenvalues" ); exit(errno); }
     if((*X) == NULL){ perror("Eigenvectors"); exit(errno); }
-    
+
 
 // free memory of arrays which are not needed anymore
     free(res);      res     = NULL;

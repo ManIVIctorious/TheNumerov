@@ -1,123 +1,105 @@
-# Compiler
+# Compilers
   CC   = gcc
   CppC = g++ -Wno-unused-parameter
-# List of compiler flags
-  CFLAGS += -g#                     # Enable debug symbols
-  CFLAGS += -Og#                    # Set optimisation level, should be g if debug symbols are enabled
-  CFLAGS += -march=native#          # Tune for current chipset, don't bother about backwards compatibility
- #CFLAGS += -mtune=native#          # Tune for current chipset, remain backwards compatible
 
-  CFLAGS += -Wall#                  # Enable base set of warnings
-  CFLAGS += -Wextra#                # Enable additional warnings
-  CFLAGS += -Werror#                # Treat warnings as errors
- #CFLAGS = -g -w#                   # Disable all warnings
+# List of compiler flags
+  OPT  = -g -Og -march=native  # Set optimisation level to debug
+  WARN = -Wall -Wextra -Werror # Enable base set and additional warnings and treat them as errors
+  INC  = -I.
 
 # Preprocessor flags (compile time flags)
   PPF += -D HAVE_GSL_INSTALLED#     # gnu scientific library support
   PPF += -D HAVE_MKL_INSTALLED#     # intel math kernel library support
   PPF += -D HAVE_ARMA_INSTALLED#    # Armadillo C++ linear algebra library
 
-
 # Resulting executable
   EXEPATH = $(if ${MyLocalPath}, ${MyLocalPath}, bin)
   EXE = $(EXEPATH)/TheNumerov
 
+# List of source files
+# Standard source files
+  SRC += main.c
+  SRC += GetSettingsControlFile.c
+  SRC += ParseControlFile.c
+  SRC += GetSettingsGetopt.c
+  SRC += CheckCoordinateSpacing.c
+  SRC += InputFunction.c
+  SRC += InputCoriolisCoefficients.c
+  SRC += TextOut.c
+  SRC += OutputSettings.c
+  SRC += MetaGetStencil.c
+  SRC += FillNumerovStencils.c
+  SRC += FillDerivativeStencils.c
+  SRC += MetaEigensolver.c
+  SRC += Help.c
+  SRC += MetaInterpolation.c
+  SRC += nx1dInterpolation.c
+  SRC += Integrators.c
+  # GSL sources
+  ifeq ($(findstring HAVE_GSL_INSTALLED, $(PPF)), HAVE_GSL_INSTALLED)
+    GSLSRC += GSL/GenFiniteDifferenceStencils.c
+  endif
+  # MKL sources
+  ifeq ($(findstring HAVE_MKL_INSTALLED, $(PPF)), HAVE_MKL_INSTALLED)
+    MKLSRC += MKL/Fill_MKL.c
+    MKLSRC += MKL/SolverFEAST_MKL.c
+  endif
+  # Armadillo sources (require C++)
+  ifeq ($(findstring HAVE_ARMA_INSTALLED, $(PPF)), HAVE_ARMA_INSTALLED)
+    ARMASRC += Armadillo/Fill_Armadillo.cpp
+    ARMASRC += Armadillo/SolverARPACK_Armadillo.cpp
+  endif
 
-# List of resulting object files
-# Standard objects
-    OBJ += main.o
-    OBJ += GetSettingsControlFile.o
-    OBJ += ParseControlFile.o
-    OBJ += GetSettingsGetopt.o
-    OBJ += CheckCoordinateSpacing.o
-    OBJ += InputFunction.o
-    OBJ += InputCoriolisCoefficients.o
-    OBJ += TextOut.o
-    OBJ += OutputSettings.o
-    OBJ += MetaGetStencil.o
-    OBJ += FillNumerovStencils.o
-    OBJ += FillDerivativeStencils.o
-    OBJ += MetaEigensolver.o
-    OBJ += Help.o
-    OBJ += MetaInterpolation.o
-    OBJ += nx1dInterpolation.o
-    OBJ += Integrators.o
-  # GSL objects
-    ifeq ($(findstring HAVE_GSL_INSTALLED, $(PPF)), HAVE_GSL_INSTALLED)
-      GSLOBJ += GenFiniteDifferenceStencils.o
-    endif
-  # MKL objects
-    ifeq ($(findstring HAVE_MKL_INSTALLED, $(PPF)), HAVE_MKL_INSTALLED)
-      MKLOBJ += Fill_MKL.o
-      MKLOBJ += SolverFEAST_MKL.o
-    endif
-  # Armadillo objects (require C++)
-    ifeq ($(findstring HAVE_ARMA_INSTALLED, $(PPF)), HAVE_ARMA_INSTALLED)
-      ARMAOBJ += Fill_Armadillo.o
-      ARMAOBJ += SolverARPACK_Armadillo.o
-    endif
-
+# Resulting objects
+  OBJ     = $(notdir     $(SRC:.c=.o))
+  GSLOBJ  = $(notdir  $(GSLSRC:.c=.o))
+  MKLOBJ  = $(notdir  $(MKLSRC:.c=.o))
+  ARMAOBJ = $(notdir $(ARMASRC:.cpp=.o))
 
 # List of linked libraries
   LIB += -lm
-
-# Additional linked libraries, library paths and include directories
   # GNU scientific library
-    ifeq ($(findstring HAVE_GSL_INSTALLED, $(PPF)), HAVE_GSL_INSTALLED)
-      GSLINC = `pkg-config --cflags gsl`
-
-    # additional libraries
-      LIB += `pkg-config --libs gsl`
-    endif
-
-  # Armadillo ARPACK
-    ifeq ($(findstring HAVE_ARMA_INSTALLED, $(PPF)), HAVE_ARMA_INSTALLED)
-      ARMAINC = `pkg-config --cflags armadillo`
-
-    # additional libraries
-      LIB += `pkg-config --libs armadillo`
-      LIB += -lstdc++
-    endif
-
+  ifeq ($(findstring HAVE_GSL_INSTALLED, $(PPF)), HAVE_GSL_INSTALLED)
+    GSLINC   = `pkg-config --cflags gsl`
+    LIB     += `pkg-config --libs gsl`
+  endif
   # Intel MKL
-    ifeq ($(findstring HAVE_MKL_INSTALLED, $(PPF)), HAVE_MKL_INSTALLED)
-      MKLINC += `pkg-config --cflags mkl`
+  ifeq ($(findstring HAVE_MKL_INSTALLED, $(PPF)), HAVE_MKL_INSTALLED)
+    MKLINC   = `pkg-config --cflags mkl`
+    LIB     += `pkg-config --libs mkl`
+  endif
+  # Armadillo ARPACK
+  ifeq ($(findstring HAVE_ARMA_INSTALLED, $(PPF)), HAVE_ARMA_INSTALLED)
+    ARMAINC  = `pkg-config --cflags armadillo`
+    LIB     += `pkg-config --libs armadillo` -lstdc++
+  endif
 
-    # additional libraries
-      LIB += `pkg-config --libs mkl`
-    endif
 
-
-all: $(EXE)
+all: Makefile gitversion.h $(EXE)
+# Build gitversion header
 gitversion.h:
 	echo "static const char *gitversion = \"$(shell git describe --tags --always)\";" > $@
 
 # Build object files out of C-source files
-%.o : %.c Makefile gitversion.h
-	$(CC) $(CFLAGS) $(PPF) -c $<
+$(OBJ): $(SRC)
+	$(CC) $(OPT) $(WARN) $(INC) $(PPF) -c $?
 
 # Build GNU GSL objects
-ifeq ($(findstring HAVE_GSL_INSTALLED, $(PPF)), HAVE_GSL_INSTALLED)
-$(GSLOBJ): $(GSLOBJ:.o=.c)
-	$(CC) $(CFLAGS) $(PPF) $(GSLINC) -c $?
-endif
+$(GSLOBJ): $(GSLSRC)
+	$(CC) $(OPT) $(WARN) $(INC) $(PPF) $(GSLINC) -c $?
 
 # Build Intel MKL objects
-ifeq ($(findstring HAVE_MKL_INSTALLED, $(PPF)), HAVE_MKL_INSTALLED)
-$(MKLOBJ): $(MKLOBJ:.o=.c)
-	$(CC) $(CFLAGS) $(PPF) $(MKLINC) -c $?
-endif
+$(MKLOBJ): $(MKLSRC)
+	$(CC) $(OPT) $(WARN) $(INC) $(PPF) $(MKLINC) -c $?
 
 # Build Armadillo ARPACK objects (require C++)
-ifeq ($(findstring HAVE_ARMA_INSTALLED, $(PPF)), HAVE_ARMA_INSTALLED)
-$(ARMAOBJ): $(ARMAOBJ:.o=.cpp)
-	$(CppC) $(CFLAGS) $(PPF) $(ARMAINC) -c $?
-endif
+$(ARMAOBJ): $(ARMASRC)
+	$(CppC) $(OPT) $(WARN) $(INC) $(PPF) $(ARMAINC) -c $?
 
 
 # link all objects to create the executable
 $(EXE): $(OBJ) $(GSLOBJ) $(MKLOBJ) $(ARMAOBJ)
-	$(CC) $(CFLAGS) $(LIB) $(OBJ) $(GSLOBJ) $(MKLOBJ) $(ARMAOBJ) -o $@
+	$(CC) $(OPT) $(WARN) $(INC) $(LIB) $(OBJ) $(GSLOBJ) $(MKLOBJ) $(ARMAOBJ) -o $@
 
 
 # allows to print out makefile variables, just type make print-VARIABLE
