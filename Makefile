@@ -41,12 +41,14 @@
   endif
   # MKL sources
   ifeq ($(findstring HAVE_MKL_INSTALLED, $(PPF)), HAVE_MKL_INSTALLED)
-    MKLSRC += MKL/Fill_MKL.c
+    MKLSRC += MKL/Fill_MKL_1D.c
+    MKLSRC += MKL/Fill_MKL_2D.c
     MKLSRC += MKL/SolverFEAST_MKL.c
   endif
   # Armadillo sources (require C++)
   ifeq ($(findstring HAVE_ARMA_INSTALLED, $(PPF)), HAVE_ARMA_INSTALLED)
-    ARMASRC += Armadillo/Fill_Armadillo.cpp
+    ARMASRC += Armadillo/Fill_Armadillo_1D.cpp
+    ARMASRC += Armadillo/Fill_Armadillo_2D.cpp
     ARMASRC += Armadillo/SolverARPACK_Armadillo.cpp
   endif
 
