@@ -5,13 +5,15 @@
 #include "typedefinitions.h"
 #include "gitversion.h"
 
-extern settings defaults;
-
 // provided prototypes
 int Help();
 
+// dependencies
+settings GetDefaultSettings();
 
 int Help(){
+
+    settings defaults = GetDefaultSettings();
 
     printf("\n  %s\t[OPTIONS] -i INPUT-FILENAME [-o OUTPUT-FILENAME]", program_invocation_short_name);
 

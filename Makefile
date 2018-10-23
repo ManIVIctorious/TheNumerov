@@ -19,6 +19,7 @@
 # List of source files
 # Standard source files
   SRC += main.c
+  SRC += GetDefaultSettings.c
   SRC += GetSettingsControlFile.c
   SRC += ParseControlFile.c
   SRC += GetSettingsGetopt.c

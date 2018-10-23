@@ -6,10 +6,10 @@
 
 #include "constants.h"
 #include "typedefinitions.h"
-#include "default_settings.h"
 
 // input functions
 //  settings input
+settings GetDefaultSettings();
 settings GetSettingsControlFile(char* inputfile, settings defaults);
 settings GetSettingsGetopt(settings defaults, int argc, char** argv);
 //  data input
@@ -37,7 +37,6 @@ int   TextOut_Eigenvectors(FILE* fd, settings prefs, int n_out, int n_points, in
 int main(int argc, char* argv[]){
 
     int i, j, k, l, control;
-    settings prefs;
 
 // check for help tag
     if(argc == 1){ Help(); exit(EXIT_SUCCESS); }
@@ -52,7 +51,7 @@ int main(int argc, char* argv[]){
 //  first set prefs to defaults
 //  then search in **argv for the "-C" flag
 //  if it exists pass the following argument to the GetSettingsControlFile() function
-    prefs = defaults;
+    settings prefs = GetDefaultSettings();
     for(i = 1; i < (argc-1); ++i){
         if(strncmp(argv[i], "-C", 2) == 0 || strncmp(argv[i], "--control-file", 14) == 0){
             prefs = GetSettingsControlFile(argv[i+1], prefs);
@@ -103,7 +102,7 @@ int main(int argc, char* argv[]){
 // kinetic energy parameter:    [ekin_param] = kJ/mol / (mol/g/angstrom^2)
 //  - hbar^2/2 * 10^20          * 1000 * avogadro^2 / 1000 = -10^20 * hbar^2/2 * avogadro^2
 //    J kg m^2 * angstrom^2/m^2 * g/kg * (1/mol)^2  / kJ/J =  kJ/mol * g * angstrom^2 / mol
-    double ekin_param = -1.0E20 * AVOGADRO*AVOGADRO * PLANCK*PLANCK/(8.0*M_PI*M_PI);
+    double ekin_param = -1.0E20 * avogadro*avogadro * planck*planck/(8.0*M_PI*M_PI);
 
     int element;
     int jump;           // needed to respect coordinate jumps between dimensions

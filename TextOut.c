@@ -23,7 +23,7 @@ int   TextOut_Eigenvectors(FILE* fd, settings prefs, int n_out, int n_points, in
 int TextOut_Frequencies(FILE* fd, settings prefs, int n_out, double* E){
 
     int i, j;
-    const double kJpermolToWavenumber = 10.0 / (AVOGADRO*PLANCK*LIGHTSPEED); // cm^-1 / (kJ/mol)
+    const double kJpermolToWavenumber = 10.0 / (avogadro*planck*lightspeed); // cm^-1 / (kJ/mol)
 
 // output eigenvalues
     fprintf(fd, "# Eigenvalues:");
@@ -158,8 +158,8 @@ int TextOut_Dipole(FILE* fd, settings prefs, int n_out, int n_points, int* nq, d
 //          * || sum_k { <Psi_i|mu_k|Psi_j> } ||^2 * DipToAsm^2     // * A^2 s^2 m^2
 //          * (E_j - E_i) / (planck * avogadro / 1000)              // * 1 / s
 //
-const double f_osc_prefactor = (8000.0/3.0 * M_PI*M_PI * ELMASS) * prefs.DipToAsm*prefs.DipToAsm
-                             / (PLANCK*PLANCK * AVOGADRO * ELEMENTARYCHARGE*ELEMENTARYCHARGE);
+const double f_osc_prefactor = (8000.0/3.0 * M_PI*M_PI * elmass) * prefs.DipToAsm*prefs.DipToAsm
+                             / (planck*planck * avogadro * elementarycharge*elementarycharge);
 
 // print header and index line
     fprintf(fd, "\n# Oscillator strength:\n#\n#");
