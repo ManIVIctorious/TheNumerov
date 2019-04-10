@@ -121,11 +121,11 @@ int FillMKL_2D(settings prefs, int* nq, double* v, double ekin_param, double* st
                                 prefactor *= ((prefs.mu_factor * prefs.ekin_factor)/2.0);
 
                                 (*vals_A)[n_entries] -= prefactor * (
-                                            q[0][i*nq[1]+j] *                   fst_deriv[(prefs.n_stencil/2) + xsh] *   nothing[(prefs.n_stencil/2) + ysh]    / dq
-                                          + q[1][i*nq[1]+j] *                   fst_deriv[(prefs.n_stencil/2) + ysh] *   nothing[(prefs.n_stencil/2) + xsh]    / dq
-                                          - q[0][i*nq[1]+j] * q[0][i*nq[1]+j] * sec_deriv[(prefs.n_stencil/2) + ysh] *   nothing[(prefs.n_stencil/2) + xsh]    / dq / dq
-                                          - q[1][i*nq[1]+j] * q[1][i*nq[1]+j] * sec_deriv[(prefs.n_stencil/2) + xsh] *   nothing[(prefs.n_stencil/2) + ysh]    / dq / dq
-                                    + 2.0 * q[0][i*nq[1]+j] * q[1][i*nq[1]+j] * fst_deriv[(prefs.n_stencil/2) + xsh] * fst_deriv[(prefs.n_stencil/2) + ysh]    / dq / dq
+                                            q[0][i*nq[1]+j] *                   fst_deriv[(prefs.n_stencil/2) + xsh] *   nothing[(prefs.n_stencil/2) + ysh] / dq
+                                          + q[1][i*nq[1]+j] *                   fst_deriv[(prefs.n_stencil/2) + ysh] *   nothing[(prefs.n_stencil/2) + xsh] / dq
+                                          - q[0][i*nq[1]+j] * q[0][i*nq[1]+j] * sec_deriv[(prefs.n_stencil/2) + ysh] *   nothing[(prefs.n_stencil/2) + xsh] / dq / dq
+                                          - q[1][i*nq[1]+j] * q[1][i*nq[1]+j] * sec_deriv[(prefs.n_stencil/2) + xsh] *   nothing[(prefs.n_stencil/2) + ysh] / dq / dq
+                                    + 2.0 * q[0][i*nq[1]+j] * q[1][i*nq[1]+j] * fst_deriv[(prefs.n_stencil/2) + xsh] * fst_deriv[(prefs.n_stencil/2) + ysh] / dq / dq
                                 );
                             }
                         //####################################################################################################
@@ -148,9 +148,11 @@ int FillMKL_2D(settings prefs, int* nq, double* v, double ekin_param, double* st
     (*rows_A)[0] = 1;
 
 // free memory
-    free(nothing);   nothing   = NULL;
-    free(fst_deriv); fst_deriv = NULL;
-    free(sec_deriv); sec_deriv = NULL;
+    if(prefs.coriolis_file_set){
+        free(nothing);   nothing   = NULL;
+        free(fst_deriv); fst_deriv = NULL;
+        free(sec_deriv); sec_deriv = NULL;
+    }
 
     return 0;
 }
