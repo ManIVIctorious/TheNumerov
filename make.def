@@ -1,0 +1,21 @@
+# Executable name
+  EXENAME1 = coriolis_coefficients
+  EXENAME2 = watson_correction
+
+# Additional libraries, includes and packages
+  LIB      = -lm
+  INC      = 
+  PACKAGES = gsl
+
+# Preprocessor flags
+  PPF = 
+
+# Source Files
+  SRC1 += main_coriolis_coefficients.c
+  SRC1 += InputNormalMode.c
+  
+  SRC2 += main_coriolis_correction.c
+  SRC2 += InputComFile.c
+  SRC2 += InputMasses.c
+  SRC2 += InputCoriolisCoefficients.c
+  SRC2 += InvertMatrix.c

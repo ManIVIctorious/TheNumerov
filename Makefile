@@ -1,40 +1,62 @@
-# Compiler
-  CC = gcc
-# List of compiler flags
-  CFLAGS = -O2 -Wall -Wextra -Werror -march=native
 
-# Resulting executables
-  EXEDIR = $(if ${MyLocalPath}, ${MyLocalPath}, bin)
-  EXE1 = $(EXEDIR)/coriolis_coefficients
-  EXE2 = $(EXEDIR)/watson_correction
+include make.def
 
+# Compiler and compiler flags
+  ifndef CC
+    CC = gcc
+  endif
+  ifndef OPT
+    OPT  = -O2 -march=native
+  endif
+  ifndef WARN
+    WARN = -Wall -Wextra -Werror
+  endif
 
-# List of linked libraries
-  LIB += `pkg-config --cflags --libs gsl`
+# Linked libraries and includes
+  ifdef PACKAGES
+    INC += `pkg-config --cflags $(PACKAGES)`
+    LIB += `pkg-config --libs   $(PACKAGES)`
+  endif
 
-# List of resulting object files
-  OBJ1 += main_coriolis_coefficients.o
-  OBJ1 += InputNormalMode.o
+# Exexutable Directory
+  ifndef EXEDIR
+    EXEDIR = $(if ${MyLocalPath}, ${MyLocalPath}, bin)
+  endif
+  ifndef EXE1
+    EXE1 = $(EXEDIR)/$(EXENAME1)
+  endif
+  ifndef EXE2
+    EXE2 = $(EXEDIR)/$(EXENAME2)
+  endif
 
-  OBJ2 += main_coriolis_correction.o
-  OBJ2 += InputComFile.o
-  OBJ2 += InputMasses.o
-  OBJ2 += InputCoriolisCoefficients.o
-  OBJ2 += InvertMatrix.o
+# Resulting objects
+  OBJ1 = $(notdir $(SRC1:.c=.o))
+  OBJ2 = $(notdir $(SRC2:.c=.o))
 
   OBJ = $(OBJ1) $(OBJ2)
 
-all: $(EXE1) $(EXE2)
-# define rule to build object files out of C-source files
-%.o : %.c
-	$(CC) $(CFLAGS) $(INCDIR) $(LIB) -c $<
+.Phony: all
+all: $(EXE1) $(EXE2) Makefile make.def
+# Build object files out of C-source files
+$(OBJ): %.o : %.c
+	$(CC) $(OPT) $(WARN) $(INC) $(PPF) -c $?
 
-# link all objects to create the executable
-$(EXE1): $(OBJ1) Makefile
-	$(CC) $(CFLAGS) $(LIBDIR) $(LIB) $(OBJ1) -o $@
+# Link all objects to create the executable
+$(EXE1): $(OBJ1) $(EXEDIR)
+	$(CC) $(OPT) $(WARN) $(INC) $(LIB) $(OBJ1) -o $@
+$(EXE2): $(OBJ2) $(EXEDIR)
+	$(CC) $(OPT) $(WARN) $(INC) $(LIB) $(OBJ2) -o $@
 
-$(EXE2): $(OBJ2) Makefile
-	$(CC) $(CFLAGS) $(LIBDIR) $(LIB) $(OBJ2) -o $@
+# Create executable directory
+$(EXEDIR):
+	mkdir -p $(EXEDIR)
 
+# Allows to print out makefile variables, just type make print-VARIABLE
+#  it will return VARIABLE = value_of_VARIABLE
+print-%:
+	@echo $* = $($*)
+
+# Remove all generated binary files
 clean:
 	rm -f $(OBJ) $(EXE1) $(EXE2)
+	rmdir -p $(EXEDIR)
