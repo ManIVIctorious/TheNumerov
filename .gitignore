@@ -1,4 +1,4 @@
-gitversion.h
+gitversion.c
 *.sw[po]
 *.o
 *.*~

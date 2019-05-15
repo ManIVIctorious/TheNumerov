@@ -48,12 +48,19 @@ include make.def
   MKLOBJ  = $(notdir  $(MKLSRC:.c=.o))
   ARMAOBJ = $(notdir $(ARMASRC:.cpp=.o))
 
+# version files
+# GITHEAD changes with every branch switch
+# GITREF  changes with every new commit
+  GITHEAD = .git/HEAD
+  GITREF  = $(shell sed "s+^\s*ref:\s*+.git/+" .git/HEAD)
 
 .Phony: all
-all: Makefile make.def gitversion.h $(EXE)
-# Build gitversion header
-gitversion.h:
-	echo "static const char *gitversion = \"$(shell git describe --tags --always)\";" > $@
+all: Makefile make.def $(EXE)
+# Create gitversion source and object file:
+gitversion.c: $(GITHEAD) $(GITREF)
+	echo "const char *gitversion = \"$(shell git describe --tags --always)\";" > $@
+gitversion.o: gitversion.c
+	$(CC) -w $(PPF) -c $?
 
 # Build object files out of C-source files
 $(OBJ): %.o: %.c
@@ -72,8 +79,8 @@ $(ARMAOBJ): %.o: Armadillo/%.cpp
 	$(CppC) $(OPT) $(WARN) $(INC) $(PPF) $(ARMAINC) -c $?
 
 # Link all objects to create the executable
-$(EXE): $(OBJ) $(GSLOBJ) $(MKLOBJ) $(ARMAOBJ) $(EXEDIR)
-	$(CC) $(OPT) $(WARN) $(INC) $(LIB) $(OBJ) $(GSLOBJ) $(MKLOBJ) $(ARMAOBJ) -o $@
+$(EXE): $(OBJ) $(GSLOBJ) $(MKLOBJ) $(ARMAOBJ) $(EXEDIR) gitversion.o
+	$(CC) $(OPT) $(WARN) $(INC) $(LIB) $(OBJ) $(GSLOBJ) $(MKLOBJ) $(ARMAOBJ) gitversion.o -o $@
 
 # Create executable directory
 $(EXEDIR):
@@ -86,5 +93,5 @@ print-%:
 
 # Remove all generated binary files
 clean:
-	rm -f $(OBJ) $(GSLOBJ) $(MKLOBJ) $(ARMAOBJ) $(EXE) gitversion.h
+	rm -f $(OBJ) $(GSLOBJ) $(MKLOBJ) $(ARMAOBJ) $(EXE)
 	rmdir -p $(EXEDIR) 2>/dev/null
