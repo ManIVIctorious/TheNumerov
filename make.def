@@ -45,6 +45,7 @@
   ifeq ($(findstring HAVE_ARMA_INSTALLED, $(PPF)), HAVE_ARMA_INSTALLED)
     ARMASRC += Armadillo/Fill_Armadillo_1D.cpp
     ARMASRC += Armadillo/Fill_Armadillo_2D.cpp
+    ARMASRC += Armadillo/Fill_Armadillo_3D.cpp
     ARMASRC += Armadillo/SolverARPACK_Armadillo.cpp
   endif
 

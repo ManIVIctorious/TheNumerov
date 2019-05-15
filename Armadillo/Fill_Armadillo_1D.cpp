@@ -1,4 +1,5 @@
 
+#include <stdio.h>
 #include <armadillo>
 #include "typedefinitions.h"
 
@@ -18,12 +19,13 @@ arma::sp_mat FillArmadillo_1D(int* nq, double* v, double ekin_param, double* ste
     for(i = 0; i < nq[0]; ++i){
 
         for(xsh = -n_stencil/2; xsh <= n_stencil/2; ++xsh){
-            if( ( (i+xsh) > -1 ) && ( (i+xsh) < nq[0] ) ){
+        if( ( (i+xsh) > -1 ) && ( (i+xsh) < nq[0] ) ){
 
-                if( stencil[xsh + n_stencil/2] > threshold || stencil[xsh + n_stencil/2] < threshold ){ max_entries++; }
-
+            if( stencil[xsh + n_stencil/2] > threshold || stencil[xsh + n_stencil/2] < threshold ){
+                max_entries++;
             }
-        }
+
+        }}
     }
 
 // determine positions and values
@@ -34,19 +36,17 @@ arma::sp_mat FillArmadillo_1D(int* nq, double* v, double ekin_param, double* ste
     for(i = 0; i < nq[0]; ++i){
 
         for(xsh = -n_stencil/2; xsh <= n_stencil/2; ++xsh){
-            if( ( (i+xsh) > -1 ) && ( (i+xsh) < nq[0] ) ){
+        if( ( (i+xsh) > -1 ) && ( (i+xsh) < nq[0] ) ){
 
-                if( stencil[xsh + n_stencil/2] > threshold || stencil[xsh + n_stencil/2] < threshold ){
+            if( stencil[xsh + n_stencil/2] > threshold || stencil[xsh + n_stencil/2] < threshold ){
+            // locations of stencil values around the main diagonal
+                locations(0, index) =     i;       // rows
+                locations(1, index) = ( i + xsh ); // columns
+            //++++++++++++++++++++++++++++++++++++++++++++++++++
+                values(index++) = stencil[xsh + n_stencil/2] * ekin_param;
 
-                // locations of stencil values around the main diagonal
-                    locations( 0, index) =     i;       // rows
-                    locations( 1, index) = ( i + xsh ); // columns
-                //++++++++++++++++++++++++++++++++++++++++++++++++++
-                    values(index++) = stencil[xsh + n_stencil/2] * ekin_param;
-
-                }
             }
-        }
+        }}
     }
 
 // actual sparse matrix fill
@@ -57,5 +57,6 @@ arma::sp_mat FillArmadillo_1D(int* nq, double* v, double ekin_param, double* ste
         A(i,i) += v[i];
     }
 
+    printf("Matrix created, Potential added, %u entries\n", index);
     return A;
 }

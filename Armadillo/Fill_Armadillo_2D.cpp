@@ -1,4 +1,5 @@
 
+#include <stdio.h>
 #include <armadillo>
 #include "typedefinitions.h"
 
@@ -21,22 +22,24 @@ arma::sp_mat FillArmadillo_2D(settings prefs, int* nq, int n_points, double* v, 
         for(j = 0; j < nq[1]; ++j){
 
             for(xsh = -prefs.n_stencil/2; xsh <= prefs.n_stencil/2; ++xsh){
-                if( ( (i+xsh) > -1 ) && ( (i+xsh) < nq[0] ) ){
+            if( ( (i+xsh) > -1 ) && ( (i+xsh) < nq[0] ) ){
 
-                    for(ysh = -prefs.n_stencil/2; ysh <= prefs.n_stencil/2; ++ysh){
-                        if( ( (j+ysh) > -1 ) && ( (j+ysh) < nq[1] ) ){
+                for(ysh = -prefs.n_stencil/2; ysh <= prefs.n_stencil/2; ++ysh){
+                if( ( (j+ysh) > -1 ) && ( (j+ysh) < nq[1] ) ){
 
-                            stencil_entry = stencil[(xsh + prefs.n_stencil/2)*prefs.n_stencil + (ysh + prefs.n_stencil/2)];
-                            if( (stencil_entry > threshold) || (stencil_entry < -threshold) ){ max_entries++; }
+                    stencil_entry = stencil[
+                                         (xsh + prefs.n_stencil/2)*prefs.n_stencil
+                                        +(ysh + prefs.n_stencil/2)
+                                    ];
 
-                        }
+                    if( (stencil_entry > threshold) || (stencil_entry < -threshold) ){
+                        max_entries++;
                     }
 
-                }
-            }
-
-        }
-    }
+                }}// end ysh
+            }}// end xsh
+        }// end j
+    }// end i
 
 
 // determine positions and values
@@ -48,31 +51,28 @@ arma::sp_mat FillArmadillo_2D(settings prefs, int* nq, int n_points, double* v, 
         for(j = 0; j < nq[1]; ++j){
 
             for(xsh = -prefs.n_stencil/2; xsh <= prefs.n_stencil/2; ++xsh){
-                if( ( (i+xsh) > -1 ) && ( (i+xsh) < nq[0] ) ){
+            if( ( (i+xsh) > -1 ) && ( (i+xsh) < nq[0] ) ){
 
-                    for(ysh = -prefs.n_stencil/2; ysh <= prefs.n_stencil/2; ++ysh){
-                        if( ( (j+ysh) > -1 ) && ( (j+ysh) < nq[1] ) ){
+                for(ysh = -prefs.n_stencil/2; ysh <= prefs.n_stencil/2; ++ysh){
+                if( ( (j+ysh) > -1 ) && ( (j+ysh) < nq[1] ) ){
 
-                            stencil_entry = stencil[(xsh + prefs.n_stencil/2)*prefs.n_stencil + (ysh + prefs.n_stencil/2)];
+                    stencil_entry = stencil[
+                                         (xsh + prefs.n_stencil/2)*prefs.n_stencil
+                                        +(ysh + prefs.n_stencil/2)
+                                    ];
 
-                            if(stencil_entry > threshold || stencil_entry < -threshold){
+                    if(stencil_entry > threshold || stencil_entry < -threshold){
+                    // locations of stencil values around the main diagonal
+                        locations(0, index) =     i      *nq[1] +     j;
+                        locations(1, index) = ( i + xsh )*nq[1] + ( j + ysh );
+                    //++++++++++++++++++++++++++++++++++++++++++++++++++
+                        values(index++) = stencil_entry * ekin_param / 2;
 
-                            // locations of stencil values around the main diagonal
-                                locations( 0, index) =     i      *nq[1] +     j;
-                                locations( 1, index) = ( i + xsh )*nq[1] + ( j + ysh );
-                            //++++++++++++++++++++++++++++++++++++++++++++++++++
-                                values(index++) = stencil_entry * ekin_param / 2;
-
-                            }
-
-                        }
-                    }
-
-                }
-            }
-
-        }
-    }
+                    }// end filling
+                }}// end ysh
+            }}// end xsh
+        }// end j
+    }// end i
 
 // actual sparse matrix fill
     arma::sp_mat A(locations, values, n_points, n_points, true, true);
@@ -82,5 +82,6 @@ arma::sp_mat FillArmadillo_2D(settings prefs, int* nq, int n_points, double* v, 
         A(i,i) += v[i];
     }
 
+    printf("Matrix created, Potential added, %u entries\n", index);
     return A;
 }

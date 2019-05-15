@@ -7,6 +7,7 @@
 // Dependencies
 arma::sp_mat FillArmadillo_1D(int* nq, double* v, double ekin_param, double* stencil, int n_stencil);
 arma::sp_mat FillArmadillo_2D(settings prefs, int* nq, int n_points, double* v, double ekin_param, double* stencil, double** q, double dq, double*** mu, double** zeta);
+arma::sp_mat FillArmadillo_3D(settings prefs, int* nq, int n_points, double* v, double ekin_param, double* stencil, double** q, double dq, double*** mu, double** zeta);
 
 // Provided Prototypes
 extern "C" int SolverARPACK_Armadillo(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double** E, double** X, double** q, double dq, double*** mu, double** zeta);
@@ -38,7 +39,26 @@ extern "C"{
             // two dimensional filling routine:
             //  The first and second terms of the Watson Hamiltonian are to be set in the filling routine
             //  when a Coriolis file is given, the third term is already set in main (Watson term)
+            //  At the moment only the basic Hamiltonian is supported.
+                if(prefs.coriolis_file_set){
+                    fprintf(stderr, "At the moment only the basic Hamiltonian is implemented for this"
+                                    "\n2D problem. Nevertheless, the third term of the Watson Hamiltonian"
+                                    "\nis already set in main() => be prepared for some wrong results!\n\n"
+                           );
+                }
                 A = FillArmadillo_2D(prefs, nq, n_points, v, ekin_param, stencil, q, dq, mu, zeta);
+                break;
+
+            case 3:
+            // three dimensional filling routine:
+            //  At the moment only the basic Hamiltonian is supported.
+                if(prefs.coriolis_file_set){
+                    fprintf(stderr, "At the moment only the basic Hamiltonian is implemented for this"
+                                    "\n3D problem. Nevertheless, the third term of the Watson Hamiltonian"
+                                    "\nis already set in main() => be prepared for some wrong results!\n\n"
+                           );
+                }
+                A = FillArmadillo_3D(prefs, nq, n_points, v, ekin_param, stencil, q, dq, mu, zeta);
                 break;
 
             default:
@@ -52,7 +72,7 @@ extern "C"{
         }
 
     // start eigenstate calculation
-        bool success = true;
+        bool success = false;
         arma::mat eigvec;
         arma::vec eigval;
 

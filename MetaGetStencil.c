@@ -5,6 +5,7 @@
 // Dependencies
 int FillStencil1D(double* stencil, int n_stencil);
 int FillStencil2D(double* stencil, int n_stencil);
+int FillStencil3D(double* stencil, int n_stencil);
 
 
 // provided prototypes
@@ -23,6 +24,10 @@ int MetaGetStencil(double* stencil, int n_stencil, int dimension){
 
         case 2:
             control = FillStencil2D(stencil, n_stencil);
+            break;
+
+        case 3:
+            control = FillStencil3D(stencil, n_stencil);
             break;
 
         default:
