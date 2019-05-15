@@ -19,9 +19,9 @@ typedef struct settings {
   double threshold;   // Spacing threshold for double comparison
 
 // Flags
-  int analyze;
-  int dipole;
-  int check_spacing;
+  char analyze;
+  char dipole;
+  char check_spacing;
 
 // Eigensolver specific values
   int Eigensolver;  // Which eigensolver to use (1 FEAST, 2 ARPACK)
@@ -31,13 +31,13 @@ typedef struct settings {
 
 // Files
   char * input_file;
-  int    input_file_set;
+  char   input_file_set;
 
   char * coriolis_file;
-  int    coriolis_file_set;
+  char   coriolis_file_set;
 
   char * output_file;
-  int    output_file_set;
+  char   output_file_set;
 
 } settings;
 

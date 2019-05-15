@@ -289,7 +289,7 @@ int main(int argc, char* argv[]){
     }
 
 // perform spacing check
-    if(prefs.check_spacing == 1){
+    if(prefs.check_spacing){
         dq = CheckCoordinateSpacing(q, nq, prefs.threshold, prefs.dimension);
     }else{ dq = q[prefs.dimension-1][1] - q[prefs.dimension-1][0]; }
 
@@ -467,15 +467,15 @@ int main(int argc, char* argv[]){
     integrand = malloc(n_points * sizeof(double));
     if(integrand == NULL){ perror("Integrand"); exit(errno); }
 
-    for(i = 0; i < n_out; i++){
-        for (j = 0; j < n_points; j++){
-            integrand[j] = X[j+i*n_points] * X[j+i*n_points];
+    for(i = 0; i < n_out; ++i){
+        for (j = 0; j < n_points; ++j){
+            integrand[j] = X[i*n_points + j] * X[i*n_points + j];
         }
 
         integral = Integrate(prefs.dimension, nq, dq, integrand);
 
-        for (j = 0; j < n_points; j++){
-            X[j+i*n_points] = X[j+i*n_points] / sqrt(integral);
+        for (j = 0; j < n_points; ++j){
+            X[i*n_points + j] = X[i*n_points + j] / sqrt(integral);
         }
     }
 
@@ -503,7 +503,9 @@ int main(int argc, char* argv[]){
         TextOut_Potential(fd, prefs, n_out, n_points, nq, integrand, dq, X, v);
 
     // output kinetic energy (i.e. <X[i]|ħ² * d²/dx²|X[j]>)
-        TextOut_EKinetic(fd, prefs, n_out, n_points, nq, integrand, dq, X, stencil, ekin_param);
+        if(prefs.dimension == 2 && !prefs.coriolis_file_set){
+            TextOut_EKinetic(fd, prefs, n_out, n_points, nq, integrand, dq, X, stencil, ekin_param);
+        }
 
         fclose(fd); fd = NULL;
     }
