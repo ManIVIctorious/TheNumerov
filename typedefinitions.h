@@ -33,6 +33,9 @@ typedef struct settings {
   char * input_file;
   char   input_file_set;
 
+  char * ext_dip_file;
+  char   ext_dip_file_set;
+
   char * coriolis_file;
   char   coriolis_file_set;
 

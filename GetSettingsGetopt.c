@@ -23,7 +23,7 @@ settings GetSettingsGetopt(settings preferences, int argc, char** argv){
 //---------------------------------------------------------------------------------
     // optstring contains a list of all short option indices,
     //  indices followed by a colon are options requiring an argument.
-    const char         * optstring = "hPC:a::d::T::D:n:s:N:k:v:f:M:t:l:u:m:i:o:c:";
+    const char         * optstring = "a::c:d::e:f:hi:k:l:m:n:o:s:t:u:v:C:D:M:N:PT::";
     const struct option longopts[] = {
     //  *name:      option name,
     //  has_arg:    if option requires argument,
@@ -52,6 +52,7 @@ settings GetSettingsGetopt(settings preferences, int argc, char** argv){
     // string values:
         {"masses",           required_argument, 0, 'm'},
         {"input-file",       required_argument, 0, 'i'},
+        {"ext-dipole-file",  required_argument, 0, 'e'},
         {"output-file",      required_argument, 0, 'o'},
         {"coriolis-input",   required_argument, 0, 'c'},
     // flags:
@@ -179,6 +180,13 @@ settings GetSettingsGetopt(settings preferences, int argc, char** argv){
                 if(preferences.input_file_set){ free(preferences.input_file); }
                 preferences.input_file = optarg;
                 ++preferences.input_file_set;
+                break;
+
+            case 'e':
+            // copy optarg to string and ensure zero termination
+                if(preferences.ext_dip_file){ free(preferences.ext_dip_file); }
+                preferences.ext_dip_file = optarg;
+                ++preferences.ext_dip_file_set;
                 break;
 
             case 'c':

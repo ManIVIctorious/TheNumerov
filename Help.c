@@ -9,11 +9,11 @@
 int Help();
 
 // dependencies
-settings GetDefaultSettings();
+settings SetDefaultSettings();
 
 int Help(){
 
-    settings defaults = GetDefaultSettings();
+    settings defaults = SetDefaultSettings();
 
     printf("\n  %s\t[OPTIONS] -i INPUT-FILENAME [-o OUTPUT-FILENAME]", program_invocation_short_name);
 
@@ -139,6 +139,15 @@ int Help(){
            "\n\t    after the potential energy (e.g. 2D: q1, q2, potential, dipolemoment{x,y,z})"
            "\n\t    Keyword:\tDipole"
            "\n\t    Default:\t%s", defaults.dipole ? "true" : "false"
+    );
+
+    printf("\n"
+           "\n\t-e, --ext-dipole-file"
+           "\n\t    Instead of reading the dipole moments from the primary input file, they can"
+           "\n\t    also be passed on in an explicit external file consisting of <dimension> columns"
+           "\n\t    containing the coordinates and additional three columns containing the dipole"
+           "\n\t    moment in x, y and z direction (e.g. 2D: q1, q2, dip_x, dip_y, dip_z)."
+           "\n\t    Keyword:\tExternal_Dipole_File"
     );
 
     printf("\n"

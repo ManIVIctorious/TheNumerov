@@ -35,94 +35,98 @@ int OutputSettings(FILE* fd, settings prefs){
     }
 
 
-    fprintf(fd,
-        "##-----------------------------------------------------------------------------------------\n"
-        "##  Settings   Settings   Settings   Settings   Settings   Settings   Settings   Settings\n"
-        "##-----------------------------------------------------------------------------------------\n"
-    );
+fprintf(fd,
+    "##-----------------------------------------------------------------------------------------\n"
+    "##  Settings   Settings   Settings   Settings   Settings   Settings   Settings   Settings\n"
+    "##-----------------------------------------------------------------------------------------\n"
+);
 
 // General Information
 fprintf(fd,
-"## General Information:\n");
-    if(strlen(gitversion) > 0){
-        fprintf(fd, "##\tGit Revision:\t%s\n", gitversion);
-    }
+"## General Information:");
+  if(strlen(gitversion) > 0){
+    fprintf(fd, "\n##\tGit Revision:\t%s", gitversion);
+  }
 
-    if(0 == gethostname(Hostname, 16)){
-        struct passwd *p = getpwuid(getuid());
-        fprintf(fd, "##\tSystem:      \t%s@%s (UID:%d)\n", p->pw_name, Hostname, getuid());
-    }
+  if(gethostname(Hostname, 16) == 0){
+    struct passwd *p = getpwuid(getuid());
+    fprintf(fd, "\n##\tSystem:      \t%s@%s (UID:%d)", p->pw_name, Hostname, getuid());
+  }
 
-    fprintf(fd, "##\tUnix Epoch:  \t%ld\n", current_time);
-    fprintf(fd, "##\tDate & Time: \t%s#\n", ctime(&current_time));
-    fprintf(fd, "#\n#\n");
+    fprintf(fd, "\n##\tUnix Epoch:  \t%ld", current_time);
+    fprintf(fd, "\n##\tDate & Time: \t%s#", ctime(&current_time));
 
 
 fprintf(fd,
-"## General settings:\n");
+"\n#\n#\n"
+"## General settings:");
 // integer values
-    fprintf(fd, "#\tDimensionality       = % d;\n", prefs.dimension);
-    fprintf(fd, "#\tStencil_Size         = % d;\n", prefs.n_stencil);
-    if(prefs.n_spline == 0){
-    fprintf(fd, "#\tInterpolation_Points = %s;\n", "none");
-    }else{
-        fprintf(fd, "#\tInterpolation_Points = % d;\n", prefs.n_spline);
-    }
+    fprintf(fd, "\n#\tDimensionality       = % d;", prefs.dimension);
+    fprintf(fd, "\n#\tStencil_Size         = % d;", prefs.n_stencil);
+  if(prefs.n_spline == 0){
+    fprintf(fd, "\n#\tInterpolation_Points = %s;", "none");
+  }else{
+    fprintf(fd, "\n#\tInterpolation_Points = % d;", prefs.n_spline);
+  }
 // double values
-    fprintf(fd, "#\n");
+    fprintf(fd, "\n#");
 
-    fprintf(fd, "#\tKin_E_Factor         = % 12.6lf;\t# in x per kJ/mol\n", prefs.ekin_factor);
-    fprintf(fd, "#\tPot_E_Factor         = % 12.6lf;\t# input (v)  -> output unit of energy\n", prefs.epot_factor);
-    fprintf(fd, "#\tIMOI_Factor          = % 12.6lf;\t# input (mu) -> kJ/mol\n", prefs.mu_factor);
-    fprintf(fd, "#\tSpacing_Threshold    = % 12.5le;\n", prefs.threshold);
-    fprintf(fd, "#\n");
+    fprintf(fd, "\n#\tKin_E_Factor         = % 12.8lf;\t# in x per kJ/mol", prefs.ekin_factor);
+    fprintf(fd, "\n#\tPot_E_Factor         = % 12.8lf;\t# input (v)  -> output unit of energy", prefs.epot_factor);
+    fprintf(fd, "\n#\tIMOI_Factor          = % 12.8le;\t# input (mu) -> kJ/mol", prefs.mu_factor);
+    fprintf(fd, "\n#\tSpacing_Threshold    = % 12.8le;", prefs.threshold);
+    fprintf(fd, "\n#");
 
-    fprintf(fd, "#\t# Reduced mass of each dimension,\n");
-    fprintf(fd, "#\t# given as colon separated string, with entries in g/mol\n");
-    fprintf(fd, "#\tReduced_Masses = %.12lf", prefs.masses[0]);
+    fprintf(fd, "\n#\t# Reduced mass of each dimension,");
+    fprintf(fd, "\n#\t# given as colon separated string, with entries in g/mol");
+    fprintf(fd, "\n#\tReduced_Masses = %.12lf", prefs.masses[0]);
     for(i = 1; i < prefs.dimension; ++i){
         fprintf(fd, ":%.12lf", prefs.masses[i]);
     }
-    fprintf(fd, ";\n#\n");
+    fprintf(fd, ";");
 
 
 fprintf(fd,
-"## Flags:\n");
-    fprintf(fd, "#\tAnalyze        = %s;\n", prefs.analyze        ? "true" : "false");
-    fprintf(fd, "#\tDipole         = %s;\n", prefs.dipole         ? "true" : "false");
-    fprintf(fd, "#\tCheck_Spacing  = %s;\n", prefs.check_spacing  ? "true" : "false");
-    fprintf(fd, "#\n#\n");
+"\n#\n#\n"
+"## Flags:");
+    fprintf(fd, "\n#\tAnalyze        = %s;", prefs.analyze        ? "true" : "false");
+    fprintf(fd, "\n#\tDipole         = %s;", prefs.dipole         ? "true" : "false");
+    fprintf(fd, "\n#\tCheck_Spacing  = %s;", prefs.check_spacing  ? "true" : "false");
 
 
 fprintf(fd,
-"## Eigensolver specific settings:\n");
-    fprintf(fd, "#\tEigensolver    = %s;\n", Eigensolver);
-    if(prefs.Eigensolver == 1){
-        fprintf(fd, "#\tLower_Bound    = % 12.6lf;\n", prefs.e_min);
-        fprintf(fd, "#\tUpper_Bound    = % 12.6lf;\n", prefs.e_max);
-    }
-    if(prefs.Eigensolver == 2){
-        fprintf(fd, "#\tN_Eigenstates  = %d;\n", prefs.n_out);
-    }
-    fprintf(fd, "#\n#\n");
+"\n#\n#\n"
+"## Eigensolver specific settings:");
+    fprintf(fd, "\n#\tEigensolver    = %s;", Eigensolver);
+  if(prefs.Eigensolver == 1){
+    fprintf(fd, "\n#\tLower_Bound    = % 12.8lf;", prefs.e_min);
+    fprintf(fd, "\n#\tUpper_Bound    = % 12.8lf;", prefs.e_max);
+  }
+  if(prefs.Eigensolver == 2){
+    fprintf(fd, "\n#\tN_Eigenstates  = %d;", prefs.n_out);
+  }
 
 
 fprintf(fd,
-"## Files:\n");
-    fprintf(fd, "#\tInput_File     = %s;\n", prefs.input_file);
-    if(prefs.coriolis_file_set){
-        fprintf(fd, "#\tCoriolis_File  = %s;\n", prefs.coriolis_file);
-    }
-    fprintf(fd, "#\tOutput_File    = %s;\n", prefs.output_file);
-    fprintf(fd, "#\n#\n");
+"\n#\n#\n"
+"## Files:");
+    fprintf(fd, "\n#\tInput_File           = %s;", prefs.input_file);
+  if(prefs.ext_dip_file_set){
+    fprintf(fd, "\n#\tExternal_Dipole_File = %s;", prefs.ext_dip_file);
+  }
+  if(prefs.coriolis_file_set){
+    fprintf(fd, "\n#\tCoriolis_File        = %s;", prefs.coriolis_file);
+  }
+    fprintf(fd, "\n#\tOutput_File          = %s;", prefs.output_file);
 
 
-    fprintf(fd,
-        "##-----------------------------------------------------------------------------------------\n"
-        "## End Settings   End Settings   End Settings   End Settings   End Settings   End Settings\n"
-        "##-----------------------------------------------------------------------------------------\n"
-        "#\n#\n"
-    );
+fprintf(fd,
+    "\n#\n#\n"
+    "##-----------------------------------------------------------------------------------------\n"
+    "## End Settings   End Settings   End Settings   End Settings   End Settings   End Settings\n"
+    "##-----------------------------------------------------------------------------------------\n"
+    "#\n#\n"
+);
 
     return 0;
 }

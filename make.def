@@ -14,12 +14,13 @@
 # Source Files
 # Standard source files
   SRC += main.c
-  SRC += GetDefaultSettings.c
+  SRC += SetDefaultSettings.c
   SRC += GetSettingsControlFile.c
   SRC += ParseControlFile.c
   SRC += GetSettingsGetopt.c
   SRC += CheckCoordinateSpacing.c
   SRC += InputFunction.c
+  SRC += InputDipoleMoment.c
   SRC += InputCoriolisCoefficients.c
   SRC += TextOut.c
   SRC += OutputSettings.c

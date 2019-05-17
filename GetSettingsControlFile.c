@@ -43,6 +43,7 @@ settings GetSettingsControlFile(char* inputfile, settings preferences){
     // string values:
         {"Reduced_Masses",          0,  'm',  "" },
         {"Input_File",              0,  'i',  "" },
+        {"External_Dipole_File",    0,  'e',  "" },
         {"Output_File",             0,  'o',  "" },
         {"Coriolis_File",           0,  'c',  "" },
     // other:
@@ -174,6 +175,23 @@ settings GetSettingsControlFile(char* inputfile, settings preferences){
                 strncpy(preferences.input_file, optarg, wordlength);
                 preferences.input_file[wordlength] = '\0';
                 ++preferences.input_file_set;
+                break;
+
+            case 'e':
+            // memory allocation
+                if( (wordlength = strlen(optarg)) < _MaxSettingsStringLength_ ){
+                    preferences.ext_dip_file = malloc( (wordlength+1) * sizeof(char) );
+                    if(preferences.ext_dip_file == NULL){ perror("preferences.ext_dip_file"); exit(EXIT_FAILURE); }
+                }else{
+                    fprintf(stderr, "\n (-) Error: Keyword length for \"%s\" too long"
+                                    "\n     Aborting...\n\n", keywordlist [i].keyword
+                    );
+                    exit(EXIT_FAILURE);
+                }
+            // copy optarg to string and ensure zero termination
+                strncpy(preferences.ext_dip_file, optarg, wordlength);
+                preferences.ext_dip_file[wordlength] = '\0';
+                ++preferences.ext_dip_file_set;
                 break;
 
             case 'c':

@@ -9,11 +9,12 @@
 
 // input functions
 //  settings input
-settings GetDefaultSettings();
+settings SetDefaultSettings();
 settings GetSettingsControlFile(char* inputfile, settings defaults);
 settings GetSettingsGetopt(settings defaults, int argc, char** argv);
 //  data input
 int InputFunction(char* inputfile, double** *q, int* nq, double* *v, double** *mu, int dimension, int dipole_flag);
+int InputDipoleMoment(char* inputfile, double** *q, double** *mu, int dimension);
 int InputCoriolisCoefficients(char* inputfile, double** *q, double** zeta, double*** *mu, int dimension);
 double CheckCoordinateSpacing(double** q, int* nq, double threshold, int dimension);
 
@@ -51,7 +52,7 @@ int main(int argc, char* argv[]){
 //  first set prefs to defaults
 //  then search in **argv for the "-C" flag
 //  if it exists pass the following argument to the GetSettingsControlFile() function
-    settings prefs = GetDefaultSettings();
+    settings prefs = SetDefaultSettings();
     for(i = 1; i < (argc-1); ++i){
         if(strncmp(argv[i], "-C", 2) == 0 || strncmp(argv[i], "--control-file", 14) == 0){
             prefs = GetSettingsControlFile(argv[i+1], prefs);
@@ -92,7 +93,6 @@ int main(int argc, char* argv[]){
     double  * v   = NULL;           // potential entries for each coordinate
     double ** dip = NULL;           // dipole moment for each coordinate
 //  Coriolis coefficients
-    double **  q_coriolis = NULL;   // coordinate entries to be verified with **q
     double **  zeta       = NULL;   // Coriolis coefficients for all D*(D-1)/2 mode combinations
     double *** mu         = NULL;   // 3*3 "reciprocal moment of inertia tensor" for all coordinate entries
 
@@ -176,6 +176,10 @@ int main(int argc, char* argv[]){
 
 // Input primary file
 //------------------------------------------------------------------------------------------------------------
+// disable reading dipole file from primary input file when
+//  external dipole file is set to be used
+    if(prefs.ext_dip_file_set){ prefs.dipole = 0; }
+
 // initialize arrays:
 //  2D array q[dimension][entries] containing the coordinates of all dimensions
     q = malloc(prefs.dimension * sizeof(double*));
@@ -210,12 +214,66 @@ int main(int argc, char* argv[]){
     }
 
 
+// Input of external dipole file
+//------------------------------------------------------------------------------------------------------------
+    if(prefs.ext_dip_file_set){
+    // initialize arrays:
+    //  2D array q_dip[D][entries] analogous to q
+        double ** q_dip = malloc(prefs.dimension * sizeof(double*));
+        if(q_dip == NULL){ perror("q_dip"); exit(errno); }
+        for(i = 0; i < prefs.dimension; ++i){ q_dip[i] = NULL; }
+
+    //  2D array dip[3][entries] containing the dipole moment's {x,y,z}-components for all coordinates
+        dip = malloc(3 * sizeof(double*));
+        if(dip == NULL){ perror("dip"); exit(errno); }
+        for(i = 0; i < 3; ++i){ dip[i] = NULL; }
+
+    // read file
+        control = InputDipoleMoment(prefs.ext_dip_file, &q_dip, &dip, prefs.dimension);
+
+    // for every entry in dipole input file there must be exact one in the primary input file
+        if(control != n_points){
+            fprintf(stderr,
+                "\n (-) Error reading data from input-file: \"%s\""
+                "\n     Number of Data points (%d) does not match number in \"%s\" (%d)"
+                "\n     Aborting...\n\n"
+                , prefs.ext_dip_file, control, prefs.input_file, n_points
+            );
+            exit(EXIT_FAILURE);
+        }
+
+    // check if coordinates are the same
+        for(i = 0; i < n_points; ++i){
+            for(j = 0; j < prefs.dimension; ++j){
+                if( (q[j][i] - q_dip[j][i])*(q[j][i] - q_dip[j][i]) > prefs.threshold*prefs.threshold ){
+                    fprintf(stderr,
+                        "\n (-) Error in Coriolis input-file: \"%s\", entry no %d."
+                        "\n     The coordinates do not match the ones in \"%s\"."
+                        "\n     Aborting...\n\n"
+                        , prefs.ext_dip_file, i, prefs.input_file
+                    );
+                    exit(EXIT_FAILURE);
+                }
+            }
+        }
+
+    // when checks have passed free memory of q_dip
+        for(i = 0; i < prefs.dimension; ++i){
+            free(q_dip[i]); q_dip[i] = NULL;
+        }
+        free(q_dip); q_dip = NULL;
+
+    // since dipole input was successful set prefs.dipole flag to true
+        prefs.dipole = 1;
+    }
+
+
 // Input Coriolis coefficients file
 //------------------------------------------------------------------------------------------------------------
     if(prefs.coriolis_file_set){
     // initialize arrays:
     //  2D array q_coriolis[dimension][entries] analogue to q
-        q_coriolis = malloc(prefs.dimension * sizeof(double*));
+        double **  q_coriolis = malloc(prefs.dimension * sizeof(double*));
         if(q_coriolis == NULL){ perror("q_coriolis"); exit(errno); }
         for(i = 0; i < prefs.dimension; ++i){ q_coriolis[i] = NULL; }
 
