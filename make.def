@@ -20,7 +20,6 @@
   SRC += GetSettingsGetopt.c
   SRC += CheckCoordinateSpacing.c
   SRC += InputFunction.c
-  SRC += InputDipoleMoment.c
   SRC += InputCoriolisCoefficients.c
   SRC += TextOut.c
   SRC += OutputSettings.c

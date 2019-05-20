@@ -187,6 +187,7 @@ settings GetSettingsGetopt(settings preferences, int argc, char** argv){
                 if(preferences.ext_dip_file){ free(preferences.ext_dip_file); }
                 preferences.ext_dip_file = optarg;
                 ++preferences.ext_dip_file_set;
+                preferences.dipole = 1;
                 break;
 
             case 'c':

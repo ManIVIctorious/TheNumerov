@@ -192,6 +192,7 @@ settings GetSettingsControlFile(char* inputfile, settings preferences){
                 strncpy(preferences.ext_dip_file, optarg, wordlength);
                 preferences.ext_dip_file[wordlength] = '\0';
                 ++preferences.ext_dip_file_set;
+                preferences.dipole = 1;
                 break;
 
             case 'c':

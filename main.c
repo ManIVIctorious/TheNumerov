@@ -13,8 +13,7 @@ settings SetDefaultSettings();
 settings GetSettingsControlFile(char* inputfile, settings defaults);
 settings GetSettingsGetopt(settings defaults, int argc, char** argv);
 //  data input
-int InputFunction(char* inputfile, double** *q, int* nq, double* *v, double** *mu, int dimension, int dipole_flag);
-int InputDipoleMoment(char* inputfile, double** *q, double** *mu, int dimension);
+int InputFunction(char* inputfile, double** *q, int* nq, double* *v, double** *mu, int dimension, char potential_true, char dipole_true);
 int InputCoriolisCoefficients(char* inputfile, double** *q, double** zeta, double*** *mu, int dimension);
 double CheckCoordinateSpacing(double** q, int* nq, double threshold, int dimension);
 
@@ -201,7 +200,7 @@ int main(int argc, char* argv[]){
     }
 
 // actual file input
-    n_points = InputFunction(prefs.input_file, &q, nq, &v, &dip, prefs.dimension, prefs.dipole);
+    n_points = InputFunction(prefs.input_file, &q, nq, &v, &dip, prefs.dimension, 1, prefs.dipole);
 
 // check if the "N nq[0] ... nq[dimension-1]" line in input file matches the number of data points
     for(i = 0, control = 1; i < prefs.dimension; ++i){ control *= nq[i]; }
@@ -229,7 +228,7 @@ int main(int argc, char* argv[]){
         for(i = 0; i < 3; ++i){ dip[i] = NULL; }
 
     // read file
-        control = InputDipoleMoment(prefs.ext_dip_file, &q_dip, &dip, prefs.dimension);
+        control = InputFunction(prefs.ext_dip_file, &q_dip, NULL, NULL, &dip, prefs.dimension, 0, 1);
 
     // for every entry in dipole input file there must be exact one in the primary input file
         if(control != n_points){

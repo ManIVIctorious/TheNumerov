@@ -9,10 +9,14 @@
 #include <ctype.h>
 
 // provided prototypes
-int InputFunction(char* inputfile, double** *q, int* nq, double* *v, double** *mu, int dimension, int dipole_flag);
+int InputFunction(char* inputfile, double** *q, int* nq, double* *v, double** *mu, int dimension, char potential_true, char dipole_true);
 
 
-int InputFunction(char* inputfile, double** *q, int* nq, double* *v, double** *mu, int dimension, int dipole_flag){
+int InputFunction(char* inputfile, double** *q, int* nq, double* *v, double** *mu, int dimension, char potential_true, char dipole_true){
+
+    int expected_column_count = dimension;
+    if(potential_true){ expected_column_count += 1; }
+    if(dipole_true){    expected_column_count += 3; }
 
     FILE * fd     = NULL;
     char * token  = NULL;
@@ -76,32 +80,36 @@ int InputFunction(char* inputfile, double** *q, int* nq, double* *v, double** *m
     //  get the number of coordinate entries
         if( *pos == 'N' || *pos == 'n' ){
 
-        // tokenize buffer, get first entry which ain't a white space (the N)
-            pos = strsep(&token, delimiter);
+        // skip reading entries when nq == NULL
+            if( nq != NULL ){
 
-        // there must be <dimension> entries after the N flag:
-            i = 0;
-            while(i < dimension){
+            // tokenize buffer, get first entry which ain't a white space (the N)
                 pos = strsep(&token, delimiter);
 
-            // print an error if less than <dimension> entries are found
-                if(pos == NULL){
-                    fprintf(stderr,
-                        "\n (-) Error reading data from input-file \"%s\"."
-                        "\n     The N line doesn't contain %d entries."
-                        "\n     Aborting - please check your input..."
-                        "\n\n"
-                        , inputfile, dimension
-                    );
-                    exit(EXIT_FAILURE);
+            // there must be <dimension> entries after the N flag:
+                i = 0;
+                while(i < dimension){
+                    pos = strsep(&token, delimiter);
+
+                // print an error if less than <dimension> entries are found
+                    if(pos == NULL){
+                        fprintf(stderr,
+                            "\n (-) Error reading data from input-file \"%s\"."
+                            "\n     The N line doesn't contain %d entries."
+                            "\n     Aborting - please check your input..."
+                            "\n\n"
+                            , inputfile, dimension
+                        );
+                        exit(EXIT_FAILURE);
+                    }
+
+                // ignore adjacent delimiting characters
+                    if(*pos == '\0'){ continue; }
+
+                // store data in integer array
+                    nq[i] = atoi(pos);
+                    ++i;
                 }
-
-            // ignore adjacent delimiting characters
-                if(*pos == '\0'){ continue; }
-
-            // store data in integer array
-                nq[i] = atoi(pos);
-                ++i;
             }
             continue;
         }
@@ -126,7 +134,7 @@ int InputFunction(char* inputfile, double** *q, int* nq, double* *v, double** *m
                     "\n (-) Error reading data from input-file \"%s\"."
                     "\n     Too few entries in input line number %d (only found %d of the expected %d columns)"
                     "\n     Aborting - please check your input...\n\n"
-                    , inputfile, linenumber, i, (dipole_flag == 1) ? dimension+4 : dimension+1
+                    , inputfile, linenumber, i, expected_column_count
                 );
                 exit(EXIT_FAILURE);
             }
@@ -139,37 +147,39 @@ int InputFunction(char* inputfile, double** *q, int* nq, double* *v, double** *m
         }
 
 
-    // potential:
-    //  reallocate memory for potential v
-        (*v) = realloc( (*v), (entry_rows + 1) * sizeof(double) );
-        if( (*v) == NULL){ perror("Input function v"); exit(errno); }
+    // if potential is to be read
+        if(potential_true){
+        //  reallocate memory for potential v
+            (*v) = realloc( (*v), (entry_rows + 1) * sizeof(double) );
+            if( (*v) == NULL){ perror("Input function v"); exit(errno); }
 
-    // get token and convert to double
-        i = 0;
-        while(i < 1){
-            pos = strsep(&token, delimiter);
+        // get token and convert to double
+            i = 0;
+            while(i < 1){
+                pos = strsep(&token, delimiter);
 
-        // throw an error if no data found
-            if(pos == NULL){
-                fprintf(stderr,
-                    "\n (-) Error reading data from input-file \"%s\"."
-                    "\n     Too few entries in input line number %d (only found %d of the expected %d columns)"
-                    "\n     Aborting - please check your input...\n\n"
-                    , inputfile, linenumber, i+dimension, (dipole_flag == 1) ? dimension+4 : dimension+1
-                );
-                exit(EXIT_FAILURE);
+            // throw an error if no data found
+                if(pos == NULL){
+                    fprintf(stderr,
+                        "\n (-) Error reading data from input-file \"%s\"."
+                        "\n     Too few entries in input line number %d (only found %d of the expected %d columns)"
+                        "\n     Aborting - please check your input...\n\n"
+                        , inputfile, linenumber, i+dimension, expected_column_count
+                    );
+                    exit(EXIT_FAILURE);
+                }
+
+            // ignore adjacent delimiting characters
+                if(*pos == '\0'){ continue; }
+
+                (*v)[entry_rows] = atof(pos);
+                ++i;
             }
-
-        // ignore adjacent delimiting characters
-            if(*pos == '\0'){ continue; }
-
-            (*v)[entry_rows] = atof(pos);
-            ++i;
         }
 
 
     // if dipole flag equals 1 read dipole data, else increment number of entry rows and continue
-        if(dipole_flag == 1){
+        if(dipole_true){
 
         // dipole:
         //  reallocate memory for mu[0] to mu[2]
@@ -189,7 +199,7 @@ int InputFunction(char* inputfile, double** *q, int* nq, double* *v, double** *m
                         "\n (-) Error reading data from input-file \"%s\"."
                         "\n     Too few entries in input line number %d (only found %d of the expected %d columns)"
                         "\n     Aborting - please check your input...\n\n"
-                        , inputfile, linenumber, i+dimension+1, (dipole_flag == 1) ? dimension+4 : dimension+1
+                        , inputfile, linenumber, i+dimension+1, expected_column_count
                     );
                     exit(EXIT_FAILURE);
                 }
