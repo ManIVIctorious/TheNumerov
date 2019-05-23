@@ -22,30 +22,23 @@ include make.def
   ifndef EXEDIR
     EXEDIR = $(if ${MyLocalPath}, ${MyLocalPath}, bin)
   endif
-  ifndef EXE1
-    EXE1 = $(EXEDIR)/$(EXENAME1)
-  endif
-  ifndef EXE2
-    EXE2 = $(EXEDIR)/$(EXENAME2)
+  ifndef EXE
+    EXE = $(EXEDIR)/$(EXENAME)
   endif
 
 # Resulting objects
-  OBJ1 = $(notdir $(SRC1:.c=.o))
-  OBJ2 = $(notdir $(SRC2:.c=.o))
+  OBJ = $(notdir $(SRC:.c=.o))
 
-  OBJ = $(OBJ1) $(OBJ2)
 
 .Phony: all
-all: $(EXE1) $(EXE2) Makefile make.def
+all: $(EXE) Makefile make.def
 # Build object files out of C-source files
 $(OBJ): %.o : %.c
 	$(CC) $(OPT) $(WARN) $(INC) $(PPF) -c $?
 
 # Link all objects to create the executable
-$(EXE1): $(OBJ1) $(EXEDIR)
-	$(CC) $(OPT) $(WARN) $(INC) $(LIB) $(OBJ1) -o $@
-$(EXE2): $(OBJ2) $(EXEDIR)
-	$(CC) $(OPT) $(WARN) $(INC) $(LIB) $(OBJ2) -o $@
+$(EXE): $(OBJ) $(EXEDIR)
+	$(CC) $(OPT) $(WARN) $(INC) $(LIB) $(OBJ) -o $@
 
 # Create executable directory
 $(EXEDIR):
@@ -58,5 +51,5 @@ print-%:
 
 # Remove all generated binary files
 clean:
-	rm -f $(OBJ) $(EXE1) $(EXE2)
+	rm -f $(OBJ) $(EXE)
 	rmdir -p $(EXEDIR)

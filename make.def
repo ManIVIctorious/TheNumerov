@@ -1,6 +1,5 @@
 # Executable name
-  EXENAME1 = coriolis_coefficients
-  EXENAME2 = watson_correction
+  EXENAME = WatsonPrep
 
 # Additional libraries, includes and packages
   LIB      = -lm
@@ -8,14 +7,18 @@
   PACKAGES = gsl
 
 # Preprocessor flags
-  PPF = 
+# PPF += -Ddebug_normalmode
+# PPF += -Ddebug_coords
+# PPF += -Ddebug_moment_of_inertia
+# PPF += -Ddebug_mu
 
 # Source Files
-  SRC1 += main_coriolis_coefficients.c
-  SRC1 += InputNormalMode.c
-  
-  SRC2 += main_coriolis_correction.c
-  SRC2 += InputComFile.c
-  SRC2 += InputMasses.c
-  SRC2 += InputCoriolisCoefficients.c
-  SRC2 += InvertMatrix.c
+  SRC += main.c
+  SRC += Help.c
+  SRC += SetDefaultSettings.c
+  SRC += GetSettingsGetopt.c
+  SRC += InputNormalMode.c
+  SRC += InputFileList.c
+  SRC += InputComFile.c
+  SRC += MomentOfInertia.c
+  SRC += InvertMatrix.c

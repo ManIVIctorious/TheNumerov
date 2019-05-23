@@ -6,72 +6,82 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <errno.h>
 
 // Offered prototypes
-int InputComFile(char *inputfile, double **x, double **y, double **z);
+int InputComFile(char* inputfile, double* x, double* y, double* z, int max_lines);
 
-int InputComFile(char *inputfile, double **x, double **y, double **z){
+int InputComFile(char* inputfile, double* x, double* y, double* z, int max_lines){
 
-    int rows, comment_flag, control;
-    unsigned int i;
-    char * comment = "#%\n";
-    char * line    = NULL;
-    char   buffer[_MaxLineLength_] = "";
-    FILE *fd;
+    FILE * fd     = NULL;
+    char * token  = NULL;
+    char * pos    = NULL;
+    char * buffer = NULL;
+    const char * comment = "#%\n";
 
-    double aux1 = 0;
-    double aux2 = 0;
-    double aux3 = 0;
+    int i, control;
+    int linenumber;
+    int entry_rows;
 
+// open input file read only
     fd = fopen(inputfile, "r");
-    if(fd == NULL){
-        fprintf(stderr, "\n(-) ERROR opening input-file: \"%s\"", inputfile);
-        fprintf(stderr, "\n    Exiting...\n\n");
-        return(-1);
-    }
+    if( fd == NULL ){ perror(inputfile); exit(errno); }
 
-    rows = 0;
-    while(fgets(buffer, sizeof(buffer), fd) != NULL){
+// allocate memory of size _MaxLineLength_ for buffer
+    buffer = malloc((_MaxLineLength_) * sizeof(char));
+    if( buffer == NULL ){ perror("InputComFile buffer"); exit(errno); }
 
-    // check if the first character in buffer is a comment char,
-    //  if yes jump to next line
-        comment_flag = 0;
-        for(i=0; i<strlen(comment); ++i){
-            if(buffer[0] == comment[i]){
-                comment_flag = 1;
-                break;
+// start parsing file
+    entry_rows = 0;
+    linenumber = 0;
+    while( fgets(buffer, _MaxLineLength_, fd) != NULL ){
+
+        linenumber++;
+
+    // check for existence of newline character. If not found the line is not
+    //  fully inside of the buffer and therefore, exceeding line length.
+        for(i = 0, control = 0; i < (int)strlen(buffer); ++i){
+            if(buffer[i] == '\n'){
+                control = 1;
             }
         }
-        if(comment_flag == 1) continue;
+        if(control == 0){
+            fprintf(stderr,
+                "\n (-) Error in input file \"%s\", line \"%d\" is too long."
+                "\n     Aborting..."
+                "\n\n", inputfile, linenumber
+            );
+            exit(EXIT_FAILURE);
+        }
 
-    // copy "buffer" with stripped comments to new buffer "line"
-        line = strtok(buffer, comment);
-        if(line == NULL) continue;
+    // strip buffer from comments
+        token = buffer;
+        pos = strsep(&token, comment);
+        if(pos == NULL) continue;
 
-    // remove leading white spaces and tabulators
-    //  and skip empty lines
-        while(isspace(*line)) line++;
-        if(strlen(line) == 0) continue;
+    // remove leading white spaces and empty lines
+        while( isspace(*pos) && *pos != '\0' ){ pos++; }
+        if(strlen(pos) == 0) continue;
 
-    // At this point the requested input line is stripped of
-    //  comments and blank lines. From here on the parsing starts:
-    //printf("%s\n", line);
+// buffer now contains a full (non empty) line of the input file, stripped of
+//  comments and *pos points to the first, non white space character of buffer
 //-----------------------------------------------------------------------------------
 
-        control = sscanf(line, "%*s  %lf  %lf  %lf", &aux1, &aux2, &aux3);
-        if(control == 3){
-            (*x)  = realloc((*x),  (rows + 1) * sizeof(double));
-            (*y)  = realloc((*y),  (rows + 1) * sizeof(double));
-            (*z)  = realloc((*z),  (rows + 1) * sizeof(double));
+    if(entry_rows == max_lines){
+        fprintf(stderr,
+                "\n (-) Error: Reached maximum number of lines in file \"%s\"\n"
+                "\n     but more lines do exist, please check your input."
+                "\n     Aborting...\n\n"
+                , inputfile
+            );
+    }
 
-            (*x)[rows] = aux1;
-            (*y)[rows] = aux2;
-            (*z)[rows] = aux3;
+        control = sscanf(buffer, "%*s  %lf  %lf  %lf", &(x[entry_rows]), &(y[entry_rows]), &(z[entry_rows]));
+        if( control != 3){ continue; }
 
-            ++rows;
-        }
+        ++entry_rows;
     }
     fclose(fd); fd = NULL;
 
-    return rows;
+    return entry_rows;
 }
