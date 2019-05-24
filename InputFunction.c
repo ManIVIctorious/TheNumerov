@@ -66,7 +66,7 @@ int InputFunction(char* inputfile, double** *q, int* nq, double* *v, double** *m
         if(pos == NULL) continue;
 
     // remove leading white spaces and empty lines
-        while(isspace(*pos) != 0 && *pos != '\0') { pos++; }
+        while(isspace(*pos) && *pos != '\0') { pos++; }
         if(strlen(pos) == 0) continue;
 
 // buffer now contains a full (non empty) line of the input file, stripped of

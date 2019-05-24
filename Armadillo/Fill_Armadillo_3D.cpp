@@ -15,7 +15,7 @@ arma::sp_mat FillArmadillo_3D(settings prefs, int* nq, int n_points, double* v, 
     int max_entries = 0;
 
     double stencil_entry;
-    double threshold = 1.0E-7;
+    double threshold = 1.0E-8;
 
 // determine maximum number of entries (number of stencil entries inside the matrix greater than threshold)
     for(i = 0; i < nq[0]; ++i){

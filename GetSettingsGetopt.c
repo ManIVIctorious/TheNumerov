@@ -69,7 +69,8 @@ settings GetSettingsGetopt(settings preferences, int argc, char** argv){
     //  control = -1 corresponds to the end of the options
         control = getopt_long(argc, argv, optstring, longopts, longindex);
 
-    // iterate over options control
+    // compare control with "val" from longopts to determine the desired action
+        if(control == -1){ break; }
         switch(control){
 
         // print help messages
