@@ -71,6 +71,53 @@ int InputCoriolisCoefficients(char* inputfile, double** *q, double** zeta, doubl
     // point stringp to first non white space character in buffer
         stringp = pos;
 
+
+    // zeta values:
+    //  lines containing zeta values start with Zeta_{x,y,z} followed by
+    //  (dim*(dim-1))/2 columns containing the respective Coriolis coefficients
+        for(i = 0; i < 3; ++i){
+            control = 0;
+
+        //  check if line starts with Zeta_{x,y,z}:
+            const char * zeta_line_inits[3] = {"Zeta_x:", "Zeta_y:", "Zeta_z:" };
+            if( strncasecmp(stringp, zeta_line_inits[i], 7) == 0 ){
+                control = 1;
+
+            // set stringp to second field
+                strsep(&stringp, delimiter);
+
+                m = 0;
+                while( m < (dimension * (dimension - 1))/2 ){
+                // set pos to next field
+                    pos = strsep(&stringp, delimiter);
+
+                // throw an error if no data found
+                    if(pos == NULL){
+                        fprintf(stderr,
+                            "\n (-) Error reading data from input-file \"%s\"."
+                            "\n     Too few entries in input line number %d (only found %d of expected %d columns)"
+                            "\n     Aborting, please check your input...\n\n"
+                            , inputfile, linenumber, m, (dimension * (dimension - 1))/2
+                        );
+                        exit(EXIT_FAILURE);
+                    }
+
+                // ignore adjacent delimiters
+                    if(*pos == '\0'){ continue; }
+
+                    zeta[i][m++] = atof(pos);
+                }
+                break;
+            }
+        }
+        if(control == 1){ continue; }
+
+
+    // Effective Reciprocal Moment of Inertia Tensor lines:
+    //  these lines start with <dimension> coordinates on the potential energy surface
+    //  followed by the upper triangle (with main diagonal) of the symmetric tensor
+    //  <dim1>...<dimN> <mu_xx> <mu_xy> <mu_xz> <mu_yy> <mu_yz> <mu_zz>
+
     // Coordinates:
     //  reallocate memory
         for(i = 0; i < dimension; ++i){
@@ -89,7 +136,7 @@ int InputCoriolisCoefficients(char* inputfile, double** *q, double** zeta, doubl
                     "\n (-) Error reading data from input-file \"%s\"."
                     "\n     Too few entries in input line number %d (only found %d of expected %d columns)"
                     "\n     Aborting, please check your input...\n\n"
-                    , inputfile, linenumber, i, (dimension + 3 * ((dimension * (dimension - 1))/2) + 6)
+                    , inputfile, linenumber, i, (dimension + 6)
                 );
                 exit(EXIT_FAILURE);
             }
@@ -97,54 +144,9 @@ int InputCoriolisCoefficients(char* inputfile, double** *q, double** zeta, doubl
         // ignore adjacent delimiting characters
             if(*pos == '\0'){ continue; }
 
-            (*q)[i][entry_rows] = atof(pos);
-            ++i;
+            (*q)[i++][entry_rows] = atof(pos);
         }
         n = i;
-
-
-    // Zeta values:
-    //  read data from input file and store it in zeta
-        for(m = 0; m < 3; ++m){
-
-            i = 0;
-            while(i < (dimension*(dimension - 1)) / 2){
-
-                pos = strsep(&stringp, delimiter);
-
-            // throw an error if no data found
-                if(pos == NULL){
-                    fprintf(stderr,
-                        "\n (-) Error reading data from input-file \"%s\"."
-                        "\n     Too few entries in input line number %d (only found %d of expected %d columns)"
-                        "\n     Aborting, please check your input...\n\n"
-                        , inputfile, linenumber, n, (dimension + 3 * ((dimension * (dimension - 1))/2) + 6)
-                    );
-                    exit(EXIT_FAILURE);
-                }
-
-            // ignore adjacent delimiting characters
-                if(*pos == '\0'){ continue; }
-
-                if(zeta[m][i] == 0.0){
-                    zeta[m][i] = atof(pos);
-
-                }else if( zeta[m][i] != atof(pos) ){
-                    fprintf(stderr,
-                        "\n (-) Error reading data from input-file \"%s\"."
-                        "\n     Since the zeta parameters are only dependent on the mode files"
-                        "\n     they have to be constant in regard of the deviation from minimum"
-                        "\n     Line\told zeta\tnew zeta:"
-                        "\n      %d \t% .12le \t% .12le"
-                        "\n     Aborting - please check your input..."
-                        "\n\n", inputfile, linenumber, zeta[m][i], atof(pos)
-                    );
-                    exit(EXIT_FAILURE);
-                }
-                ++i;
-                ++n;
-            }
-        }
 
 
     // "Effective reciprocal inertia tensor" mu:
@@ -161,7 +163,6 @@ int InputCoriolisCoefficients(char* inputfile, double** *q, double** zeta, doubl
 
             i = 0;
             while( (i+m) < 3 ){
-
                 pos = strsep(&stringp, delimiter);
 
             // throw an error if no data found
@@ -170,7 +171,7 @@ int InputCoriolisCoefficients(char* inputfile, double** *q, double** zeta, doubl
                         "\n (-) Error reading data from input-file \"%s\"."
                         "\n     Too few entries in input line number %d (only found %d of expected %d columns)"
                         "\n     Aborting, please check your input...\n\n"
-                        , inputfile, linenumber, n, (dimension + 3 * ((dimension * (dimension - 1))/2) + 6)
+                        , inputfile, linenumber, n, (dimension + 6)
                     );
                     exit(EXIT_FAILURE);
                 }
