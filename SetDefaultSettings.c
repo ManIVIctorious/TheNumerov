@@ -1,4 +1,5 @@
 
+#include <stdio.h>
 #include <stdlib.h>
 #include "settings.h"
 
@@ -15,8 +16,9 @@ settings SetDefaultSettings(){
 
         .modelist = NULL,
 
-        .output_file = "/dev/stdout",
+        .output_file = NULL,
         .output_file_set = 0,
+        .fdout = stdout,
 
     };
 

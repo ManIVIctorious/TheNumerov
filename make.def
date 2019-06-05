@@ -1,9 +1,9 @@
 # Executable name
-  EXENAME = WatsonPrep
+  EXENAME = TheWatson
 
 # Additional libraries, includes and packages
   LIB      = -lm
-  INC      = 
+  INC      =
   PACKAGES = gsl
 
 # Preprocessor flags
@@ -17,8 +17,9 @@
   SRC += Help.c
   SRC += SetDefaultSettings.c
   SRC += GetSettingsGetopt.c
+
   SRC += InputNormalMode.c
-  SRC += InputFileList.c
+  SRC += ProcessFileList.c
+  SRC += EffectiveReciprocalMomentofInertia.c
   SRC += InputComFile.c
-  SRC += MomentOfInertia.c
   SRC += InvertMatrix.c

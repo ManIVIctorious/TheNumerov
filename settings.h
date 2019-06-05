@@ -19,6 +19,14 @@ typedef struct settings {
     // standard output file
     char * output_file;
     char   output_file_set;
+    FILE * fdout;
+
+
+// data:
+    int       n_atoms;
+    double    tot_mass;
+    double *  atom_masses;
+    double ** zeta;
 
 } settings;
 

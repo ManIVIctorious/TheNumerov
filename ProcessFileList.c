@@ -8,11 +8,15 @@
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
+#include "settings.h"
+
+// dependencies
+void EffectiveReciprocalMomentofInertia(settings prefs, double* q, char* coordsfile);
 
 // provided prototypes
-int InputFileList(char* inputfile, int dimension, double** *Q, char** *coordslist);
+int ProcessFileList(settings prefs);
 
-int InputFileList(char* inputfile, int dimension, double** *Q, char** *coordslist){
+int ProcessFileList(settings prefs){
 
     FILE * fd     = NULL;
     char * token  = NULL;
@@ -25,13 +29,21 @@ int InputFileList(char* inputfile, int dimension, double** *Q, char** *coordslis
     int linenumber;
     int entry_rows;
 
+// data in FileList-file (to be further processed)
+//--------------------------------------------------
+    char coordsfile[_PATH_MAX_];
+    double * q = malloc(prefs.dimension * sizeof(double));
+    if(q == NULL){ perror("q in ProcessFileList"); exit(errno); }
+
+// Begin with file input
+//--------------------------------------------------
 // open input file read only
-    fd = fopen(inputfile, "r");
-    if( fd == NULL ){ perror(inputfile); exit(errno); }
+    fd = fopen(prefs.input_coordinates, "r");
+    if( fd == NULL ){ perror(prefs.input_coordinates); exit(errno); }
 
 // allocate memory of size _MaxLineLength_ for buffer
     buffer = malloc((_MaxLineLength_) * sizeof(char));
-    if( buffer == NULL ){ perror("InputFileList buffer"); exit(errno); }
+    if( buffer == NULL ){ perror("ProcessFileList buffer"); exit(errno); }
 
 // start file parsing
     entry_rows = 0;
@@ -51,7 +63,7 @@ int InputFileList(char* inputfile, int dimension, double** *Q, char** *coordslis
             fprintf(stderr,
                 "\n (-) Error in input file \"%s\", line \"%d\" is too long."
                 "\n     Aborting..."
-                "\n\n", inputfile, linenumber
+                "\n\n", prefs.input_coordinates, linenumber
             );
             exit(EXIT_FAILURE);
         }
@@ -71,21 +83,10 @@ int InputFileList(char* inputfile, int dimension, double** *Q, char** *coordslis
 
         token = pos;
 
-        (*coordslist) = realloc( *(coordslist), (entry_rows + 1) * sizeof(char*) );
-        if( (*coordslist) == NULL ){ perror("coordslist"); exit(errno); }
-
-        (*coordslist)[entry_rows] = malloc( _PATH_MAX_ * sizeof(char) );
-        if( (*coordslist)[entry_rows] == NULL ){ perror("coordslist[]"); exit(errno); }
-
-        for(i = 0; i < dimension; ++i){
-            (*Q)[i] = realloc( (*Q)[i], (entry_rows + 1) * sizeof(double) );
-            if( (*Q)[i] == NULL ){ perror("Q[i]"); exit(errno); }
-        }
-
 
     // read deviation from minimum geometry Q from input file
         i = 0;
-        while(i < dimension){
+        while(i < prefs.dimension){
             pos = strsep( &token, delim );
 
         // throw an error if no data found
@@ -94,7 +95,7 @@ int InputFileList(char* inputfile, int dimension, double** *Q, char** *coordslis
                         "\n (-) Error reading data from input file \"%s\"."
                         "\n     Too few lines in input line number %d (only found %d of the expected %d columns)"
                         "\n     Aborting...\n\n"
-                        , inputfile, linenumber, i, dimension+1
+                        , prefs.input_coordinates, linenumber, i, prefs.dimension+1
                     );
                 exit(EXIT_FAILURE);
             }
@@ -102,12 +103,12 @@ int InputFileList(char* inputfile, int dimension, double** *Q, char** *coordslis
         // ignore adjacent delimiting characters
             if(*pos == '\0'){ continue; }
 
-            (*Q)[i++][entry_rows] = atof(pos);
+            q[i++] = atof(pos);
         }
 
 
     // read coordinate file names from input file
-        while( i < (dimension + 1) ){
+        while( i < (prefs.dimension + 1) ){
             pos = strsep( &token, delim );
 
         // throw an error if no data found
@@ -116,7 +117,7 @@ int InputFileList(char* inputfile, int dimension, double** *Q, char** *coordslis
                         "\n (-) Error reading data from input file \"%s\"."
                         "\n     Too few lines in input line number %d (only found %d of the expected %d columns)"
                         "\n     Aborting...\n\n"
-                        , inputfile, linenumber, i, dimension+1
+                        , prefs.input_coordinates, linenumber, i, prefs.dimension+1
                     );
                 exit(EXIT_FAILURE);
             }
@@ -124,12 +125,33 @@ int InputFileList(char* inputfile, int dimension, double** *Q, char** *coordslis
         // ignore adjacent delimiting characters
             if(*pos == '\0'){ continue; }
 
-            strncpy( (*coordslist)[entry_rows], pos, _PATH_MAX_ );
+            strncpy( coordsfile, pos, _PATH_MAX_ );
             ++i;
         }
 
-        ++entry_rows;
+    // After each read data line start directly with processing
+    //  Determine Effective Reciprocal Moment of Inertia Tensor mu
+    //------------------------------------------------------------
+    #ifdef debug_coords
+    //{{{
+    // output coordinates for control
+        fprintf(stderr, "\n%d\t%s\n", entry_rows+1, coordsfile);
+        fprintf(stderr,
+                "\nNumber of Atoms:\t%d"
+                "\nInput coordinates:\n"
+                "\t         x         "
+                "\t         y         "
+                "\t         z         "
+                "\t    atomic mass    "
+                "\n"
+                , prefs.n_atoms
+            );
+    //}}}
+    #endif
 
+        EffectiveReciprocalMomentofInertia(prefs, q, coordsfile);
+
+        ++entry_rows;
     }
     fclose(fd); fd = NULL;
 
