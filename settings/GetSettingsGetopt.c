@@ -1,10 +1,13 @@
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <getopt.h>
+#include <errno.h>
 
 #include "typedefinitions.h"
+#include "gitversion.h"
 
 // Dependencies
 int Help();
@@ -23,7 +26,7 @@ settings GetSettingsGetopt(settings preferences, int argc, char** argv){
 //---------------------------------------------------------------------------------
     // optstring contains a list of all short option indices,
     //  indices followed by a colon are options requiring an argument.
-    const char         * optstring = "a::c:d::e:f:hi:k:l:m:n:o:s:t:u:v:C:D:M:N:PT::";
+    const char         * optstring = "a::c:d::e:f:hi:k:l:m:n:o:s:t:u:v:C:D:M:N:PT::V";
     const struct option longopts[] = {
     //  *name:      option name,
     //  has_arg:    if option requires argument,
@@ -31,6 +34,7 @@ settings GetSettingsGetopt(settings preferences, int argc, char** argv){
     //              else it returns 0 and flag points to a variable set to val
     //  val:        value to return
         {"help",                   no_argument, 0, 'h'},
+        {"version",                no_argument, 0, 'V'},
         {"pipe",                   no_argument, 0, 'P'},
     // Boolian values:
         {"analyze",          optional_argument, 0, 'a'},
@@ -76,6 +80,11 @@ settings GetSettingsGetopt(settings preferences, int argc, char** argv){
         // print help messages
             case 'h':
                 Help();
+                exit(EXIT_SUCCESS);
+
+        // print version information
+            case 'V':
+                printf("\t%s, version: %s\n", program_invocation_short_name, gitversion);
                 exit(EXIT_SUCCESS);
 
         // Pipe: read input from stdin

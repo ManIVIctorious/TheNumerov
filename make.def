@@ -1,9 +1,14 @@
 # Executable name
+# PROGRAM_VERSION = test
+# EXEDIR  = bin
   EXENAME = TheNumerov
 
-# Additional libraries, includes and packages
+# Additional settings, including warnings, optimisation
+#   level, libraries, includes and packages (pkg-config files)
+# OPT      = -O2 -march=native
+# WARN     = -Wall -Wextra -Werror -Wno-stringop-truncation -Wno-stringop-overflow
   LIB      = -lm
-  INC      = -I.
+  INC      = -Iinclude/
   PACKAGES = gsl mkl armadillo
 
 # Preprocessor flags
@@ -11,41 +16,5 @@
   PPF += -D HAVE_MKL_INSTALLED  # intel math kernel library support
   PPF += -D HAVE_ARMA_INSTALLED # Armadillo C++ linear algebra library
 
-# Source Files
-# Standard source files
-  SRC += main.c
-  SRC += SetDefaultSettings.c
-  SRC += GetSettingsControlFile.c
-  SRC += ParseControlFile.c
-  SRC += GetSettingsGetopt.c
-  SRC += CheckCoordinateSpacing.c
-  SRC += InputFunction.c
-  SRC += InputCoriolisCoefficients.c
-  SRC += TextOut.c
-  SRC += OutputSettings.c
-  SRC += MetaGetStencil.c
-  SRC += FillNumerovStencils.c
-  SRC += FillDerivativeStencils.c
-  SRC += MetaEigensolver.c
-  SRC += Help.c
-  SRC += MetaInterpolation.c
-  SRC += nx1dInterpolation.c
-  SRC += Integrators.c
-# GSL sources
-  ifeq ($(findstring HAVE_GSL_INSTALLED, $(PPF)), HAVE_GSL_INSTALLED)
-    GSLSRC += GSL/GenFiniteDifferenceStencils.c
-  endif
-# MKL sources
-  ifeq ($(findstring HAVE_MKL_INSTALLED, $(PPF)), HAVE_MKL_INSTALLED)
-    MKLSRC += MKL/Fill_MKL_1D.c
-    MKLSRC += MKL/Fill_MKL_2D.c
-    MKLSRC += MKL/SolverFEAST_MKL.c
-  endif
-# Armadillo sources (require C++)
-  ifeq ($(findstring HAVE_ARMA_INSTALLED, $(PPF)), HAVE_ARMA_INSTALLED)
-    ARMASRC += Armadillo/Fill_Armadillo_1D.cpp
-    ARMASRC += Armadillo/Fill_Armadillo_2D.cpp
-    ARMASRC += Armadillo/Fill_Armadillo_3D.cpp
-    ARMASRC += Armadillo/SolverARPACK_Armadillo.cpp
-  endif
-
+# List of source files
+  include make.src

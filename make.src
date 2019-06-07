@@ -1,0 +1,59 @@
+# Source Files
+#----------------------------------------------------------------------
+  SRC += main.c
+  SRC += InputFunction.c
+  SRC += InputCoriolisCoefficients.c
+  SRC += CheckCoordinateSpacing.c
+  SRC += FillDerivativeStencils.c
+  SRC += nx1dInterpolation.c
+  SRC += MetaEigensolver.c
+  SRC += MetaInterpolation.c
+# settings
+  SRC += settings/SetDefaultSettings.c
+  SRC += settings/GetSettingsControlFile.c
+  SRC += settings/ParseControlFile.c
+  SRC += settings/GetSettingsGetopt.c
+# stencils
+  SRC += dispatchers/MetaGetStencil.c
+  SRC += dispatchers/1D/FillStencil1D.c
+  SRC += dispatchers/2D/FillStencil2D.c
+  SRC += dispatchers/3D/FillStencil3D.c
+  SRC += dispatchers/4D/FillStencil4D.c
+# integrators
+  SRC += dispatchers/Integrators.c
+  SRC += dispatchers/1D/integrate_1d.c
+  SRC += dispatchers/2D/integrate_2d.c
+  SRC += dispatchers/3D/integrate_3d.c
+  SRC += dispatchers/4D/integrate_4d.c
+# output
+  SRC += output/Help.c
+  SRC += output/OutputSettings.c
+  SRC += output/TextOut_Dipole.c
+  SRC += output/TextOut_EKinetic.c
+  SRC += output/TextOut_Eigenvectors.c
+  SRC += output/TextOut_Frequencies.c
+  SRC += output/TextOut_Orthonormality.c
+  SRC += output/TextOut_Potential.c
+
+# GSL sources
+#----------------------------------------------------------------------
+ifeq ($(findstring HAVE_GSL_INSTALLED, $(PPF)), HAVE_GSL_INSTALLED)
+  GSLSRC += GSL_GenFiniteDifferenceStencils.c
+endif
+
+# MKL sources
+#----------------------------------------------------------------------
+ifeq ($(findstring HAVE_MKL_INSTALLED, $(PPF)), HAVE_MKL_INSTALLED)
+  MKLSRC += dispatchers/MKL_SolverFEAST.c
+  MKLSRC += dispatchers/1D/MKL_Fill_1D.c
+  MKLSRC += dispatchers/2D/MKL_Fill_2D.c
+endif
+
+# Armadillo sources (require C++)
+#----------------------------------------------------------------------
+ifeq ($(findstring HAVE_ARMA_INSTALLED, $(PPF)), HAVE_ARMA_INSTALLED)
+  ARMASRC += dispatchers/Armadillo_SolverARPACK.cpp
+  ARMASRC += dispatchers/1D/Armadillo_Fill_1D.cpp
+  ARMASRC += dispatchers/2D/Armadillo_Fill_2D.cpp
+  ARMASRC += dispatchers/3D/Armadillo_Fill_3D.cpp
+endif
