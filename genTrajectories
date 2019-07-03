@@ -1,0 +1,170 @@
+#!/bin/bash
+
+#--------------------------------------------------------------------------------
+#                               Default parameters
+#--------------------------------------------------------------------------------
+dim=2
+in_file_pattern='*.com'
+
+
+#--------------------------------------------------------------------------------
+#                              Function definition
+#--------------------------------------------------------------------------------
+function MAN {
+cat << EOF 1>&2
+
+Synopsis:  ${0##*/} {-H|h}
+                    {-D|d dimension}
+                    {-I|i input file pattern}
+                    [list of input directories]
+
+Description:
+    Takes a list of mode scan directories and extracts the full coordinates,
+    as well as the coordinates alongside the individual modes into xyz-files.
+
+    The default values are:
+        Dimension:          $dim
+        Input file pattern: '$in_file_pattern'
+
+EOF
+}
+export -f MAN
+for i in $@; do if [[ $i == '-h' ]]; then MAN; exit 0; fi; done
+if [ $# -eq 0 ]; then MAN; exit 0; fi
+
+
+#--------------------------------------------------------------------------------
+#               Populate variables and provide input error handling
+#--------------------------------------------------------------------------------
+while getopts "hHD:d:I:i:" opt; do
+    case $opt in
+        D|d)  dim="$OPTARG";;
+        I|i)  in_file_pattern="$OPTARG";;
+        h|H)  MAN; exit 0;;
+    esac
+done
+shift $(( OPTIND - 1 ))
+DirList=${@}
+
+
+#--------------------------------------------------------------------------------
+#                             Actual start of Script
+#--------------------------------------------------------------------------------
+for Directory in $DirList; do
+
+# check if directory exists and, if yes, go there
+    if [ ! -d ${Directory} ]; then
+        printf "\n  Error: Directory \"$Directory\" does not exist." >&2
+        printf "\n  Skipping...\n\n" >&2
+        continue
+    fi
+    cd $Directory
+    printf "Entering $Directory\n" 1>&2
+
+# create hidden temporary directory
+    while [ 1 ]; do
+        temp_dir=".tmp_${RANDOM}";
+        if [ ! -d ${temp_dir} ]; then
+            mkdir ${temp_dir};
+            break;
+        fi;
+    done
+
+# create sort pattern
+    sp="-g"; for i in $(seq 1 $dim); do sp="$sp -k$i"; done
+
+# define file_name_ending containing the final glob pattern (e.g. *.com => \.com)
+    file_name_ending=$(sed "s/[*]/ /g; s/\./\\\./g" <<< "$in_file_pattern" | awk '{print $NF}')
+
+# list pattern files 
+# | bring coordinates to the front
+# | replace all underscores of first field with space 
+# | sort output using sort pattern
+    ls $in_file_pattern | sed "s/^\s*[^=]*=\(.*\)${file_name_ending}$/\1 &/" | awk '{field = gsub(/_/," ",$1); print $0}' | sort $sp > "${temp_dir}/traj_full.tmp"
+
+# create bitstring representation of all non zero dimension entries
+# (if first dimension is non zero: +=1, second: +=2, third: +=4, etc.)
+# then extract all file names with none or exactly one, non zero entries
+# and store the file name lists.
+    if [ $dim -gt 1 ]; then
+        awk '{
+        # first iteration over coordinate columns, whenever the
+        #  respective coordinate column entry is non zero add the flag
+            count = 0; flag = 1;
+            for(i = 1; i <= '$dim'; ++i){
+                if( $i != 0 ){ count += flag }
+                flag *= 2;
+            }
+
+        # second iteration over coordinate columns:
+        #  whenever no or only the i-th bit is set in the bitstring
+        #  (i.e. there is none or exactly one non zero column) print
+        #  the file name column to the respective temporary file
+            flag = 1;
+            for(i = 1; i <= '$dim'; ++i){
+
+            # define i-th out_file
+                out_file = sprintf("%s/traj_%02d.tmp", "'${temp_dir}'", i);
+
+            # if no or only the i-th bit is set in the
+            # bitstring print file name to out_file
+                if( count == flag || count == 0 ){
+                    print $('$dim'+1) >> out_file
+                }
+
+                flag *= 2;
+            }
+
+        }' "${temp_dir}/traj_full.tmp"
+    fi
+
+
+# remove coordinate prefix from traj_full.tmp
+    while [ 1 ]; do
+        temp_file=${temp_dir}/${RANDOM}.tmp;
+        if [ ! -e ${temp_file} ]; then
+            break;
+        fi;
+    done
+    awk '{print $('$dim'+1)}' "${temp_dir}/traj_full.tmp" > "$temp_file"
+    mv "$temp_file" "${temp_dir}/traj_full.tmp"
+
+
+# determine number of atoms
+    n_atoms=$(for i in $(cat "${temp_dir}/traj_full.tmp"); do grep -P "^\s*[A-Z][a-z]?(\s+[+-]?\d+\.\S+){3}$" $i | wc -l; done | sort | uniq)
+
+    if [ $(echo $n_atoms | wc -w) -ne 1 ]; then
+        printf "\n  Error: Number of atoms not constant." >&2
+        printf "\n         Skipping...\n\n" >&2
+        continue
+    fi
+
+
+# generate trajectories from file lists
+    for filelist in ${temp_dir}/*.tmp; do
+    
+        outfile=${filelist##*/}
+        outfile=${outfile%.tmp}.xyz
+
+    # if output file already exists remove file list and skip to next iteration
+        if [ -e $outfile ]; then
+            printf "\n  Error: File \"$outfile\" already exists." >&2
+            printf "\n         Skipping...\n\n" >&2
+            rm ${filelist}
+            continue;
+        fi
+    
+    # create trajectory
+        for i in $(cat ${filelist}); do
+            printf "$n_atoms\n\n" >> "${outfile}"
+            grep -P "^\s*[A-Z][a-z]?(\s+[+-]?\d+\.\S+){3}$" $i >> "${outfile}"
+        done
+
+        rm ${filelist}
+
+    done
+
+    rmdir ${temp_dir}
+    cd - 1>/dev/null 2>&1
+
+done
