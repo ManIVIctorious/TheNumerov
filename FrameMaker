@@ -1,0 +1,204 @@
+#!/bin/bash
+
+#--------------------------------------------------------------------------------
+#                               Default parameters
+#--------------------------------------------------------------------------------
+              com_head="top";
+              com_body="coords";
+           RedMassFile="reduced_masses";
+directly_process_frame=0;
+
+#--------------------------------------------------------------------------------
+#                                Print help page
+#--------------------------------------------------------------------------------
+function MAN {
+cat << EOF 1>&2
+
+Synopsis:  ${0##*/} {-h}
+                    {-t com_head file}
+                    {-c coordinate file}
+                    {-m reduced masses file}
+                    {-p}
+                    [-o output file]
+                    [-d ΔQ_base * increment] (n_modes times!)
+                    [list of mode files]
+
+Description:
+    This script takes a com_head (settings of com file), a coordinates
+    file (containing cartesian coordinates) and a reduced masses file,
+    consisting of the three columns <mode name> <reduced_mass> and
+    the displacement scaling factor <sqrt(reduced_mass_min/reduced_mass_i)>.
+
+    Besides these three files the script requires displacements and mode files.
+    The displacements are given using the -d flag (e.g. -d 0.1 -d 0.2 for the 2D
+    displacement of 0.1*<scaling_factor>*mode_01 and 0.2*<scaling_factor>*mode_02)
+    while the mode files are appended. The number of given -d flags also sets the
+    dimensionality and must match the number of provided mode files.
+
+    After these files are set the actual frame building starts,
+    Example:
+        for i in \$(seq min ΔQ_base max); do
+            for j in \$(seq min ΔQ_base max); do
+                ${0##*/} -o 2D_mode_scan_<system>_<environment>_modes_01_02\\
+                           -d \$i -d \$j mode_01 mode_02
+            done
+        done
+
+    With this information then a .com file is produced. Pseudocode:
+
+    frame = coords
+    for i in modes; do
+        frame += mode_increment[i] * mass_factor[i] * mode[i]
+    done
+
+    outfile_suffix=_dr=
+    for i in modes; do
+        outfile_suffix = outfile_suffix_<mode_increment[i] * mass_factor[i] * mass[i]>
+    done
+
+    cat top frame > <output_file><outfile_suffix>
+
+    If the -p flag is set the generated frames are directly processed by
+    gaussian 16.
+
+    The default values are:
+        com_head     = $com_head
+        com_body     = $com_body
+        RedMassFile  = $RedMassFile
+        Process file (with gaussian) = false
+
+EOF
+}
+export -f MAN
+for i in $@; do if [[ $i == '-h' ]]; then MAN; exit 0; fi; done
+if [ $# -eq 0 ]; then MAN; exit 0; fi
+
+
+#--------------------------------------------------------------------------------
+#               Populate variables and provide input error handling
+#--------------------------------------------------------------------------------
+n_disp=0 # number of provided displacements
+
+while getopts "hHt:c:m:d:o:p" opt; do
+    case $opt in
+        t)      com_head="$OPTARG";;  # top
+        c)      com_body="$OPTARG";;  # coords
+        m)   RedMassFile="$OPTARG";;  # mass
+        d)       n_disp=$((n_disp + 1))
+           displacement[$n_disp]="$OPTARG";;
+        o)    OutputFile="$OPTARG";;
+        p)  directly_process_frame=1;;
+        h|H)  MAN; exit 0;;
+    esac
+done
+shift $(( OPTIND - 1 ))
+
+
+# check if input files exist and are readable
+if [ ! -r "$com_head"    ]; then printf "Error: File \"$com_head\" could not be read\n"; exit 1; fi
+if [ ! -r "$com_body"    ]; then printf "Error: File \"$com_body\" could not be read\n"; exit 1; fi
+if [ ! -r "$RedMassFile" ]; then printf "Error: File \"$RedMassFile\" could not be read\n"; exit 1; fi
+
+# check if output file is set
+if [ -z $OutputFile ]; then
+    printf "Error: Please specify a suitable output file name prefix\n";
+    printf "    e.g. <dimension>D_scan_<system>_<method>_<solvent>_<mode>\n";
+    exit 1;
+fi
+
+# get dimensionality from the number of mode files provided
+#   and fill the mode file names into mode[] array
+dim=0; for i in $@; do dim=$((dim + 1)); mode[$dim]=$i; done
+
+# check if number of mode files is equal to dispdim
+if [ $n_disp -ne $dim ]; then
+    printf "Error: Number of displacements ("$n_disp") does not\n"
+    printf "       match number of mode files ("$dim")\n"
+    exit 1;
+fi
+
+
+#--------------------------------------------------------------------------------
+#                             Actual start of Script
+#--------------------------------------------------------------------------------
+for i in $(seq 1 $dim); do
+
+# check if mode file exists and is readable
+    if [ ! -r ${mode[$i]} ]; then
+        printf "Error: File \"${mode[$i]}\" could not be read\n";
+        exit 1;
+    fi
+
+# Get increment for the i^th mode out of base increment and reduced mass file
+    incr[$i]=$(awk '{ if($1 == "'${mode[$i]##*/}'"){printf "%.12lf", $3*'${displacement[$i]}'} }' $RedMassFile)
+
+# Get reduced mass for the i^th mode out of reduced mass file
+    mass[$i]=$(awk '{ if($1 == "'${mode[$i]##*/}'"){ printf "%.12lf", $2 } }' $RedMassFile)
+
+# check for population of increments and reduced masses
+    if [ -z ${incr[$i]} -o -z ${mass[$i]} ]; then
+        printf "Error: \"${mode[$i]##*/}\" not found in \"$RedMassFile\"\n";
+        exit 1;
+    fi
+
+done
+
+
+# augment output file name by coordinates
+OutputFile="${OutputFile}_dr="
+for i in $(seq 1 $dim); do
+    OutputFile=${OutputFile}_$(awk '{printf "%+.12lf", '${incr[$i]}' * sqrt('${mass[$i]}')}' <<< 1)
+done
+OutputFile=$(sed "s/=_/=/" <<< $OutputFile)
+
+# create frame
+#   in pipe:
+#       first line:     all increments
+#       second to NR:   $com_body $mode[1] ... $mode[n] (all 4 columns wide)
+cat <(echo "${incr[@]}") <(paste $com_body ${mode[@]}) | awk '
+
+    {
+    # first line:
+    #   get all increments and save them in incr[] array
+    #   also set dimensionality for further processing
+        if(NR == 1){
+            for(i = 1; i <= NF; ++i){
+                incr[i] = $i;
+            }
+            dim = NF;
+
+    # For all other lines:
+    #   $1 = Atom symbol
+    #   $2-$4 = {x,y,z} base coordinates (minimum geometry)
+    #   $5-$7 + i*4, i ∈ {0,...,dim} = {x,y,z} coordinate displacements of i^th mode
+        }else{
+
+            x = $2;
+            y = $3;
+            z = $4;
+            for(i = 0; i < dim; ++i){
+                x += incr[i+1] * $(5 + i*4);
+                y += incr[i+1] * $(6 + i*4);
+                z += incr[i+1] * $(7 + i*4);
+            }
+            printf "%s\t% .8le\t% .8le\t% .8le\n", $1, x, y, z;
+        }
+    }
+    END{ printf "\n\n" }'  > ${OutputFile}_frame
+
+
+# Check if output file has already been successfully processed by gaussian
+if ( grep "Normal termination" ${OutputFile}.log >/dev/null 2>&1 ); then
+    printf "${OutputFile}.com already completed\n"
+else
+    cat ${com_head} ${OutputFile}_frame > "${OutputFile}.com"
+
+    if [ "${directly_process_frame}" -eq 1 ]; then
+        cd ${OutputFile%/*}
+        g16 "${OutputFile}.com"
+        cd - >/dev/null 2>&1
+    fi
+fi
+
+# remove frame
+if [ -f "${OutputFile}_frame" ]; then rm "${OutputFile}_frame"; fi
