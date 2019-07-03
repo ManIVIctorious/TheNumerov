@@ -200,6 +200,7 @@ int main(int argc, char **argv){
 // output Coriolis coefficients
 //--------------------------------------------------
     fdout = fopen(prefs.output_file, "w");
+    if( fdout == NULL ){ perror(prefs.output_file); exit(errno); }
 
     fprintf(fdout, "#Modes:");
     for(i = 0; i < prefs.dimension; ++i){
@@ -240,6 +241,7 @@ int main(int argc, char **argv){
 // print header
 //--------------------------------------------------
     fdout = fopen(prefs.output_file, "a");
+    if( fdout == NULL ){ perror(prefs.output_file); exit(errno); }
 
     fprintf(fdout, "#");
     for(i = 0; i < prefs.dimension; ++i){
