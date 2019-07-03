@@ -1,0 +1,25 @@
+# Executable name
+  EXENAME = TheWatson
+
+# Additional libraries, includes and packages
+  LIB      = -lm
+  INC      =
+  PACKAGES = gsl
+
+# Preprocessor flags
+# PPF += -Ddebug_normalmode
+# PPF += -Ddebug_coords
+# PPF += -Ddebug_moment_of_inertia
+# PPF += -Ddebug_mu
+
+# Source Files
+  SRC += main.c
+  SRC += Help.c
+  SRC += SetDefaultSettings.c
+  SRC += GetSettingsGetopt.c
+
+  SRC += InputNormalMode.c
+  SRC += ProcessFileList.c
+  SRC += EffectiveReciprocalMomentofInertia.c
+  SRC += InputComFile.c
+  SRC += InvertMatrix.c
