@@ -1,0 +1,106 @@
+#!/bin/bash
+
+#--------------------------------------------------------------------------------
+#                               Default parameters
+#--------------------------------------------------------------------------------
+   ModeFiles=mode_*
+  OutputFile=reduced_masses
+
+
+#--------------------------------------------------------------------------------
+#                                Print help page
+#--------------------------------------------------------------------------------
+function MAN {
+cat << EOF 1>&2
+
+Synopsis:  ${0##*/} {-h}
+                    {-o Output file}
+                    [list of mode files]
+
+Description:
+    Takes a number of mode files and calculates their reduced masses,
+    as well as the square root of the quotient of the lightest mass
+    and the respective mass.
+
+    The resulting data are saved to the output file in the following form:
+
+        <mode_name>   redmass[i]   sqrt(min_redmass/redmass[i])
+
+    The default values are:
+        Output File = $OutputFile
+        Mode Files  = $ModeFiles
+
+EOF
+}
+export -f MAN
+for i in $@; do if [[ $i == '-h' ]]; then MAN; exit 0; fi; done
+
+
+#--------------------------------------------------------------------------------
+#               Populate variables and provide input error handling
+#--------------------------------------------------------------------------------
+while getopts "hHo:" opt; do
+    case $opt in
+        o)    OutputFile="$OPTARG";;
+        h|H)  MAN; exit 0;;
+    esac
+done
+shift $(( OPTIND - 1 ))
+
+ModeFiles=${@:-$ModeFiles}
+
+
+#--------------------------------------------------------------------------------
+#                             Actual start of Script
+#--------------------------------------------------------------------------------
+for i in $ModeFiles; do
+
+# mode name
+    printf "${i##*/}\t"
+
+# norm modes
+    awk 'BEGIN{ norm = 0 }
+        {
+            norm += $1*$1 + $2*$2 + $3*$3
+
+               x[NR] = $1
+               y[NR] = $2
+               z[NR] = $3
+            mass[NR] = $4
+
+        }END{
+
+            for(i = 1; i <= NR; ++i){
+                printf "\t% .12le", x[i] /= sqrt(norm)
+                printf "\t% .12le", y[i] /= sqrt(norm)
+                printf "\t% .12le", z[i] /= sqrt(norm)
+                printf "\t% .12le", mass[i]
+                printf "\n"
+            }
+
+        }' $i |
+# calculate reduced mass
+    awk 'BEGIN{ red_mass = 0 }
+        {
+            red_mass += ($1*$1 + $2*$2 + $3*$3) * $4
+        }
+        END{
+            printf "% .12le\n", red_mass
+        }'
+
+done |
+# determine sqrt(min_red_mass / red_mass_i) and output to file
+awk '{
+        if(NR == 1){ min_mass = $2 }
+
+        mode_name[NR] = $1;
+        mode_mass[NR] = $2;
+
+        if(min_mass > $2){ min_mass = $2 }
+
+    }
+    END{
+        for(i = 1; i <= NR; ++i){
+            printf "\t%s\t% 14.8lf\t% 14.8lf\n", mode_name[i], mode_mass[i], sqrt(min_mass/mode_mass[i])
+        }
+    }' > $OutputFile
