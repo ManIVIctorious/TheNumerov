@@ -1,17 +1,16 @@
 
 #include <stdio.h>
-#include "typedefinitions.h"
  
 // Dependencies
 double Integrate(int dimension, int* nq, double dx, double* integrand);
 
 // provided prototypes
-int TextOut_Potential(FILE* fd, settings prefs, int n_out, int n_points, int* nq, double* integrand, double dq, double* X, double* v);
+int TextOut_Potential(FILE* fd, int dimensionality, int n_out, int n_points, int* nq, double* integrand, double dq, double* X, double* v);
 
 
 // Potential energy output
 //  calculate int Psi_i*V*Psi_j dτ (i.e. <X[i]|V|X[j]>)
-int TextOut_Potential(FILE* fd, settings prefs, int n_out, int n_points, int* nq, double* integrand, double dq, double* X, double* v){
+int TextOut_Potential(FILE* fd, int dimensionality, int n_out, int n_points, int* nq, double* integrand, double dq, double* X, double* v){
 
     int i, j, k;
 
@@ -28,7 +27,7 @@ int TextOut_Potential(FILE* fd, settings prefs, int n_out, int n_points, int* nq
             // generate integrand
                 integrand[k] = X[k + i*n_points]*X[k + j*n_points] * v[k];
             }
-            fprintf(fd, "  % 12.5e", Integrate(prefs.dimension, nq, dq, integrand));
+            fprintf(fd, "  % 12.5e", Integrate(dimensionality, nq, dq, integrand));
         }
     }
     fprintf(fd, "\n#\n#");

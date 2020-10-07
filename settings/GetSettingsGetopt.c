@@ -14,9 +14,9 @@ int Help();
 
 
 // provided prototypes
-settings GetSettingsGetopt(settings preferences, int argc, char** argv);
+void GetSettingsGetopt(int argc, char** argv, settings* preferences);
 
-settings GetSettingsGetopt(settings preferences, int argc, char** argv){
+void GetSettingsGetopt(int argc, char** argv, settings* preferences){
 
     int control = 0;
     int * longindex = NULL;
@@ -60,8 +60,8 @@ settings GetSettingsGetopt(settings preferences, int argc, char** argv){
         {"output-file",      required_argument, 0, 'o'},
         {"coriolis-input",   required_argument, 0, 'c'},
     // flags:
-        {"mkl",                    no_argument, &preferences.Eigensolver, 1},
-        {"armadillo",              no_argument, &preferences.Eigensolver, 2},
+        {"mkl",                    no_argument, &preferences->Eigensolver, 1},
+        {"armadillo",              no_argument, &preferences->Eigensolver, 2},
     // requires zero termination
         { 0 , 0 , 0 , 0 }
     };
@@ -89,41 +89,41 @@ settings GetSettingsGetopt(settings preferences, int argc, char** argv){
 
         // Pipe: read input from stdin
             case 'P':
-                preferences.input_file = "/dev/stdin";
-                ++preferences.input_file_set;
+                preferences->input_file = "/dev/stdin";
+                ++preferences->input_file_set;
                 break;
 
 
         // Boolian values
             case 'a':
-                if(optarg == NULL){ preferences.analyze = 1; }
+                if(optarg == NULL){ preferences->analyze = 1; }
                 else{
-                    preferences.analyze     = atoi(optarg);
-                    if(preferences.analyze == 0){
-                        if(strncasecmp("true", optarg, 4) == 0) { preferences.analyze = 1; }
-                        else                                    { preferences.analyze = 0; }
+                    preferences->analyze     = atoi(optarg);
+                    if(preferences->analyze == 0){
+                        if(strncasecmp("true", optarg, 4) == 0) { preferences->analyze = 1; }
+                        else                                    { preferences->analyze = 0; }
                     }
                 }
                 break;
 
             case 'd':
-                if(optarg == NULL){ preferences.dipole = 1; }
+                if(optarg == NULL){ preferences->dipole = 1; }
                 else{
-                    preferences.dipole      = atoi(optarg);
-                    if(preferences.dipole == 0){
-                        if(strncasecmp("true", optarg, 4) == 0) { preferences.dipole = 1; }
-                        else                                    { preferences.dipole = 0; }
+                    preferences->dipole      = atoi(optarg);
+                    if(preferences->dipole == 0){
+                        if(strncasecmp("true", optarg, 4) == 0) { preferences->dipole = 1; }
+                        else                                    { preferences->dipole = 0; }
                     }
                 }
                 break;
 
             case 'T':
-                if(optarg == NULL){ preferences.check_spacing = 0; }
+                if(optarg == NULL){ preferences->check_spacing = 0; }
                 else{
-                    preferences.check_spacing = atoi(optarg);
-                    if(preferences.check_spacing == 0){
-                        if(strncasecmp("true", optarg, 4) == 0) { preferences.check_spacing = 0; }
-                        else                                    { preferences.check_spacing = 1; }
+                    preferences->check_spacing = atoi(optarg);
+                    if(preferences->check_spacing == 0){
+                        if(strncasecmp("true", optarg, 4) == 0) { preferences->check_spacing = 0; }
+                        else                                    { preferences->check_spacing = 1; }
                     }
                 }
                 break;
@@ -131,93 +131,90 @@ settings GetSettingsGetopt(settings preferences, int argc, char** argv){
 
         // integer values
             case 'D':
-                preferences.dimension   = atoi(optarg);
+                preferences->dimension   = atoi(optarg);
                 break;
 
             case 'n':
-                preferences.n_stencil   = atoi(optarg);
+                preferences->n_stencil   = atoi(optarg);
                 break;
 
             case 's':
-                preferences.n_spline    = atoi(optarg);
+                preferences->n_spline    = atoi(optarg);
                 break;
 
             case 'N':
-                preferences.n_out       = atoi(optarg);
+                preferences->n_out       = atoi(optarg);
                 break;
 
 
         // double values
             case 'k':
-                preferences.ekin_factor = atof(optarg);
+                preferences->ekin_factor = atof(optarg);
                 break;
 
             case 'v':
-                preferences.epot_factor = atof(optarg);
+                preferences->epot_factor = atof(optarg);
                 break;
 
             case 'f':
-                preferences.DipToAsm    = atof(optarg);
+                preferences->DipToAsm    = atof(optarg);
                 break;
 
             case 'M':
-                preferences.mu_factor   = atof(optarg);
+                preferences->mu_factor   = atof(optarg);
                 break;
 
             case 't':
-                preferences.threshold   = atof(optarg);
+                preferences->threshold   = atof(optarg);
                 break;
 
             case 'l':
-                preferences.e_min       = atof(optarg);
+                preferences->e_min       = atof(optarg);
                 break;
 
             case 'u':
-                preferences.e_max       = atof(optarg);
+                preferences->e_max       = atof(optarg);
                 break;
 
 
         // string values
             case 'm':
             // copy optarg to string and ensure zero termination
-                if(preferences.masses_string_set){ free(preferences.masses_string); }
-                preferences.masses_string = optarg;
-                ++preferences.masses_string_set;
+                if(preferences->masses_string_set){ free(preferences->masses_string); }
+                preferences->masses_string = optarg;
+                ++preferences->masses_string_set;
                 break;
 
             case 'i':
             // copy optarg to string and ensure zero termination
-                if(preferences.input_file_set){ free(preferences.input_file); }
-                preferences.input_file = optarg;
-                ++preferences.input_file_set;
+                if(preferences->input_file_set){ free(preferences->input_file); }
+                preferences->input_file = optarg;
+                ++preferences->input_file_set;
                 break;
 
             case 'e':
             // copy optarg to string and ensure zero termination
-                if(preferences.ext_dip_file){ free(preferences.ext_dip_file); }
-                preferences.ext_dip_file = optarg;
-                ++preferences.ext_dip_file_set;
-                preferences.dipole = 1;
+                if(preferences->ext_dip_file){ free(preferences->ext_dip_file); }
+                preferences->ext_dip_file = optarg;
+                ++preferences->ext_dip_file_set;
+                preferences->dipole = 1;
                 break;
 
             case 'c':
             // copy optarg to string and ensure zero termination
-                if(preferences.coriolis_file_set){ free(preferences.coriolis_file); }
-                preferences.coriolis_file = optarg;
-                ++preferences.coriolis_file_set;
+                if(preferences->coriolis_file_set){ free(preferences->coriolis_file); }
+                preferences->coriolis_file = optarg;
+                ++preferences->coriolis_file_set;
                 break;
 
             case 'o':
             // copy optarg to string and ensure zero termination
-                if(preferences.output_file_set){ free(preferences.output_file); }
-                preferences.output_file = optarg;
-                ++preferences.output_file_set;
+                if(preferences->output_file_set){ free(preferences->output_file); }
+                preferences->output_file = optarg;
+                ++preferences->output_file_set;
                 break;
 
 
         }
     }
-
-// return new settings struct "preferences"
-    return preferences;
 }

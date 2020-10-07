@@ -1,14 +1,13 @@
 
 #include <stdio.h>
 
-#include "typedefinitions.h"
 #include "constants.h"
 
 // provided prototypes
-int TextOut_Frequencies(FILE* fd, settings prefs, int n_out, double* E);
+int TextOut_Frequencies(FILE* fd, double ekin_factor, int n_out, double* E);
  
 // Output eigenvalues and calculate Frequencies
-int TextOut_Frequencies(FILE* fd, settings prefs, int n_out, double* E){
+int TextOut_Frequencies(FILE* fd, double ekin_factor, int n_out, double* E){
 
     int i, j;
     const double kJpermolToWavenumber = 10.0 / (avogadro*planck*lightspeed); // cm^-1 / (kJ/mol)
@@ -28,7 +27,7 @@ int TextOut_Frequencies(FILE* fd, settings prefs, int n_out, double* E){
         fprintf(fd, "\n# %3d", i);
 
         for(j = 0; j < i; j++){
-            fprintf(fd, "  % 12.5e", (E[i] - E[j]) * kJpermolToWavenumber / prefs.ekin_factor);
+            fprintf(fd, "  % 12.5e", (E[i] - E[j]) * kJpermolToWavenumber / ekin_factor);
         }
     }
     fprintf(fd, "\n#\n#");

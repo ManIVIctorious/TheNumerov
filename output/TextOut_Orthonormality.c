@@ -1,17 +1,16 @@
  
 #include <stdio.h>
-#include "typedefinitions.h"
 
 // Dependencies
 double Integrate(int dimension, int* nq, double dx, double* integrand);
 
 // provided prototypes
-int TextOut_Orthonormality(FILE* fd, settings prefs, int n_out, int n_points, int* nq, double* integrand, double dq, double* X);
+int TextOut_Orthonormality(FILE* fd, int dimensionality, int n_out, int n_points, int* nq, double* integrand, double dq, double* X);
 
 
 // check for ortho-normality of evaluated wave functions:
 //  calculate int Psi_i*Psi_j dτ (i.e. <X[i]|X[j]>)
-int TextOut_Orthonormality(FILE* fd, settings prefs, int n_out, int n_points, int* nq, double* integrand, double dq, double* X){
+int TextOut_Orthonormality(FILE* fd, int dimensionality, int n_out, int n_points, int* nq, double* integrand, double dq, double* X){
 
     int i, j, k;
 
@@ -28,7 +27,7 @@ int TextOut_Orthonormality(FILE* fd, settings prefs, int n_out, int n_points, in
             // generate integrand
                 integrand[k] = X[k + i*n_points]*X[k + j*n_points];
             }
-            fprintf(fd, "  % 12.5e", Integrate(prefs.dimension, nq, dq, integrand));
+            fprintf(fd, "  % 12.5e", Integrate(dimensionality, nq, dq, integrand));
         }
     }
     fprintf(fd, "\n#\n#");

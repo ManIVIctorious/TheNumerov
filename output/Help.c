@@ -166,10 +166,10 @@ int Help(){
 
     printf("\n"
            "\n\t-T, --no-spacing-check"
-           "\n\t    Disable the coordinate spacing check completely"
-           "\n\t    This option does not disable the check if the Coriolis files"
-           "\n\t    contain the same coordinates as the standard input file,"
-           "\n\t    so threshold (-t) may still be needed"
+           "\n\t    Disable the check for equi-distant coordinate spacing."
+           "\n\t    This option does not disable the coordinate comparison between"
+           "\n\t    different input files. In this case setting the threshold"
+           "\n\t    (-t argument) to a sufficiently high value could be required."
            "\n\t    Keyword:\tCheck_Spacing"
            "\n\t    Default:\t%s", defaults.check_spacing ? "false" : "true"
     );

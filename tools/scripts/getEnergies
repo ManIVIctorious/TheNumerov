@@ -204,7 +204,7 @@ function ExtractData {
 
 
 # determine final output file name
-    sizes="$(sed "s/\\t/x/g; s/^\s*[Nn]x//" <<< $dimension_line)"
+    sizes="$(sed 's/\\t/x/g; s/^\s*[Nn]x//' <<< $dimension_line)"
     if [ $dimension -eq 1 ]; then sizes="x${sizes}"; fi
 
     OutputFile="${OutputDir}/${OutputPrefix}_${sizes}_energies.dat"

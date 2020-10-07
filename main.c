@@ -10,8 +10,8 @@
 // input functions
 //  settings input
 settings SetDefaultSettings();
-settings GetSettingsControlFile(char* inputfile, settings defaults);
-settings GetSettingsGetopt(settings defaults, int argc, char** argv);
+void GetSettingsControlFile(char* inputfile,  settings *defaults);
+void GetSettingsGetopt(int argc, char** argv, settings *defaults);
 //  data input
 int InputFunction(char* inputfile, double** *q, int* nq, double* *v, double** *mu, int dimension, char potential_true, char dipole_true);
 int InputCoriolisCoefficients(char* inputfile, double** *q, double** zeta, double*** *mu, int dimension);
@@ -25,42 +25,33 @@ double Integrate(int dimension, int* nq, double dx, double* integrand);
 
 // output functions
 int Help();
-int OutputSettings(FILE* fd, settings preferences);
-int    TextOut_Frequencies(FILE* fd, settings prefs, int n_out, double* E);
-int TextOut_Orthonormality(FILE* fd, settings prefs, int n_out, int n_points, int* nq, double* integrand, double dq, double* X);
-int      TextOut_Potential(FILE* fd, settings prefs, int n_out, int n_points, int* nq, double* integrand, double dq, double* X, double* v);
+int OutputSettings(FILE* fd, settings *preferences);
+int    TextOut_Frequencies(FILE* fd, double ekin_factor, int n_out, double* E);
+int TextOut_Orthonormality(FILE* fd, int dimensionality, int n_out, int n_points, int* nq, double* integrand, double dq, double* X);
+int      TextOut_Potential(FILE* fd, int dimensionality, int n_out, int n_points, int* nq, double* integrand, double dq, double* X, double* v);
 int       TextOut_EKinetic(FILE* fd, settings prefs, int n_out, int n_points, int* nq, double* integrand, double dq, double* X, double* stencil, double ekin_param);
 int         TextOut_Dipole(FILE* fd, settings prefs, int n_out, int n_points, int* nq, double* integrand, double dq, double* E, double* X, double** dip);
-int   TextOut_Eigenvectors(FILE* fd, settings prefs, int n_out, int n_points, int* nq, double** q, double* v, double*** mu, double* X, double** dip);
+int   TextOut_Eigenvectors(FILE* fd, settings *prefs, int n_out, int n_points, int* nq, double** q, double* v, double*** mu, double* X, double** dip);
 
 
 int main(int argc, char* argv[]){
 
-    int i, j, k, l, control;
-
-// check for help tag
-    if(argc == 1){ Help(); exit(EXIT_SUCCESS); }
-    for(i = 1; i < argc; ++i){
-        if(strncmp(argv[i], "-h", 2) == 0 || strncmp(argv[i], "--help", 6) == 0){
-            Help();
-            exit(EXIT_SUCCESS);
-        }
-    }
+    int i, j, k, l, m, control;
 
 // get preferences out of command line flags, control file and defaults struct:
-//  first set prefs to defaults
-//  then search in **argv for the "-C" flag
-//  if it exists pass the following argument to the GetSettingsControlFile() function
+//  1. Initialize struct "prefs" with the default values
+//  2. Parse **argv for the literal string -C or --control-file
+//  3. If found pass the following argument to the GetSettingsControlFile() function updating prefs
+//  4. Call GetSettingsGetopt() function
+// This allows to set all settings in a control file (passed by the -C parameter)
+// and afterwards overwrite all settings with the corresponding command line flags
     settings prefs = SetDefaultSettings();
     for(i = 1; i < (argc-1); ++i){
         if(strncmp(argv[i], "-C", 2) == 0 || strncmp(argv[i], "--control-file", 14) == 0){
-            prefs = GetSettingsControlFile(argv[i+1], prefs);
+            GetSettingsControlFile(argv[i+1], &prefs);
         }
     }
-//  afterwards use the new settings struct prefs as an input for GetSettingsGetopt()
-//  This allows to set all settings in a control file (passed by the -C parameter)
-//  and afterwards overwrite all settings with the corresponding command line flags
-    prefs = GetSettingsGetopt(prefs, argc, argv);
+    GetSettingsGetopt(argc, argv, &prefs);
 
 
 //------------------------------------------------------------------------------------------------------------
@@ -79,34 +70,6 @@ int main(int argc, char* argv[]){
     exit(EXIT_FAILURE);
 #endif
 #endif
-
-
-//------------------------------------------------------------------------------------------------------------
-//   Declaration  Declaration  Declaration  Declaration  Declaration  Declaration  Declaration  Declaration
-//------------------------------------------------------------------------------------------------------------
-// Input
-//  standard file
-    int n_points  = 0;              // total number of entries per dimension
-    int     * nq  = NULL;           // number of unique entries per dimension
-    double ** q   = NULL;           // coordinate entries of all dimensions
-    double  * v   = NULL;           // potential entries for each coordinate
-    double ** dip = NULL;           // dipole moment for each coordinate
-//  Coriolis coefficients
-    double **  zeta       = NULL;   // Coriolis coefficients for all D*(D-1)/2 mode combinations
-    double *** mu         = NULL;   // 3*3 "reciprocal moment of inertia tensor" for all coordinate entries
-
-    double dq = 0;                  // delta q after coordinate spacing check
-    double v_min;                   // minimum value of potential
-
-// kinetic energy parameter:    [ekin_param] = kJ/mol / (mol/g/angstrom^2)
-//  - hbar^2/2 * 10^20          * 1000 * avogadro^2 / 1000 = -10^20 * hbar^2/2 * avogadro^2
-//    J kg m^2 * angstrom^2/m^2 * g/kg * (1/mol)^2  / kJ/J =  kJ/mol * g * angstrom^2 / mol
-    double ekin_param = -1.0E20 * avogadro*avogadro * planck*planck/(8.0*M_PI*M_PI);
-
-    int element;
-    int jump;           // needed to respect coordinate jumps between dimensions
-    long long int n_out = -1;
-    FILE * fd = NULL;
 
 
 //------------------------------------------------------------------------------------------------------------
@@ -140,7 +103,7 @@ int main(int argc, char* argv[]){
             if(token){
 
                 prefs.masses[i] = strtod(token, &endptr);
-                if(errno != 0){ perror("strtod()"); exit(errno); }
+                if(errno){ perror("strtod()"); exit(errno); }
                 if(endptr == token){
                     fprintf(stderr,
                         "\n (-) Error: No digits were found in masses string"
@@ -159,9 +122,9 @@ int main(int argc, char* argv[]){
 
 
 // output settings for verification purpose
-    fd = fopen(prefs.output_file, "w");
+    FILE * fd = fopen(prefs.output_file, "w");
     if(fd == NULL){ perror(prefs.output_file); exit(errno); }
-    OutputSettings(fd, prefs);
+    OutputSettings(fd, &prefs);
     fclose(fd); fd = NULL;
 
 
@@ -175,32 +138,32 @@ int main(int argc, char* argv[]){
 
 // Input primary file
 //------------------------------------------------------------------------------------------------------------
-// disable reading dipole file from primary input file when
-//  external dipole file is set to be used
+// disable reading dipole file from primary input file when external dipole file is set to be used
     if(prefs.ext_dip_file_set){ prefs.dipole = 0; }
 
 // initialize arrays:
-//  2D array q[dimension][entries] containing the coordinates of all dimensions
-    q = malloc(prefs.dimension * sizeof(double*));
+//  2D array double q[dimension][entries] containing the coordinates of all dimensions
+    double ** q = malloc(prefs.dimension * sizeof(double*));
     if(q == NULL){ perror("q"); exit(errno); }
     for(i = 0; i < prefs.dimension; ++i){ q[i] = NULL; }
 
-//  1D array nq[dimension] containing the number of points per dimension
-    nq = calloc(prefs.dimension, sizeof(int));
+//  1D array int nq[dimension] containing the number of points for each dimension
+    int * nq = calloc(prefs.dimension, sizeof(int));
     if(nq == NULL){ perror("nq"); exit(errno); }
 
-//  1D array v[entries] containing the potential values
-    v = NULL;
+//  1D array double v[entries] containing the potential energy values
+    double * v = NULL;
 
-//  2D array dip[3][entries] containing the dipole moment's {x,y,z}-components for all coordinates
+//  2D array double dip[3][entries] containing the dipole moment's {x,y,z}-components for all coordinates
+    double ** dip = NULL;
     if(prefs.dipole){
         dip = malloc(3 * sizeof(double*));
         if(dip == NULL){ perror("dip"); exit(errno); }
         for(i = 0; i < 3; ++i){ dip[i] = NULL; }
     }
 
-// actual file input
-    n_points = InputFunction(prefs.input_file, &q, nq, &v, &dip, prefs.dimension, 1, prefs.dipole);
+// actual file input, the return value is the total number of valid entries in the input file
+    int n_points = InputFunction(prefs.input_file, &q, nq, &v, &dip, prefs.dimension, 1, prefs.dipole);
 
 // check if the "N nq[0] ... nq[dimension-1]" line in input file matches the number of data points
     for(i = 0, control = 1; i < prefs.dimension; ++i){ control *= nq[i]; }
@@ -217,12 +180,12 @@ int main(int argc, char* argv[]){
 //------------------------------------------------------------------------------------------------------------
     if(prefs.ext_dip_file_set){
     // initialize arrays:
-    //  2D array q_dip[D][entries] analogous to q
+    //  2D array double q_dip[D][entries] analogous to q
         double ** q_dip = malloc(prefs.dimension * sizeof(double*));
         if(q_dip == NULL){ perror("q_dip"); exit(errno); }
         for(i = 0; i < prefs.dimension; ++i){ q_dip[i] = NULL; }
 
-    //  2D array dip[3][entries] containing the dipole moment's {x,y,z}-components for all coordinates
+    //  2D array double dip[3][entries] containing the dipole moment's {x,y,z}-components for all coordinates
         dip = malloc(3 * sizeof(double*));
         if(dip == NULL){ perror("dip"); exit(errno); }
         for(i = 0; i < 3; ++i){ dip[i] = NULL; }
@@ -230,7 +193,7 @@ int main(int argc, char* argv[]){
     // read file
         control = InputFunction(prefs.ext_dip_file, &q_dip, NULL, NULL, &dip, prefs.dimension, 0, 1);
 
-    // for every entry in dipole input file there must be exact one in the primary input file
+    // for every entry in dipole input file there must be exactly one in the primary input file
         if(control != n_points){
             fprintf(stderr,
                 "\n (-) Error reading data from input-file: \"%s\""
@@ -246,7 +209,7 @@ int main(int argc, char* argv[]){
             for(j = 0; j < prefs.dimension; ++j){
                 if( (q[j][i] - q_dip[j][i])*(q[j][i] - q_dip[j][i]) > prefs.threshold*prefs.threshold ){
                     fprintf(stderr,
-                        "\n (-) Error in Coriolis input-file: \"%s\", entry no %d."
+                        "\n (-) Error in external dipole input-file: \"%s\", entry no %d."
                         "\n     The coordinates do not match the ones in \"%s\"."
                         "\n     Aborting...\n\n"
                         , prefs.ext_dip_file, i, prefs.input_file
@@ -269,23 +232,25 @@ int main(int argc, char* argv[]){
 
 // Input Coriolis coefficients file
 //------------------------------------------------------------------------------------------------------------
+    double **  zeta = NULL;   // Coriolis coefficients for all D*(D-1)/2 mode combinations
+    double *** mu   = NULL;   // 3*3 "reciprocal moment of inertia tensor" for all coordinate entries
+
     if(prefs.coriolis_file_set){
     // initialize arrays:
-    //  2D array q_coriolis[dimension][entries] analogue to q
+    //  2D array double q_coriolis[dimension][entries] analogue to q
         double **  q_coriolis = malloc(prefs.dimension * sizeof(double*));
         if(q_coriolis == NULL){ perror("q_coriolis"); exit(errno); }
         for(i = 0; i < prefs.dimension; ++i){ q_coriolis[i] = NULL; }
 
-    //  2D array zeta[3][(D*(D-1))/2] containing the Coriolis coefficients in {x,y,z}-direction
+    //  2D array double zeta[3][(D*(D-1))/2] containing the Coriolis coefficients in {x,y,z}-direction
         zeta = malloc(3 * sizeof(double*));
         if(zeta == NULL){ perror("zeta"); exit(errno); }
-
         for(i = 0; i < 3; ++i){
             zeta[i] = calloc((prefs.dimension*(prefs.dimension - 1))/2, sizeof(double));
             if(zeta[i] == NULL){ perror("zeta[i]"); exit(errno); }
         }
 
-    //  3D array mu[3][3][entries] containing the 3*3 "inverse moment of inertia tensor" for all coordinates
+    //  3D array double mu[3][3][entries] containing the 3*3 "inverse moment of inertia tensor" for each configuration
         mu = malloc(3 * sizeof(double**));
         if(mu == NULL){ perror("mu"); exit(errno); }
         for(i = 0; i < 3; ++i){
@@ -297,7 +262,7 @@ int main(int argc, char* argv[]){
     // actual file input
         control = InputCoriolisCoefficients(prefs.coriolis_file, &q_coriolis, zeta, &mu, prefs.dimension);
 
-    // for every entry in Coriolis input file there must be exact one in the input file
+    // for every entry in Coriolis input file there must be exactly one in the input file
         if(control != n_points){
             fprintf(stderr,
                 "\n (-) Error reading data from input-file: \"%s\""
@@ -346,9 +311,13 @@ int main(int argc, char* argv[]){
     }
 
 // perform spacing check
+    double dq = 0;
     if(prefs.check_spacing){
         dq = CheckCoordinateSpacing(q, nq, prefs.threshold, prefs.dimension);
-    }else{ dq = q[prefs.dimension-1][1] - q[prefs.dimension-1][0]; }
+    }else{
+    // set default value if no spacing check is performed
+        dq = q[prefs.dimension-1][1] - q[prefs.dimension-1][0];
+    }
 
 
 //------------------------------------------------------------------------------------------------------------
@@ -401,14 +370,14 @@ int main(int argc, char* argv[]){
         // mu is a symmetric 3 times 3 matrix, so an interpolation of the upper or
         //  lower triangle should be identical to a full interpolation
             control = MetaInterpolation(&(mu[0][0]), nq, dq, prefs.dimension, prefs.n_spline);
-            element = MetaInterpolation(&(mu[0][1]), nq, dq, prefs.dimension, prefs.n_spline);
-            i       = MetaInterpolation(&(mu[0][2]), nq, dq, prefs.dimension, prefs.n_spline);
-            j       = MetaInterpolation(&(mu[1][1]), nq, dq, prefs.dimension, prefs.n_spline);
-            k       = MetaInterpolation(&(mu[1][2]), nq, dq, prefs.dimension, prefs.n_spline);
-            l       = MetaInterpolation(&(mu[2][2]), nq, dq, prefs.dimension, prefs.n_spline);
+               i    = MetaInterpolation(&(mu[0][1]), nq, dq, prefs.dimension, prefs.n_spline);
+               j    = MetaInterpolation(&(mu[0][2]), nq, dq, prefs.dimension, prefs.n_spline);
+               k    = MetaInterpolation(&(mu[1][1]), nq, dq, prefs.dimension, prefs.n_spline);
+               l    = MetaInterpolation(&(mu[1][2]), nq, dq, prefs.dimension, prefs.n_spline);
+               m    = MetaInterpolation(&(mu[2][2]), nq, dq, prefs.dimension, prefs.n_spline);
 
         // check return values
-            if(control != n_points || element != n_points || i != n_points || j != n_points || k != n_points || l != n_points){
+            if(control != n_points || i != n_points || j != n_points || k != n_points || l != n_points || m != n_points){
                 fprintf(stderr,
                     "\n (-) Error in execution of interpolation function."
                     "\n     Aborting...\n\n"
@@ -432,7 +401,8 @@ int main(int argc, char* argv[]){
 
 
     // set new values for all q entries
-        for(i = prefs.dimension-1, jump = 1; i >= 0; --i){
+        int jump = 1;
+        for(i = (prefs.dimension - 1); i >= 0; --i){
             for(j = 0; j < n_points/jump/nq[i]; ++j){
                 for(k = 0; k < nq[i]; ++k){
                     for(l = 0; l < jump; ++l){
@@ -482,14 +452,21 @@ int main(int argc, char* argv[]){
     }
 
 // shift potential minimum to zero
-    for(i = 1, v_min = v[0]; i < n_points; ++i){
+    double v_min = v[0];
+    for(i = 1; i < n_points; ++i){
         if(v[i] < v_min){ v_min = v[i]; }
     }
     for(i = 0; i < n_points; ++i){
         v[i] -= v_min;
     }
 
-// convert kinetic energy parameter (being hbar^2 / (2 * mass)) to output unit of energy
+
+// kinetic energy parameter:    [ekin_param] = kJ/mol / (mol/g/angstrom^2)
+//  - hbar^2/2 * 10^20          * 1000 * avogadro^2 / 1000 = -10^20 * hbar^2/2 * avogadro^2
+//    J kg m^2 * angstrom^2/m^2 * g/kg * (1/mol)^2  / kJ/J =  kJ/mol * g / mol * angstrom^2
+    double ekin_param = -1.0E20 * avogadro*avogadro * planck*planck/(8.0*M_PI*M_PI);
+
+// convert kinetic energy parameter to output unit of energy
 //  ekin_param          is given in     kJ/mol / (mol/g/angstrom^2)
 //  dq                  is given in     angstrom * sqrt(g/mol)
 //  prefs.ekin_factor   is given in     (output unit of energy) / (kJ/mol)
@@ -510,18 +487,27 @@ int main(int argc, char* argv[]){
 //------------------------------------------------------------------------------------------------------------
 //   eigen-value solver   eigen-value solver   eigen-value solver   eigen-value solver   eigen-value solver
 //------------------------------------------------------------------------------------------------------------
-    double * E         = NULL;  // eigenvalues
-    double * X         = NULL;  // eigenvectors
-    double * integrand = NULL;
-    double   integral;
+    double * E          = NULL;  // eigenvalues
+    double * X          = NULL;  // eigenvectors
+    long long int n_out =   -1;  // Number of output eigenstates
 
 // Solve the matrix eigenvalue problem
 //  MetaEigensolver() forwards all arguments to the Solver<EigensolverName>() function.
 //  This function calls an adequate matrix fill routine and then solves the matrix problem
     n_out = MetaEigensolver(prefs, nq, v, ekin_param, stencil, &E, &X, q, dq, mu, zeta);
 
+// The x,y,z - Coriolis coefficients Zeta are not required anymore
+    if(prefs.coriolis_file_set){
+        free(zeta[0]); zeta[0] = NULL;
+        free(zeta[1]); zeta[1] = NULL;
+        free(zeta[2]); zeta[2] = NULL;
+        free(zeta);    zeta    = NULL;
+    }
+
+
 // Normalize eigen vectors
-    integrand = malloc(n_points * sizeof(double));
+    double   integral;
+    double * integrand = malloc(n_points * sizeof(double));
     if(integrand == NULL){ perror("Integrand"); exit(errno); }
 
     for(i = 0; i < n_out; ++i){
@@ -540,84 +526,85 @@ int main(int argc, char* argv[]){
 //------------------------------------------------------------------------------------------------------------
 //   Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output
 //------------------------------------------------------------------------------------------------------------
+// open output file
     fd = fopen(prefs.output_file, "a");
     if(fd == NULL){ perror(prefs.output_file); exit(errno); }
 
 // output eigenvalues and frequencies (in cm^-1)
-    TextOut_Frequencies(fd, prefs, n_out, E);
-    fclose(fd); fd = NULL;
+    TextOut_Frequencies(fd, prefs.ekin_factor, n_out, E);
 
 // Analyze section
 //------------------------------------------------------------------------------------------------------------
     if(prefs.analyze){
-        fd = fopen(prefs.output_file, "a");
-        if(fd == NULL){ perror(prefs.output_file); exit(errno); }
 
     // output ortho-normality check (i.e. <X[i]|X[j]>)
-        TextOut_Orthonormality(fd, prefs, n_out, n_points, nq, integrand, dq, X);
+        TextOut_Orthonormality(fd, prefs.dimension, n_out, n_points, nq, integrand, dq, X);
 
     // output potential energy (i.e. <X[i]|V|X[j]>)
-        TextOut_Potential(fd, prefs, n_out, n_points, nq, integrand, dq, X, v);
+        TextOut_Potential(fd, prefs.dimension, n_out, n_points, nq, integrand, dq, X, v);
 
     // output kinetic energy (i.e. <X[i]|ħ² * d²/dx²|X[j]>)
         if(prefs.dimension == 2 && !prefs.coriolis_file_set){
             TextOut_EKinetic(fd, prefs, n_out, n_points, nq, integrand, dq, X, stencil, ekin_param);
         }
 
-        fclose(fd); fd = NULL;
     }
 // last use of stencil in kinetic energy part
-    free(stencil);     stencil = NULL;
+    free(stencil); stencil = NULL;
 
 
 // dipole section
 //------------------------------------------------------------------------------------------------------------
     if(prefs.dipole){
-        fd = fopen(prefs.output_file, "a");
-        if(fd == NULL){ perror(prefs.output_file); exit(errno); }
-
     // Intensities and oscillator strength
         TextOut_Dipole(fd, prefs, n_out, n_points, nq, integrand, dq, E, X, dip);
-        fclose(fd); fd = NULL;
     }
-// free memory
+// last use of integrand in dipole moment part
     free(integrand); integrand = NULL;
 
 
 // Coordinate dependent
 //------------------------------------------------------------------------------------------------------------
-    fd = fopen(prefs.output_file, "a");
-    if(fd == NULL){ perror(prefs.output_file); exit(errno); }
-
 //  output coordinates, potential, dipole moments and wave functions
-    TextOut_Eigenvectors(fd, prefs, n_out, n_points, nq, q, v, mu, X, dip);
+    TextOut_Eigenvectors(fd, &prefs, n_out, n_points, nq, q, v, mu, X, dip);
+
+// close output file
     fclose(fd); fd = NULL;
 
 
 //------------------------------------------------------------------------------------------------------------
 //  free memory    free memory    free memory    free memory    free memory    free memory    free memory
 //------------------------------------------------------------------------------------------------------------
+// coordinates q and dimensions nq
     for(i = 0; i < prefs.dimension; ++i){
         free(q[i]); q[i] = NULL;
     }
-    free(q);  q  = NULL;
+    free( q);  q = NULL;
     free(nq); nq = NULL;
+
+// potential v, eigenvectors X and eigenvalues E
     free(v);  v  = NULL;
     free(X);  X  = NULL;
     free(E);  E  = NULL;
+
+// dipole moments in x,y and z-direction
     if(prefs.dipole){
         free(dip[0]); dip[0] = NULL;
         free(dip[1]); dip[1] = NULL;
         free(dip[2]); dip[2] = NULL;
         free(dip);    dip    = NULL;
     }
+
+// mu (inverse moment of inertia 3x3 tensor):
     if(prefs.coriolis_file_set){
-    // free mu: the interpolation routine already frees the lower triangle part and points it to the upper
-    //          one. To prevent a double free a conditional free of the lower triangle has to be used.
-        if(!prefs.n_spline){
-            free(mu[1][0]); mu[1][0] = NULL;
-            free(mu[2][0]); mu[2][0] = NULL;
-            free(mu[2][1]); mu[2][1] = NULL;
+    // If interpolation is active the lower triangle is already freed.
+    //  lower and upper triangle point to the same memory address causing a double call to free()
+    //  according to free() specification: "If ptr is NULL, no operation is performed"
+    //  => pointing the redundant pointers to NULL is obligatory to prevent undefined behaviour
+        if(prefs.n_spline){
+            mu[1][0] = NULL;
+            mu[2][0] = NULL;
+            mu[2][1] = NULL;
         }
         for(i = 0; i < 3; ++i){
             for(j = i; j < 3; ++j){
@@ -626,11 +613,6 @@ int main(int argc, char* argv[]){
             free(mu[i]); mu[i] = NULL;
         }
         free(mu); mu = NULL;
-    // free zeta
-        free(zeta[0]); zeta[0] = NULL;
-        free(zeta[1]); zeta[1] = NULL;
-        free(zeta[2]); zeta[2] = NULL;
-        free(zeta);    zeta    = NULL;
     }
 
     return 0;

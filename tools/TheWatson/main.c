@@ -165,7 +165,7 @@ int main(int argc, char **argv){
         -> the coefficients of a mode with itself is zero
                 f(1,1) = f(2,2) = 0
         -> the coefficients of mode 1 with mode 2 have the same absolute value
-            as the ones of mode 2 with mode 1 but with inverted signum:
+            as the ones of mode 2 with mode 1 but with inverted parity:
                 f(1,2) = -f(2,1)
 
     Leading to the conclusion, that only the upper triangle has to be calculated

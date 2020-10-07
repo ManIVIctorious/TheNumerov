@@ -8,10 +8,10 @@
 #include "controlfile.h"
 
 // Provided prototypes
-settings GetSettingsControlFile(char* inputfile, settings preferences);
+void GetSettingsControlFile(char* inputfile, settings* preferences);
 
 
-settings GetSettingsControlFile(char* inputfile, settings preferences){
+void GetSettingsControlFile(char* inputfile, settings* preferences){
 
     int i;
     size_t wordlength;
@@ -70,75 +70,75 @@ settings GetSettingsControlFile(char* inputfile, settings preferences){
 
         // Boolian values
             case 'a':
-                preferences.analyze = atoi(optarg);
-                if(preferences.analyze == 0){
-                    if(strncasecmp("true", optarg, 4) == 0) { preferences.analyze = 1; }
-                    else                                    { preferences.analyze = 0; }
+                preferences->analyze = atoi(optarg);
+                if(preferences->analyze == 0){
+                    if(strncasecmp("true", optarg, 4) == 0) { preferences->analyze = 1; }
+                    else                                    { preferences->analyze = 0; }
                 }
                 break;
 
             case 'd':
-                preferences.dipole = atoi(optarg);
-                if(preferences.dipole == 0){
-                    if(strncasecmp("true", optarg, 4) == 0) { preferences.dipole = 1; }
-                    else                                    { preferences.dipole = 0; }
+                preferences->dipole = atoi(optarg);
+                if(preferences->dipole == 0){
+                    if(strncasecmp("true", optarg, 4) == 0) { preferences->dipole = 1; }
+                    else                                    { preferences->dipole = 0; }
                 }
                 break;
 
             case 'T':
-                preferences.check_spacing = atoi(optarg);
-                if(preferences.check_spacing == 0){
-                    if(strncasecmp("true", optarg, 4) == 0) { preferences.check_spacing = 1; }
-                    else                                    { preferences.check_spacing = 0; }
+                preferences->check_spacing = atoi(optarg);
+                if(preferences->check_spacing == 0){
+                    if(strncasecmp("true", optarg, 4) == 0) { preferences->check_spacing = 1; }
+                    else                                    { preferences->check_spacing = 0; }
                 }
                 break;
 
 
         // integer values
             case 'D':
-                preferences.dimension   = atoi(optarg);
+                preferences->dimension   = atoi(optarg);
                 break;
 
             case 'n':
-                preferences.n_stencil   = atoi(optarg);
+                preferences->n_stencil   = atoi(optarg);
                 break;
 
             case 's':
-                preferences.n_spline    = atoi(optarg);
+                preferences->n_spline    = atoi(optarg);
                 break;
 
             case 'N':
-                preferences.n_out       = atoi(optarg);
+                preferences->n_out       = atoi(optarg);
                 break;
 
 
         // double values
             case 'k':
-                preferences.ekin_factor = atof(optarg);
+                preferences->ekin_factor = atof(optarg);
                 break;
 
             case 'v':
-                preferences.epot_factor = atof(optarg);
+                preferences->epot_factor = atof(optarg);
                 break;
 
             case 'f':
-                preferences.DipToAsm    = atof(optarg);
+                preferences->DipToAsm    = atof(optarg);
                 break;
 
             case 'M':
-                preferences.mu_factor   = atof(optarg);
+                preferences->mu_factor   = atof(optarg);
                 break;
 
             case 't':
-                preferences.threshold   = atof(optarg);
+                preferences->threshold   = atof(optarg);
                 break;
 
             case 'l':
-                preferences.e_min       = atof(optarg);
+                preferences->e_min       = atof(optarg);
                 break;
 
             case 'u':
-                preferences.e_max       = atof(optarg);
+                preferences->e_max       = atof(optarg);
                 break;
 
 
@@ -146,8 +146,8 @@ settings GetSettingsControlFile(char* inputfile, settings preferences){
             case 'm':
             // memory allocation
                 if( (wordlength = strlen(optarg)) < _MaxSettingsStringLength_){
-                    preferences.masses_string = malloc( (wordlength+1) * sizeof(char) );
-                    if(preferences.masses_string == NULL){ perror("preferences.masses_string"); exit(EXIT_FAILURE); }
+                    preferences->masses_string = malloc( (wordlength+1) * sizeof(char) );
+                    if(preferences->masses_string == NULL){ perror("preferences->masses_string"); exit(EXIT_FAILURE); }
                 }else{
                     fprintf(stderr, "\n (-) Error: Keyword length for \"%s\" too long"
                                     "\n     Aborting...\n\n", keywordlist [i].keyword
@@ -155,16 +155,16 @@ settings GetSettingsControlFile(char* inputfile, settings preferences){
                     exit(EXIT_FAILURE);
                 }
             // copy optarg to string and ensure zero termination
-                strncpy(preferences.masses_string, optarg, wordlength);
-                preferences.masses_string[wordlength] = '\0';
-                ++preferences.masses_string_set;
+                strncpy(preferences->masses_string, optarg, wordlength);
+                preferences->masses_string[wordlength] = '\0';
+                ++preferences->masses_string_set;
                 break;
 
             case 'i':
             // memory allocation
                 if( (wordlength = strlen(optarg)) < _MaxSettingsStringLength_){
-                    preferences.input_file = malloc( (wordlength+1) * sizeof(char));
-                    if(preferences.input_file == NULL){ perror("preferences.input_file"); exit(EXIT_FAILURE); }
+                    preferences->input_file = malloc( (wordlength+1) * sizeof(char));
+                    if(preferences->input_file == NULL){ perror("preferences->input_file"); exit(EXIT_FAILURE); }
                 }else{
                     fprintf(stderr, "\n (-) Error: Keyword length for \"%s\" too long"
                                     "\n     Aborting...\n\n", keywordlist [i].keyword
@@ -172,16 +172,16 @@ settings GetSettingsControlFile(char* inputfile, settings preferences){
                     exit(EXIT_FAILURE);
                 }
             // copy optarg to string and ensure zero termination
-                strncpy(preferences.input_file, optarg, wordlength);
-                preferences.input_file[wordlength] = '\0';
-                ++preferences.input_file_set;
+                strncpy(preferences->input_file, optarg, wordlength);
+                preferences->input_file[wordlength] = '\0';
+                ++preferences->input_file_set;
                 break;
 
             case 'e':
             // memory allocation
                 if( (wordlength = strlen(optarg)) < _MaxSettingsStringLength_ ){
-                    preferences.ext_dip_file = malloc( (wordlength+1) * sizeof(char) );
-                    if(preferences.ext_dip_file == NULL){ perror("preferences.ext_dip_file"); exit(EXIT_FAILURE); }
+                    preferences->ext_dip_file = malloc( (wordlength+1) * sizeof(char) );
+                    if(preferences->ext_dip_file == NULL){ perror("preferences->ext_dip_file"); exit(EXIT_FAILURE); }
                 }else{
                     fprintf(stderr, "\n (-) Error: Keyword length for \"%s\" too long"
                                     "\n     Aborting...\n\n", keywordlist [i].keyword
@@ -189,16 +189,16 @@ settings GetSettingsControlFile(char* inputfile, settings preferences){
                     exit(EXIT_FAILURE);
                 }
             // copy optarg to string and ensure zero termination
-                strncpy(preferences.ext_dip_file, optarg, wordlength);
-                preferences.ext_dip_file[wordlength] = '\0';
-                ++preferences.ext_dip_file_set;
-                preferences.dipole = 1;
+                strncpy(preferences->ext_dip_file, optarg, wordlength);
+                preferences->ext_dip_file[wordlength] = '\0';
+                ++preferences->ext_dip_file_set;
+                preferences->dipole = 1;
                 break;
 
             case 'c':
                 if( (wordlength = strlen(optarg)) < _MaxSettingsStringLength_){
-                    preferences.coriolis_file = malloc( (wordlength+1) * sizeof(char));
-                    if(preferences.coriolis_file == NULL){ perror("preferences.coriolis_file"); exit(EXIT_FAILURE); }
+                    preferences->coriolis_file = malloc( (wordlength+1) * sizeof(char));
+                    if(preferences->coriolis_file == NULL){ perror("preferences->coriolis_file"); exit(EXIT_FAILURE); }
                 }else{
                     fprintf(stderr, "\n (-) Error: Keyword length for \"%s\" too long"
                                     "\n     Aborting...\n\n", keywordlist [i].keyword
@@ -206,15 +206,15 @@ settings GetSettingsControlFile(char* inputfile, settings preferences){
                     exit(EXIT_FAILURE);
                 }
             // copy optarg to string and ensure zero termination
-                strncpy(preferences.coriolis_file, optarg, wordlength);
-                preferences.coriolis_file[wordlength] = '\0';
-                ++preferences.coriolis_file_set;
+                strncpy(preferences->coriolis_file, optarg, wordlength);
+                preferences->coriolis_file[wordlength] = '\0';
+                ++preferences->coriolis_file_set;
                 break;
 
             case 'o':
                 if( (wordlength = strlen(optarg)) < _MaxSettingsStringLength_){
-                    preferences.output_file = malloc( (wordlength+1) * sizeof(char));
-                    if(preferences.output_file == NULL){ perror("preferences.output_file"); exit(EXIT_FAILURE); }
+                    preferences->output_file = malloc( (wordlength+1) * sizeof(char));
+                    if(preferences->output_file == NULL){ perror("preferences->output_file"); exit(EXIT_FAILURE); }
                 }else{
                     fprintf(stderr, "\n (-) Error: Keyword length for \"%s\" too long"
                                     "\n     Aborting...\n\n", keywordlist [i].keyword
@@ -222,22 +222,22 @@ settings GetSettingsControlFile(char* inputfile, settings preferences){
                     exit(EXIT_FAILURE);
                 }
             // copy optarg to string and ensure zero termination
-                strncpy(preferences.output_file, optarg, wordlength);
-                preferences.output_file[wordlength] = '\0';
-                ++preferences.output_file_set;
+                strncpy(preferences->output_file, optarg, wordlength);
+                preferences->output_file[wordlength] = '\0';
+                ++preferences->output_file_set;
                 break;
 
 
         // other
             case 'E':
-                preferences.Eigensolver = atoi(optarg);
-                if(preferences.Eigensolver == 0){
+                preferences->Eigensolver = atoi(optarg);
+                if(preferences->Eigensolver == 0){
 
                     if(strncasecmp(optarg, "Intel_MKL_FEAST", strlen("Intel_MKL_FEAST")) == 0){
-                        preferences.Eigensolver = 1;
+                        preferences->Eigensolver = 1;
                     }
                     else if(strncasecmp(optarg, "ARMADILLO_ARPACK", strlen("ARMADILLO_ARPACK")) == 0){
-                        preferences.Eigensolver = 2;
+                        preferences->Eigensolver = 2;
                     }
 
                 }
@@ -246,6 +246,4 @@ settings GetSettingsControlFile(char* inputfile, settings preferences){
         ++i;
     }
 
-// return new settings struct preferences
-    return preferences;
 }
