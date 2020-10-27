@@ -9,10 +9,10 @@
 #include <ctype.h>
 
 // provided prototypes
-int InputFunction(char* inputfile, double** *q, int* nq, double* *v, double** *mu, int dimension, char potential_true, char dipole_true);
+int InputDataFile(char* inputfile, double** *q, int* nq, double* *v, double** *mu, int dimension, char potential_true, char dipole_true);
 
 
-int InputFunction(char* inputfile, double** *q, int* nq, double* *v, double** *mu, int dimension, char potential_true, char dipole_true){
+int InputDataFile(char* inputfile, double** *q, int* nq, double* *v, double** *mu, int dimension, char potential_true, char dipole_true){
 
     int expected_column_count = dimension;
     if(potential_true){ expected_column_count += 1; }

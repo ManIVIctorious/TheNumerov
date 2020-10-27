@@ -95,12 +95,24 @@ $(EXE): $(TOTOBJ) $(EXEDIR) gitversion.o
 $(EXEDIR):
 	mkdir -p $(EXEDIR)
 
+# Create "do nothing" recipe to forcefully build objects
+# similar to .Phony, but also works if target is a file and exists
+.Phony: FORCE
+FORCE:
+
+
 # Allows to print out makefile variables, just type make print-VARIABLE
 #  it will return VARIABLE = value_of_VARIABLE
 print-%:
 	@echo $* = $($*)
 
+# Call ctags with corresponding exclude pattern
+.Phony: tags
+tags: FORCE
+	ctags --recurse --exclude="literature/*" --exclude="tools/*" --exclude="test/*" --exclude="stash/*"
+
 # Remove all generated binary files
+.Phony: clean
 clean:
 	rm -f $(TOTOBJ) gitversion.o gitversion.c $(EXE)
-	rmdir -p $(EXEDIR) 2>/dev/null
+	rmdir -p --ignore-fail-on-non-empty $(EXEDIR)
