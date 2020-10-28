@@ -38,10 +38,12 @@
 #ifndef _CONTROL_FILE_H
 #define _CONTROL_FILE_H
 
+// maximum line and key-value length of control file
 #define _MaxLineLength_ 2048
+#define _MaxKwLength_    512
 
 struct keywords {
-    const char * keyword;
+    char       * keyword;
     int          set;
     const int    identifier;
     char         value[_MaxLineLength_];

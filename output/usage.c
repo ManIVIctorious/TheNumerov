@@ -6,12 +6,12 @@
 #include "gitversion.h"
 
 // provided prototypes
-int Help();
+void usage(void);
 
 // dependencies
 settings SetDefaultSettings();
 
-int Help(){
+void usage(void){
 
     settings defaults = SetDefaultSettings();
 
@@ -233,5 +233,4 @@ int Help(){
 #endif
 
     printf("\n\n");
-    return 0;
 }

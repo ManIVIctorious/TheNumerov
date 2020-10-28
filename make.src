@@ -8,13 +8,15 @@
   SRC += nx1dInterpolation.c
   SRC += MetaEigensolver.c
   SRC += MetaInterpolation.c
-# settings
+## Input
   SRC += input/InputDataFile.c
   SRC += input/InputCoriolisCoefficients.c
   SRC += input/SetDefaultSettings.c
+  SRC += input/ConvertString.c
   SRC += input/GetSettingsControlFile.c
   SRC += input/ParseControlFile.c
   SRC += input/GetSettingsGetopt.c
+  SRC += input/ValidateSettings.c
 ## Dispatchers
  # stencils
   SRC += dispatchers/MetaGetStencil.c
@@ -29,8 +31,8 @@
   SRC += dispatchers/3D/integrate_3d.c
   SRC += dispatchers/4D/integrate_4d.c
 # output
-  SRC += output/Help.c
-  SRC += output/OutputSettings.c
+  SRC += output/usage.c
+  SRC += output/PrintSettings.c
   SRC += output/TextOut_Dipole.c
   SRC += output/TextOut_EKinetic.c
   SRC += output/TextOut_Eigenvectors.c

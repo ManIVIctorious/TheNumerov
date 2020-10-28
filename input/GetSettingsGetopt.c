@@ -6,11 +6,12 @@
 #include <getopt.h>
 #include <errno.h>
 
+#include "ConvertString.h"
 #include "typedefinitions.h"
 #include "gitversion.h"
 
 // Dependencies
-int Help();
+void usage(void);
 
 
 // provided prototypes
@@ -18,68 +19,67 @@ void GetSettingsGetopt(int argc, char** argv, settings* preferences);
 
 void GetSettingsGetopt(int argc, char** argv, settings* preferences){
 
-    int control = 0;
-    int * longindex = NULL;
+// optstring contains a list of all short option indices,
+//  indices followed by a colon are options requiring an argument.
+    const char * optstring = "a::c:d::e:f:hi:k:l:m:n:o:s:t:u:v:C:D:M:N:PT::V";
 
-//---------------------------------------------------------------------------------
-//  FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS   FLAGS
-//---------------------------------------------------------------------------------
-    // optstring contains a list of all short option indices,
-    //  indices followed by a colon are options requiring an argument.
-    const char         * optstring = "a::c:d::e:f:hi:k:l:m:n:o:s:t:u:v:C:D:M:N:PT::V";
+// create an array of option structs
+/* struct description
+ *{{{
+ *  const char * option string
+ *  int          has_arg (no_argument == 0, required_argument == 1, optional_argument == 2)
+ *  int        * flag    if !NULL : points to a variable set to the value given by val
+ *  int          val     return value if flat == NULL
+ *}}}*/
     const struct option longopts[] = {
-    //  *name:      option name,
-    //  has_arg:    if option requires argument,
-    //  *flag:      if set to NULL getopt_long() returns val,
-    //              else it returns 0 and flag points to a variable set to val
-    //  val:        value to return
-        {"help",                   no_argument, 0, 'h'},
-        {"version",                no_argument, 0, 'V'},
-        {"pipe",                   no_argument, 0, 'P'},
-    // Boolian values:
-        {"analyze",          optional_argument, 0, 'a'},
-        {"dipole",           optional_argument, 0, 'd'},
-        {"no-spacing-check", optional_argument, 0, 'T'},
+        {"help",                   no_argument, NULL, 'h'},
+        {"version",                no_argument, NULL, 'V'},
+        {"pipe",                   no_argument, NULL, 'P'},
+    // Boolean values:
+        {"analyze",          optional_argument, NULL, 'a'},
+        {"dipole",           optional_argument, NULL, 'd'},
+        {"no-spacing-check", optional_argument, NULL, 'T'},
     // integer values:
-        {"dimension",        required_argument, 0, 'D'},
-        {"n-stencil",        required_argument, 0, 'n'},
-        {"spline",           required_argument, 0, 's'},
-        {"n-out",            required_argument, 0, 'N'},
+        {"dimension",        required_argument, NULL, 'D'},
+        {"n-stencil",        required_argument, NULL, 'n'},
+        {"spline",           required_argument, NULL, 's'},
+        {"n-out",            required_argument, NULL, 'N'},
     // double values:
-        {"fkin",             required_argument, 0, 'k'},
-        {"fpot",             required_argument, 0, 'v'},
-        {"fdipole",          required_argument, 0, 'f'},
-        {"fmu",              required_argument, 0, 'M'},
-        {"dq-threshold",     required_argument, 0, 't'},
-        {"lower-bound",      required_argument, 0, 'l'},
-        {"upper-bound",      required_argument, 0, 'u'},
+        {"fkin",             required_argument, NULL, 'k'},
+        {"fpot",             required_argument, NULL, 'v'},
+        {"fdipole",          required_argument, NULL, 'f'},
+        {"fmu",              required_argument, NULL, 'M'},
+        {"dq-threshold",     required_argument, NULL, 't'},
+        {"lower-bound",      required_argument, NULL, 'l'},
+        {"upper-bound",      required_argument, NULL, 'u'},
     // string values:
-        {"masses",           required_argument, 0, 'm'},
-        {"input-file",       required_argument, 0, 'i'},
-        {"ext-dipole-file",  required_argument, 0, 'e'},
-        {"output-file",      required_argument, 0, 'o'},
-        {"coriolis-input",   required_argument, 0, 'c'},
+        {"masses",           required_argument, NULL, 'm'},
+        {"input-file",       required_argument, NULL, 'i'},
+        {"ext-dipole-file",  required_argument, NULL, 'e'},
+        {"output-file",      required_argument, NULL, 'o'},
+        {"coriolis-input",   required_argument, NULL, 'c'},
     // flags:
         {"mkl",                    no_argument, &preferences->Eigensolver, 1},
         {"armadillo",              no_argument, &preferences->Eigensolver, 2},
     // requires zero termination
-        { 0 , 0 , 0 , 0 }
+        { NULL , 0 , NULL , 0 }
     };
+
 
     optind = 1; // option index starting by 1, provided by <getopt.h>
     while(optind < argc){
 
     // control is the integer representation of the corresponding option, e.g. 'x' = 120
     //  control = -1 corresponds to the end of the options
-        control = getopt_long(argc, argv, optstring, longopts, longindex);
+        int control = getopt_long(argc, argv, optstring, longopts, NULL);
 
     // compare control with "val" from longopts to determine the desired action
         if(control == -1){ break; }
-        switch(control){
+        switch( control ){
 
-        // print help messages
+        // print usage
             case 'h':
-                Help();
+                usage();
                 exit(EXIT_SUCCESS);
 
         // print version information
@@ -94,126 +94,108 @@ void GetSettingsGetopt(int argc, char** argv, settings* preferences){
                 break;
 
 
-        // Boolian values
+        // Boolean values
             case 'a':
                 if(optarg == NULL){ preferences->analyze = 1; }
                 else{
-                    preferences->analyze     = atoi(optarg);
-                    if(preferences->analyze == 0){
-                        if(strncasecmp("true", optarg, 4) == 0) { preferences->analyze = 1; }
-                        else                                    { preferences->analyze = 0; }
-                    }
+                    preferences->analyze = (char)convertstring_to_bool(optarg, "Analyze", NULL);
                 }
                 break;
 
             case 'd':
                 if(optarg == NULL){ preferences->dipole = 1; }
                 else{
-                    preferences->dipole      = atoi(optarg);
-                    if(preferences->dipole == 0){
-                        if(strncasecmp("true", optarg, 4) == 0) { preferences->dipole = 1; }
-                        else                                    { preferences->dipole = 0; }
-                    }
+                    preferences->dipole = (char)convertstring_to_bool(optarg, "Dipole", NULL);
                 }
                 break;
 
             case 'T':
                 if(optarg == NULL){ preferences->check_spacing = 0; }
                 else{
-                    preferences->check_spacing = atoi(optarg);
-                    if(preferences->check_spacing == 0){
-                        if(strncasecmp("true", optarg, 4) == 0) { preferences->check_spacing = 0; }
-                        else                                    { preferences->check_spacing = 1; }
-                    }
+                    preferences->dipole = (char)convertstring_to_bool(optarg, "Spacing check", NULL);
                 }
                 break;
 
 
         // integer values
             case 'D':
-                preferences->dimension   = atoi(optarg);
+                preferences->dimension = (int)convertstring_to_long(optarg, "Dimension", NULL);
                 break;
 
             case 'n':
-                preferences->n_stencil   = atoi(optarg);
+                preferences->n_stencil = (int)convertstring_to_long(optarg, "Stencil size", NULL);
                 break;
 
             case 's':
-                preferences->n_spline    = atoi(optarg);
+                preferences->n_spline  = (int)convertstring_to_long(optarg, "Number of spline points", NULL);
                 break;
 
             case 'N':
-                preferences->n_out       = atoi(optarg);
+                preferences->n_out     = (int)convertstring_to_long(optarg, "Number of Eigenstates", NULL);
                 break;
 
 
         // double values
             case 'k':
-                preferences->ekin_factor = atof(optarg);
+                preferences->ekin_factor = convertstring_to_double(optarg, "ekin factor", NULL);
                 break;
 
             case 'v':
-                preferences->epot_factor = atof(optarg);
+                preferences->epot_factor = convertstring_to_double(optarg, "epot factor", NULL);
                 break;
 
             case 'f':
-                preferences->DipToAsm    = atof(optarg);
+                preferences->DipToAsm    = convertstring_to_double(optarg, "convert dip to Asm", NULL);
                 break;
 
             case 'M':
-                preferences->mu_factor   = atof(optarg);
+                preferences->mu_factor   = convertstring_to_double(optarg, "ERIT to kJ/mol", NULL);
                 break;
 
             case 't':
-                preferences->threshold   = atof(optarg);
+                preferences->threshold   = convertstring_to_double(optarg, "Threshold", NULL);
                 break;
 
             case 'l':
-                preferences->e_min       = atof(optarg);
+                preferences->e_min       = convertstring_to_double(optarg, "Minimum eigenvalue", NULL);
                 break;
 
             case 'u':
-                preferences->e_max       = atof(optarg);
+                preferences->e_max       = convertstring_to_double(optarg, "Maximum eigenvalue", NULL);
                 break;
 
 
         // string values
             case 'm':
-            // copy optarg to string and ensure zero termination
-                if(preferences->masses_string_set){ free(preferences->masses_string); }
+            // point to optarg
                 preferences->masses_string = optarg;
                 ++preferences->masses_string_set;
                 break;
 
             case 'i':
-            // copy optarg to string and ensure zero termination
-                if(preferences->input_file_set){ free(preferences->input_file); }
+            // point to optarg
                 preferences->input_file = optarg;
                 ++preferences->input_file_set;
                 break;
 
             case 'e':
-            // copy optarg to string and ensure zero termination
-                if(preferences->ext_dip_file){ free(preferences->ext_dip_file); }
+            // point to optarg
                 preferences->ext_dip_file = optarg;
                 ++preferences->ext_dip_file_set;
                 preferences->dipole = 1;
                 break;
 
             case 'c':
-            // copy optarg to string and ensure zero termination
-                if(preferences->coriolis_file_set){ free(preferences->coriolis_file); }
+            // point to optarg
                 preferences->coriolis_file = optarg;
                 ++preferences->coriolis_file_set;
                 break;
 
             case 'o':
-            // copy optarg to string and ensure zero termination
-                if(preferences->output_file_set){ free(preferences->output_file); }
+            // point to optarg
                 preferences->output_file = optarg;
                 ++preferences->output_file_set;
                 break;
-
 
         }
     }

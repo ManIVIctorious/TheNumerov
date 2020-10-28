@@ -2,38 +2,33 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <unistd.h>
 #include <pwd.h>
 #include <time.h>
+
 #include "typedefinitions.h"
 #include "gitversion.h"
 
 // provided prototypes
-int OutputSettings(FILE* fd, settings* prefs);
+void PrintSettings(settings* prefs, FILE *fd);
 
 
-int OutputSettings(FILE* fd, settings* prefs){
+void PrintSettings(settings* prefs, FILE *fd){
 
-    int i;
-    char * Eigensolver = NULL;
     time_t current_time = time(NULL);
     char * Hostname = malloc(16 * sizeof(char));
 
+    const char * Eigensolver[3];
+    Eigensolver[0] = "unknown";
+    Eigensolver[1] = "Intel_MKL_FEAST";
+    Eigensolver[2] = "Armadillo_ARPACK";
 
-    switch(prefs->Eigensolver){
-
-        case 1:
-            Eigensolver = "Intel_MKL_FEAST";
-            break;
-
-        case 2:
-            Eigensolver = "Armadillo_ARPACK";
-            break;
-
-        default:
-            Eigensolver = "unknown";
+    if(fd == NULL){
+    // open file for writing
+        fd = fopen(prefs->output_file, "w");
+        if(fd == NULL){ perror(prefs->output_file); exit(errno); }
     }
-
 
 fprintf(fd,
     "##-----------------------------------------------------------------------------------------\n"
@@ -80,12 +75,13 @@ fprintf(fd,
     fprintf(fd, "\n#\t# Reduced mass of each dimension,");
     fprintf(fd, "\n#\t# given as colon separated string, with entries in g/mol");
     fprintf(fd, "\n#\tReduced_Masses = %.12lf", prefs->masses[0]);
-    for(i = 1; i < prefs->dimension; ++i){
+    for(int i = 1; i < prefs->dimension; ++i){
         fprintf(fd, ":%.12lf", prefs->masses[i]);
     }
     fprintf(fd, ";");
 
 
+// Boolean values
 fprintf(fd,
 "\n#\n#\n"
 "## Flags:");
@@ -94,19 +90,21 @@ fprintf(fd,
     fprintf(fd, "\n#\tCheck_Spacing  = %s;", prefs->check_spacing  ? "true" : "false");
 
 
+// Eigensolver
 fprintf(fd,
 "\n#\n#\n"
 "## Eigensolver specific settings:");
-    fprintf(fd, "\n#\tEigensolver    = %s;", Eigensolver);
+    fprintf(fd, "\n#\tEigensolver    = %s;", Eigensolver[prefs->Eigensolver]);
   if(prefs->Eigensolver == 1){
     fprintf(fd, "\n#\tLower_Bound    = % 12.8lf;", prefs->e_min);
     fprintf(fd, "\n#\tUpper_Bound    = % 12.8lf;", prefs->e_max);
   }
-  if(prefs->Eigensolver == 2){
+  else if(prefs->Eigensolver == 2){
     fprintf(fd, "\n#\tN_Eigenstates  = %d;", prefs->n_out);
   }
 
 
+// Files
 fprintf(fd,
 "\n#\n#\n"
 "## Files:");
@@ -128,5 +126,6 @@ fprintf(fd,
     "#\n#\n"
 );
 
-    return 0;
+// close file
+    fclose(fd); fd = NULL;
 }

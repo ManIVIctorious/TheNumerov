@@ -4,9 +4,9 @@
 #include "constants.h"
 #include "typedefinitions.h"
 
-settings SetDefaultSettings();
+settings SetDefaultSettings(void);
 
-settings SetDefaultSettings(){
+settings SetDefaultSettings(void){
 
     settings defaults = (const struct settings) {
         .dimension = 2,           // dimension of the problem

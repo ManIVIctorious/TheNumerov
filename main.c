@@ -7,11 +7,15 @@
 #include "constants.h"
 #include "typedefinitions.h"
 
-// input functions
-//  settings input
-settings SetDefaultSettings();
+// settings
+void usage(void);
+settings SetDefaultSettings(void);
 void GetSettingsControlFile(char* inputfile,  settings *defaults);
 void GetSettingsGetopt(int argc, char** argv, settings *defaults);
+void ValidateSettings(settings *set);
+void PrintSettings(settings* prefs, FILE *fd);
+void free_set_string_values(void);
+
 //  data input
 int InputDataFile(char* inputfile, double** *q, int* nq, double* *v, double** *mu, int dimension, char potential_true, char dipole_true);
 int InputCoriolisCoefficients(char* inputfile, double** *q, double** zeta, double*** *mu, int dimension);
@@ -24,8 +28,6 @@ int MetaEigensolver(settings prefs, int* nq, double* v, double ekin_param, doubl
 double Integrate(int dimension, int* nq, double dx, double* integrand);
 
 // output functions
-int Help();
-int OutputSettings(FILE* fd, settings *preferences);
 int    TextOut_Frequencies(FILE* fd, double ekin_factor, int n_out, double* E);
 int TextOut_Orthonormality(FILE* fd, int dimensionality, int n_out, int n_points, int* nq, double* integrand, double dq, double* X);
 int      TextOut_Potential(FILE* fd, int dimensionality, int n_out, int n_points, int* nq, double* integrand, double dq, double* X, double* v);
@@ -36,27 +38,22 @@ int   TextOut_Eigenvectors(FILE* fd, settings *prefs, int n_out, int n_points, i
 
 int main(int argc, char* argv[]){
 
-    int i, j, k, l, m, control;
-
-// get preferences out of command line flags, control file and defaults struct:
-//  1. Initialize struct "prefs" with the default values
+// get preferences from default values, control file and command line flags:
+//  1. Initialise settings struct with the default values
 //  2. Parse **argv for the literal string -C or --control-file
 //  3. If found pass the following argument to the GetSettingsControlFile() function updating prefs
 //  4. Call GetSettingsGetopt() function
-// This allows to set all settings in a control file (passed by the -C parameter)
+// This enables to set all settings in a control file (passed by the -C parameter)
 // and afterwards overwrite all settings with the corresponding command line flags
     settings prefs = SetDefaultSettings();
-    for(i = 1; i < (argc-1); ++i){
-        if(strncmp(argv[i], "-C", 2) == 0 || strncmp(argv[i], "--control-file", 14) == 0){
+    for(int i = 1; i < (argc-1); ++i){
+        if(strcmp(argv[i], "-C") == 0 || strcmp(argv[i], "--control-file") == 0){
             GetSettingsControlFile(argv[i+1], &prefs);
         }
     }
     GetSettingsGetopt(argc, argv, &prefs);
 
-
-//------------------------------------------------------------------------------------------------------------
-//    Check for usage of not compiled functionalities      Check for usage of not compiled functionalities
-//------------------------------------------------------------------------------------------------------------
+// check if eigensolver is compiled
 #ifndef HAVE_MKL_INSTALLED
 #ifndef HAVE_ARMA_INSTALLED
     fprintf(stderr,
@@ -71,66 +68,18 @@ int main(int argc, char* argv[]){
 #endif
 #endif
 
+// validate and post process settings
+    ValidateSettings(&prefs);
 
-//------------------------------------------------------------------------------------------------------------
-//       Post process settings input       Post process settings input       Post process settings input
-//------------------------------------------------------------------------------------------------------------
-//Reduced masses:
-// The reduced masses are given as a colon separated string array with the number of
-//  entries being the dimensionality. To ensure the dimensionality is set beforehand
-//  the string is saved temporarily and the conversion to a double array is
-//  performed after the initial input
-
-// allocate memory for prefs.masses array and initialize all entries to 1.0 g/mol
-    prefs.masses = malloc(prefs.dimension * sizeof(double));
-    if(prefs.masses == NULL){ perror("prefs.masses"); exit(errno); }
-    for(i = 0; i < prefs.dimension; ++i){
-        prefs.masses[i] = 1.0;
-    }
-
-// get reduced masses from masses_string
-    if(prefs.masses_string_set){
-
-        char * stringp = prefs.masses_string;
-        char * token   = NULL;
-        char * endptr  = NULL;
-
-        for(i = 0; i < prefs.dimension; ++i){
-
-        // masses string is separated by colon => split at colon position
-            token = strsep(&stringp, ":");
-
-            if(token){
-
-                prefs.masses[i] = strtod(token, &endptr);
-                if(errno){ perror("strtod()"); exit(errno); }
-                if(endptr == token){
-                    fprintf(stderr,
-                        "\n (-) Error: No digits were found in masses string"
-                        "\n     The reduced masses have to be passed as a colon separated array,"
-                        "\n     which has the same number of entries as the given dimensionality."
-                        "\n     e.g. 1D: -m 1.070908503521"
-                        "\n          2D: -m 1.070908503521:1.262900145313, etc."
-                        "\n     Aborting...\n\n"
-                    );
-                    exit(EXIT_FAILURE);
-                }
-
-            }
-        }
-    }
-
-
-// output settings for verification purpose
-    FILE * fd = fopen(prefs.output_file, "w");
-    if(fd == NULL){ perror(prefs.output_file); exit(errno); }
-    OutputSettings(fd, &prefs);
-    fclose(fd); fd = NULL;
+// print settings for verification
+    PrintSettings(&prefs, NULL);
 
 
 //------------------------------------------------------------------------------------------------------------
 //  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input
 //------------------------------------------------------------------------------------------------------------
+    int control;
+
     if(!prefs.input_file_set){
         fprintf(stderr, "\n (-) Error: No input file specified.\n     Aborting...\n\n");
         exit(EXIT_FAILURE);
@@ -145,7 +94,7 @@ int main(int argc, char* argv[]){
 //  2D array double q[dimension][entries] containing the coordinates of all dimensions
     double ** q = malloc(prefs.dimension * sizeof(double*));
     if(q == NULL){ perror("q"); exit(errno); }
-    for(i = 0; i < prefs.dimension; ++i){ q[i] = NULL; }
+    for(int i = 0; i < prefs.dimension; ++i){ q[i] = NULL; }
 
 //  1D array int nq[dimension] containing the number of points for each dimension
     int * nq = calloc(prefs.dimension, sizeof(int));
@@ -159,18 +108,19 @@ int main(int argc, char* argv[]){
     if(prefs.dipole){
         dip = malloc(3 * sizeof(double*));
         if(dip == NULL){ perror("dip"); exit(errno); }
-        for(i = 0; i < 3; ++i){ dip[i] = NULL; }
+        for(int i = 0; i < 3; ++i){ dip[i] = NULL; }
     }
 
 // actual file input, the return value is the total number of valid entries in the input file
     int n_points = InputDataFile(prefs.input_file, &q, nq, &v, &dip, prefs.dimension, 1, prefs.dipole);
 
 // check if the "N nq[0] ... nq[dimension-1]" line in input file matches the number of data points
-    for(i = 0, control = 1; i < prefs.dimension; ++i){ control *= nq[i]; }
+    control = 1;
+    for(int i = 0; i < prefs.dimension; ++i){ control *= nq[i]; }
     if(n_points != control){
         fprintf(stderr, "\n (-) Error reading data from input-file: '%s'", prefs.input_file);
         fprintf(stderr, "\n     Number of Data points (\"%d\") doesn't match \"%d", n_points, nq[0]);
-        for(i = 1; i < prefs.dimension; ++i){ fprintf(stderr, "*%d", nq[i]); } fprintf(stderr, "\"");
+        for(int i = 1; i < prefs.dimension; ++i){ fprintf(stderr, "*%d", nq[i]); } fprintf(stderr, "\"");
         fprintf(stderr, "\n     Aborting - please check your input...\n\n");
         exit(EXIT_FAILURE);
     }
@@ -183,12 +133,12 @@ int main(int argc, char* argv[]){
     //  2D array double q_dip[D][entries] analogous to q
         double ** q_dip = malloc(prefs.dimension * sizeof(double*));
         if(q_dip == NULL){ perror("q_dip"); exit(errno); }
-        for(i = 0; i < prefs.dimension; ++i){ q_dip[i] = NULL; }
+        for(int i = 0; i < prefs.dimension; ++i){ q_dip[i] = NULL; }
 
     //  2D array double dip[3][entries] containing the dipole moment's {x,y,z}-components for all coordinates
         dip = malloc(3 * sizeof(double*));
         if(dip == NULL){ perror("dip"); exit(errno); }
-        for(i = 0; i < 3; ++i){ dip[i] = NULL; }
+        for(int i = 0; i < 3; ++i){ dip[i] = NULL; }
 
     // read file
         control = InputDataFile(prefs.ext_dip_file, &q_dip, NULL, NULL, &dip, prefs.dimension, 0, 1);
@@ -205,8 +155,8 @@ int main(int argc, char* argv[]){
         }
 
     // check if coordinates are the same
-        for(i = 0; i < n_points; ++i){
-            for(j = 0; j < prefs.dimension; ++j){
+        for(int i = 0; i < n_points; ++i){
+            for(int j = 0; j < prefs.dimension; ++j){
                 if( (q[j][i] - q_dip[j][i])*(q[j][i] - q_dip[j][i]) > prefs.threshold*prefs.threshold ){
                     fprintf(stderr,
                         "\n (-) Error in external dipole input-file: \"%s\", entry no %d."
@@ -220,7 +170,7 @@ int main(int argc, char* argv[]){
         }
 
     // when checks have passed free memory of q_dip
-        for(i = 0; i < prefs.dimension; ++i){
+        for(int i = 0; i < prefs.dimension; ++i){
             free(q_dip[i]); q_dip[i] = NULL;
         }
         free(q_dip); q_dip = NULL;
@@ -240,12 +190,12 @@ int main(int argc, char* argv[]){
     //  2D array double q_coriolis[dimension][entries] analogue to q
         double **  q_coriolis = malloc(prefs.dimension * sizeof(double*));
         if(q_coriolis == NULL){ perror("q_coriolis"); exit(errno); }
-        for(i = 0; i < prefs.dimension; ++i){ q_coriolis[i] = NULL; }
+        for(int i = 0; i < prefs.dimension; ++i){ q_coriolis[i] = NULL; }
 
     //  2D array double zeta[3][(D*(D-1))/2] containing the Coriolis coefficients in {x,y,z}-direction
         zeta = malloc(3 * sizeof(double*));
         if(zeta == NULL){ perror("zeta"); exit(errno); }
-        for(i = 0; i < 3; ++i){
+        for(int i = 0; i < 3; ++i){
             zeta[i] = calloc((prefs.dimension*(prefs.dimension - 1))/2, sizeof(double));
             if(zeta[i] == NULL){ perror("zeta[i]"); exit(errno); }
         }
@@ -253,10 +203,10 @@ int main(int argc, char* argv[]){
     //  3D array double mu[3][3][entries] containing the 3*3 "inverse moment of inertia tensor" for each configuration
         mu = malloc(3 * sizeof(double**));
         if(mu == NULL){ perror("mu"); exit(errno); }
-        for(i = 0; i < 3; ++i){
+        for(int i = 0; i < 3; ++i){
             mu[i] = malloc(3 * sizeof(double*));
             if(mu[i] == NULL){ perror("mu[i]"); exit(errno); }
-            for(j = 0; j < 3; ++j){ mu[i][j] = NULL; }
+            for(int j = 0; j < 3; ++j){ mu[i][j] = NULL; }
         }
 
     // actual file input
@@ -274,8 +224,8 @@ int main(int argc, char* argv[]){
         }
 
     // check if coordinates are the same
-        for(i = 0; i < n_points; ++i){
-            for(j = 0; j < prefs.dimension; ++j){
+        for(int i = 0; i < n_points; ++i){
+            for(int j = 0; j < prefs.dimension; ++j){
                 if( (q[j][i] - q_coriolis[j][i])*(q[j][i] - q_coriolis[j][i]) > prefs.threshold*prefs.threshold ){
                     fprintf(stderr,
                         "\n (-) Error in Coriolis input-file: \"%s\", entry no %d."
@@ -289,7 +239,7 @@ int main(int argc, char* argv[]){
         }
 
     // free memory of q_coriolis
-        for(i = 0; i < prefs.dimension; ++i){
+        for(int i = 0; i < prefs.dimension; ++i){
             free(q_coriolis[i]); q_coriolis[i] = NULL;
         }
         free(q_coriolis); q_coriolis = NULL;
@@ -304,8 +254,8 @@ int main(int argc, char* argv[]){
 //  has to be constant and must be the same in all directions.
 
 // apply mass weighting to coordinates
-    for(i = 0; i < prefs.dimension; ++i){
-        for(j = 0; j < n_points; ++j){
+    for(int i = 0; i < prefs.dimension; ++i){
+        for(int j = 0; j < n_points; ++j){
             q[i][j] *= sqrt(prefs.masses[i]);
         }
     }
@@ -329,7 +279,7 @@ int main(int argc, char* argv[]){
         n_points = MetaInterpolation(&v, nq, dq, prefs.dimension, prefs.n_spline);
 
     // Calculate and verify expected return value
-        for(i = 0, control = 1; i < prefs.dimension; ++i){
+        for(int i = 0, control = 1; i < prefs.dimension; ++i){
             control *= ((nq[i] - 1) * (prefs.n_spline + 1) + 1);
         }
         if(n_points != control){
@@ -341,7 +291,7 @@ int main(int argc, char* argv[]){
         }
 
     // update memory allocation to new n_points for all coordinates
-        for(i = 0; i < prefs.dimension; ++i){
+        for(int i = 0; i < prefs.dimension; ++i){
             q[i] = realloc(q[i], n_points * sizeof(double));
             if(q[i] == NULL){ perror("reallocation of q[i]"); exit(errno); }
         }
@@ -349,9 +299,9 @@ int main(int argc, char* argv[]){
 
     // if dipole moments are given interpolate them as well
         if(prefs.dipole){
-            i = MetaInterpolation(&(dip[0]), nq, dq, prefs.dimension, prefs.n_spline);
-            j = MetaInterpolation(&(dip[1]), nq, dq, prefs.dimension, prefs.n_spline);
-            k = MetaInterpolation(&(dip[2]), nq, dq, prefs.dimension, prefs.n_spline);
+            int i = MetaInterpolation(&(dip[0]), nq, dq, prefs.dimension, prefs.n_spline);
+            int j = MetaInterpolation(&(dip[1]), nq, dq, prefs.dimension, prefs.n_spline);
+            int k = MetaInterpolation(&(dip[2]), nq, dq, prefs.dimension, prefs.n_spline);
 
         // check return values
             if(i != n_points || j != n_points || k != n_points){
@@ -369,15 +319,21 @@ int main(int argc, char* argv[]){
         if(prefs.coriolis_file_set){
         // mu is a symmetric 3 times 3 matrix, so an interpolation of the upper or
         //  lower triangle should be identical to a full interpolation
-            control = MetaInterpolation(&(mu[0][0]), nq, dq, prefs.dimension, prefs.n_spline);
-               i    = MetaInterpolation(&(mu[0][1]), nq, dq, prefs.dimension, prefs.n_spline);
-               j    = MetaInterpolation(&(mu[0][2]), nq, dq, prefs.dimension, prefs.n_spline);
-               k    = MetaInterpolation(&(mu[1][1]), nq, dq, prefs.dimension, prefs.n_spline);
-               l    = MetaInterpolation(&(mu[1][2]), nq, dq, prefs.dimension, prefs.n_spline);
-               m    = MetaInterpolation(&(mu[2][2]), nq, dq, prefs.dimension, prefs.n_spline);
+            int i = MetaInterpolation(&(mu[0][0]), nq, dq, prefs.dimension, prefs.n_spline);
+            int j = MetaInterpolation(&(mu[0][1]), nq, dq, prefs.dimension, prefs.n_spline);
+            int k = MetaInterpolation(&(mu[0][2]), nq, dq, prefs.dimension, prefs.n_spline);
+            int l = MetaInterpolation(&(mu[1][1]), nq, dq, prefs.dimension, prefs.n_spline);
+            int m = MetaInterpolation(&(mu[1][2]), nq, dq, prefs.dimension, prefs.n_spline);
+            int n = MetaInterpolation(&(mu[2][2]), nq, dq, prefs.dimension, prefs.n_spline);
 
         // check return values
-            if(control != n_points || i != n_points || j != n_points || k != n_points || l != n_points || m != n_points){
+            if(    (i != n_points)
+                || (j != n_points)
+                || (k != n_points)
+                || (l != n_points)
+                || (m != n_points)
+                || (n != n_points)
+            ){
                 fprintf(stderr,
                     "\n (-) Error in execution of interpolation function."
                     "\n     Aborting...\n\n"
@@ -394,7 +350,7 @@ int main(int argc, char* argv[]){
 
 
     // set new values for number of points for all dimensions and dq
-        for(i = 0; i < prefs.dimension; ++i){
+        for(int i = 0; i < prefs.dimension; ++i){
             nq[i] = ((nq[i] - 1) * (prefs.n_spline + 1) + 1);
         }
         dq = dq / (double) (prefs.n_spline + 1);
@@ -402,10 +358,10 @@ int main(int argc, char* argv[]){
 
     // set new values for all q entries
         int jump = 1;
-        for(i = (prefs.dimension - 1); i >= 0; --i){
-            for(j = 0; j < n_points/jump/nq[i]; ++j){
-                for(k = 0; k < nq[i]; ++k){
-                    for(l = 0; l < jump; ++l){
+        for(int i = (prefs.dimension - 1); i >= 0; --i){
+            for(int j = 0; j < n_points/jump/nq[i]; ++j){
+                for(int k = 0; k < nq[i]; ++k){
+                    for(int l = 0; l < jump; ++l){
 
                         q[i][l + k*jump + j*nq[i]*jump] = q[i][0] + (double)k * dq;
 
@@ -423,7 +379,7 @@ int main(int argc, char* argv[]){
     double * stencil = NULL;
 
 // Allocate memory of n_stencil ** dimension for stencil
-    for(i = 0, control = 1; i < prefs.dimension; ++i){ control *= prefs.n_stencil; }
+    for(int i = 0, control = 1; i < prefs.dimension; ++i){ control *= prefs.n_stencil; }
     stencil = calloc(control, sizeof(double));
     if(stencil == NULL){ perror("Stencil"); exit(errno); }
 
@@ -447,16 +403,16 @@ int main(int argc, char* argv[]){
 //      Potential and kinetic energy      Potential and kinetic energy      Potential and kinetic energy
 //------------------------------------------------------------------------------------------------------------
 // convert potential to output unit of energy
-    for(i = 0; i < n_points; ++i){
+    for(int i = 0; i < n_points; ++i){
         v[i] *= prefs.epot_factor;
     }
 
 // shift potential minimum to zero
     double v_min = v[0];
-    for(i = 1; i < n_points; ++i){
+    for(int i = 1; i < n_points; ++i){
         if(v[i] < v_min){ v_min = v[i]; }
     }
-    for(i = 0; i < n_points; ++i){
+    for(int i = 0; i < n_points; ++i){
         v[i] -= v_min;
     }
 
@@ -478,7 +434,7 @@ int main(int argc, char* argv[]){
 //  prefs.mu_factor     is given in     kJ/mol / [mu]
 //  prefs.ekin_factor   is given in     (output unit of energy) / (kJ/mol)
     if(prefs.coriolis_file_set){
-        for(i = 0; i < n_points; ++i){
+        for(int i = 0; i < n_points; ++i){
             v[i] -= ((mu[0][0][i] + mu[1][1][i] + mu[2][2][i]) / 8.0 * (prefs.mu_factor * prefs.ekin_factor));
         }
     }
@@ -510,14 +466,14 @@ int main(int argc, char* argv[]){
     double * integrand = malloc(n_points * sizeof(double));
     if(integrand == NULL){ perror("Integrand"); exit(errno); }
 
-    for(i = 0; i < n_out; ++i){
-        for (j = 0; j < n_points; ++j){
+    for(int i = 0; i < n_out; ++i){
+        for(int j = 0; j < n_points; ++j){
             integrand[j] = X[i*n_points + j] * X[i*n_points + j];
         }
 
         integral = Integrate(prefs.dimension, nq, dq, integrand);
 
-        for (j = 0; j < n_points; ++j){
+        for(int j = 0; j < n_points; ++j){
             X[i*n_points + j] = X[i*n_points + j] / sqrt(integral);
         }
     }
@@ -527,7 +483,7 @@ int main(int argc, char* argv[]){
 //   Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output  Output
 //------------------------------------------------------------------------------------------------------------
 // open output file
-    fd = fopen(prefs.output_file, "a");
+    FILE * fd = fopen(prefs.output_file, "a");
     if(fd == NULL){ perror(prefs.output_file); exit(errno); }
 
 // output eigenvalues and frequencies (in cm^-1)
@@ -575,8 +531,10 @@ int main(int argc, char* argv[]){
 //------------------------------------------------------------------------------------------------------------
 //  free memory    free memory    free memory    free memory    free memory    free memory    free memory
 //------------------------------------------------------------------------------------------------------------
+// free unused memory
+    free_set_string_values();
 // coordinates q and dimensions nq
-    for(i = 0; i < prefs.dimension; ++i){
+    for(int i = 0; i < prefs.dimension; ++i){
         free(q[i]); q[i] = NULL;
     }
     free( q);  q = NULL;
@@ -606,8 +564,8 @@ int main(int argc, char* argv[]){
             mu[2][0] = NULL;
             mu[2][1] = NULL;
         }
-        for(i = 0; i < 3; ++i){
-            for(j = i; j < 3; ++j){
+        for(int i = 0; i < 3; ++i){
+            for(int j = i; j < 3; ++j){
                 free(mu[i][j]); mu[i][j] = NULL;
             }
             free(mu[i]); mu[i] = NULL;
