@@ -4,9 +4,9 @@
 #include <math.h>
 #include <errno.h>
 
-#include "typedefinitions.h"
+#include "settings.h"
 #include "constants.h"
- 
+
 // Dependencies
 double Integrate(int dimension, int* nq, double dx, double* integrand);
 

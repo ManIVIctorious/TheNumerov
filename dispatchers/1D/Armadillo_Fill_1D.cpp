@@ -1,7 +1,7 @@
 
 #include <stdio.h>
 #include <armadillo>
-#include "typedefinitions.h"
+#include "settings.h"
 
 // Provided Prototypes
 arma::sp_mat FillArmadillo_1D(int* nq, double* v, double ekin_param, double* stencil, int n_stencil);

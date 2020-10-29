@@ -1,7 +1,7 @@
 
 #include <stdio.h>
-#include "typedefinitions.h"
- 
+#include "settings.h"
+
 // Dependencies
 double Integrate(int dimension, int* nq, double dx, double* integrand);
 

@@ -4,7 +4,7 @@
 #include <errno.h>
 #include <mkl_solvers_ee.h>
 
-#include "typedefinitions.h"
+#include "settings.h"
 
 // Dependencies
 int FirstDerivative (int n_stencil, double*  first_derivative);

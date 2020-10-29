@@ -2,7 +2,7 @@
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <errno.h>
-#include "typedefinitions.h"
+#include "settings.h"
 #include "gitversion.h"
 
 // provided prototypes

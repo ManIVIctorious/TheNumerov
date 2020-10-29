@@ -4,7 +4,7 @@
 #include <errno.h>
 #include <mkl_solvers_ee.h>
 
-#include "typedefinitions.h"
+#include "settings.h"
 
 // provided prototypes
 int FillMKL_1D(double* v, int* nq, double ekin_param, double* stencil, int n_stencil, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A);

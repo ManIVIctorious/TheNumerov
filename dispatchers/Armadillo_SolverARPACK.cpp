@@ -2,7 +2,7 @@
 #define ARMA_BLAS_LONG
 #include <armadillo>
 #include <stdio.h>
-#include "typedefinitions.h"
+#include "settings.h"
 
 // Dependencies
 arma::sp_mat FillArmadillo_1D(int* nq, double* v, double ekin_param, double* stencil, int n_stencil);

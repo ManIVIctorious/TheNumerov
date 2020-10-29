@@ -6,7 +6,7 @@
 
 #include "ConvertString.h"
 #include "controlfile.h"
-#include "typedefinitions.h"
+#include "settings.h"
 
 // Provided prototypes
 void GetSettingsControlFile(char* inputfile, settings* set);
@@ -143,12 +143,10 @@ void GetSettingsControlFile(char* inputfile, settings* set){
 
             case 'i':
                 set->input_file = set_string_values(optarg);
-                set->input_file_set++;
                 break;
 
             case 'e':
                 set->ext_dip_file = set_string_values(optarg);
-                set->ext_dip_file++;
                 set->dipole = 1;
                 break;
 

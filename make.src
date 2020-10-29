@@ -11,6 +11,8 @@
 ## Input
   SRC += input/InputDataFile.c
   SRC += input/InputCoriolisCoefficients.c
+  SRC += input/PreprocessBuffer.c
+  SRC += input/ThrowInputError.c
   SRC += input/SetDefaultSettings.c
   SRC += input/ConvertString.c
   SRC += input/GetSettingsControlFile.c

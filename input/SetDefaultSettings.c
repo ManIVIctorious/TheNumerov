@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "constants.h"
-#include "typedefinitions.h"
+#include "settings.h"
 
 settings SetDefaultSettings(void);
 
@@ -37,10 +37,8 @@ settings SetDefaultSettings(void){
     // Files
     //  input file
         .input_file        = NULL,
-        .input_file_set    = 0,
     //  external dipole file
         .ext_dip_file      = NULL,
-        .ext_dip_file_set  = 0,
     //  coriolis file
         .coriolis_file     = NULL,
         .coriolis_file_set = 0,

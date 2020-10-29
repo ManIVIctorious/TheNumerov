@@ -1,7 +1,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "typedefinitions.h"
+#include "settings.h"
 
 // Dependencies
 #ifdef HAVE_MKL_INSTALLED

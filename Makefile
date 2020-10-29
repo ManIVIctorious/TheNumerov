@@ -11,7 +11,6 @@ include make.def
   endif
   ifndef WARN
     WARN  = -Wall -Wextra -Werror
-    WARN += -Wno-stringop-truncation -Wno-stringop-overflow
   endif
 
 # Linked libraries

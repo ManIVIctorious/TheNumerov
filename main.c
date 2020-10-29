@@ -5,7 +5,7 @@
 #include <math.h>
 
 #include "constants.h"
-#include "typedefinitions.h"
+#include "settings.h"
 
 // settings
 void usage(void);
@@ -38,13 +38,19 @@ int   TextOut_Eigenvectors(FILE* fd, settings *prefs, int n_out, int n_points, i
 
 int main(int argc, char* argv[]){
 
+//------------------------------------------------------------------------------------------------------------
+//  Settings    Settings    Settings    Settings    Settings    Settings    Settings    Settings    Settings
+//------------------------------------------------------------------------------------------------------------
+
 // get preferences from default values, control file and command line flags:
-//  1. Initialise settings struct with the default values
-//  2. Parse **argv for the literal string -C or --control-file
-//  3. If found pass the following argument to the GetSettingsControlFile() function updating prefs
-//  4. Call GetSettingsGetopt() function
-// This enables to set all settings in a control file (passed by the -C parameter)
-// and afterwards overwrite all settings with the corresponding command line flags
+/*{{{
+ *  1. Initialise settings struct with the default values
+ *  2. Parse **argv for the literal string -C or --control-file
+ *  3. If found pass the following argument to the GetSettingsControlFile() function updating prefs
+ *  4. Call GetSettingsGetopt() function
+ * This enables to set all settings in a control file (passed by the -C parameter)
+ * and afterwards overwrite all settings with the corresponding command line flags
+ *}}}*/
     settings prefs = SetDefaultSettings();
     for(int i = 1; i < (argc-1); ++i){
         if(strcmp(argv[i], "-C") == 0 || strcmp(argv[i], "--control-file") == 0){
@@ -53,7 +59,7 @@ int main(int argc, char* argv[]){
     }
     GetSettingsGetopt(argc, argv, &prefs);
 
-// check if eigensolver is compiled
+// check if at least one eigensolver is available
 #ifndef HAVE_MKL_INSTALLED
 #ifndef HAVE_ARMA_INSTALLED
     fprintf(stderr,
@@ -78,19 +84,10 @@ int main(int argc, char* argv[]){
 //------------------------------------------------------------------------------------------------------------
 //  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input  Input
 //------------------------------------------------------------------------------------------------------------
-    int control;
-
-    if(!prefs.input_file_set){
-        fprintf(stderr, "\n (-) Error: No input file specified.\n     Aborting...\n\n");
-        exit(EXIT_FAILURE);
-    }
 
 // Input primary file
 //------------------------------------------------------------------------------------------------------------
-// disable reading dipole file from primary input file when external dipole file is set to be used
-    if(prefs.ext_dip_file_set){ prefs.dipole = 0; }
-
-// initialize arrays:
+// initialise arrays:
 //  2D array double q[dimension][entries] containing the coordinates of all dimensions
     double ** q = malloc(prefs.dimension * sizeof(double*));
     if(q == NULL){ perror("q"); exit(errno); }
@@ -105,7 +102,7 @@ int main(int argc, char* argv[]){
 
 //  2D array double dip[3][entries] containing the dipole moment's {x,y,z}-components for all coordinates
     double ** dip = NULL;
-    if(prefs.dipole){
+    if( prefs.dipole ){
         dip = malloc(3 * sizeof(double*));
         if(dip == NULL){ perror("dip"); exit(errno); }
         for(int i = 0; i < 3; ++i){ dip[i] = NULL; }
@@ -115,20 +112,20 @@ int main(int argc, char* argv[]){
     int n_points = InputDataFile(prefs.input_file, &q, nq, &v, &dip, prefs.dimension, 1, prefs.dipole);
 
 // check if the "N nq[0] ... nq[dimension-1]" line in input file matches the number of data points
-    control = 1;
+    int control = 1;
     for(int i = 0; i < prefs.dimension; ++i){ control *= nq[i]; }
-    if(n_points != control){
+    if( control != n_points ){
         fprintf(stderr, "\n (-) Error reading data from input-file: '%s'", prefs.input_file);
         fprintf(stderr, "\n     Number of Data points (\"%d\") doesn't match \"%d", n_points, nq[0]);
-        for(int i = 1; i < prefs.dimension; ++i){ fprintf(stderr, "*%d", nq[i]); } fprintf(stderr, "\"");
-        fprintf(stderr, "\n     Aborting - please check your input...\n\n");
+        for(int i = 1; i < prefs.dimension; ++i){ fprintf(stderr, "*%d", nq[i]); }
+        fprintf(stderr, "\"\n     Aborting - please check your input...\n\n");
         exit(EXIT_FAILURE);
     }
 
 
 // Input of external dipole file
 //------------------------------------------------------------------------------------------------------------
-    if(prefs.ext_dip_file_set){
+    if( prefs.ext_dip_file ){
     // initialize arrays:
     //  2D array double q_dip[D][entries] analogous to q
         double ** q_dip = malloc(prefs.dimension * sizeof(double*));

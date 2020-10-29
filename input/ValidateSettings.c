@@ -5,7 +5,7 @@
 #include <errno.h>
 
 #include "ConvertString.h"
-#include "typedefinitions.h"
+#include "settings.h"
 
 void ValidateSettings(settings *set){
 
@@ -39,6 +39,18 @@ void ValidateSettings(settings *set){
 //      0         unknown
 //      1   aka   Intel_MKL_FEAST
 //      2   aka   Armadillo_ARPACK
-    if( set->Eigensolver > 2 ){ set->Eigensolver = 0; }
+    if( set->Eigensolver > 2 ){
+        set->Eigensolver = 0;
+    }
+
+
+// External dipole file:
+//  For the calculation of intensities / oscillator strengths the system's dipole moment in
+//  {x,y,z}-direction has to be provided.  Either these dipole moments are directly provided
+//  in the main data input file or via an additional dipole moments file.
+//  Hence, disable reading dipole from primary input file when external dipole is used
+    if( set->ext_dip_file ){
+        set->dipole = 0;
+    }
 
 }

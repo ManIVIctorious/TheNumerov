@@ -7,7 +7,7 @@
 #include <errno.h>
 
 #include "ConvertString.h"
-#include "typedefinitions.h"
+#include "settings.h"
 #include "gitversion.h"
 
 // Dependencies
@@ -90,7 +90,6 @@ void GetSettingsGetopt(int argc, char** argv, settings* preferences){
         // Pipe: read input from stdin
             case 'P':
                 preferences->input_file = "/dev/stdin";
-                ++preferences->input_file_set;
                 break;
 
 
@@ -175,13 +174,11 @@ void GetSettingsGetopt(int argc, char** argv, settings* preferences){
             case 'i':
             // point to optarg
                 preferences->input_file = optarg;
-                ++preferences->input_file_set;
                 break;
 
             case 'e':
             // point to optarg
                 preferences->ext_dip_file = optarg;
-                ++preferences->ext_dip_file_set;
                 preferences->dipole = 1;
                 break;
 

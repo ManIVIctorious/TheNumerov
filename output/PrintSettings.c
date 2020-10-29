@@ -7,7 +7,7 @@
 #include <pwd.h>
 #include <time.h>
 
-#include "typedefinitions.h"
+#include "settings.h"
 #include "gitversion.h"
 
 // provided prototypes
@@ -109,7 +109,7 @@ fprintf(fd,
 "\n#\n#\n"
 "## Files:");
     fprintf(fd, "\n#\tInput_File           = %s;", prefs->input_file);
-  if(prefs->ext_dip_file_set){
+  if(prefs->ext_dip_file){
     fprintf(fd, "\n#\tExternal_Dipole_File = %s;", prefs->ext_dip_file);
   }
   if(prefs->coriolis_file_set){
