@@ -8,188 +8,182 @@
 #include <string.h>
 #include <ctype.h>
 
-// provided prototypes
+#include "ConvertString.h"
+
+// Required prototypes
+char * PreprocessBuffer(char* inputfile, int linenumber, char* buffer, const char* comment);
+void ThrowInputError(char* inputfile, int linenumber, char* format,...);
+
+// Provided prototypes
 int InputCoriolisCoefficients(char* inputfile, double** *q, double** zeta, double*** *mu, int dimension);
 
 int InputCoriolisCoefficients(char* inputfile, double** *q, double** zeta, double*** *mu, int dimension){
 
-    FILE * fd      = NULL;
-    char * buffer  = NULL;
-    char * stringp = NULL;
+// open input file read only
+    FILE * fd = fopen(inputfile, "r");
+    if(fd == NULL){ perror("Coriolis input file"); exit(errno); }
+
+// define delimiters
+    char * comment = "#%\n";  // strip buffer off anything after these chars
+    char * delimit = " \t";   // column delimiters
+
+// allocate memory of size _MaxLineLength_ for buffer
     char * pos     = NULL;
-    const char * comment   = "#%\n";
-    const char * delimiter = " \t";
-
-    int i, m, n, control;
-    int linenumber;
-    int entry_rows;
-
-// open input file
-    fd = fopen(inputfile, "r");
-    if(fd == NULL){ perror(inputfile); exit(errno); }
-
-// allocate memory for buffer
-    buffer = malloc((_MaxLineLength_) * sizeof(char));
+    char * stringp = NULL;
+    char * buffer  = malloc((_MaxLineLength_) * sizeof(char));
     if(buffer == NULL){ perror("Input Coriolis file buffer"); exit(errno); }
 
-// start file parsing
-    entry_rows = 0;
-    linenumber = 0;
+// expected column counts
+    int zeta_column_count = ( dimension * (dimension-1) ) / 2;
+
+// start parsing of file
+    int entryrows  = 0;
+    int linenumber = 0;
     while( fgets(buffer, _MaxLineLength_, fd) != NULL ){
 
+    // pre-process buffer
+    // strip buffer off comments, leading white spaces and do some error handling
         linenumber++;
-
-    // check for existence of newline character, if not found the line
-    //  exceeds maximum line length
-        for(i = 0, control = 0; i < (int)strlen(buffer); ++i){
-            if(buffer[i] == '\n'){
-                control = 1;
-            }
-        }
-        if(control == 0){
-            fprintf(stderr,
-                "\n (-) Error in Coriolis input file \"%s\", line \"%d\" is too long."
-                "\n     Aborting..."
-                "\n\n", inputfile, linenumber
-            );
-            exit(EXIT_FAILURE);
-        }
-
-    // strip buffer from comments
-        stringp = buffer;
-        pos = strsep(&stringp, comment);
+        pos = PreprocessBuffer(inputfile, linenumber, buffer, comment);
         if(pos == NULL){ continue; }
 
-    // remove leading white spaces and skip empty lines
-        while( isspace(*pos) && *pos != '\0' ){ pos++; }
-        if(strlen(pos) == 0) continue;
-
-// buffer now contains a (non empty) line of the input file, stripped from comments
-//  and *pos points to the first non white space character of buffer
-//-----------------------------------------------------------------------------------
-
-    // point stringp to first non white space character in buffer
         stringp = pos;
 
 
-    // zeta values:
-    //  lines containing zeta values start with Zeta_{x,y,z} followed by
+    // Parse Zeta_{x,y,z} values:
+    //--------------------------------------------------------------------------
+    //  lines containing zeta values start with Zeta_{x,y,z}: followed by
     //  (dim*(dim-1))/2 columns containing the respective Coriolis coefficients
-        for(i = 0; i < 3; ++i){
-            control = 0;
 
-        //  check if line starts with Zeta_{x,y,z}:
-            const char * zeta_line_inits[3] = {"Zeta_x:", "Zeta_y:", "Zeta_z:" };
-            if( strncasecmp(stringp, zeta_line_inits[i], 7) == 0 ){
-                control = 1;
+    // check if line starts with "Zeta_"
+        if( strncasecmp(stringp, "Zeta_", 5) == 0 ){
 
-            // set stringp to second field
-                strsep(&stringp, delimiter);
+        // get first token of buffer
+            do{
+                pos = strsep(&stringp, delimit);
+            }while( (pos != NULL) && (*pos == '\0') );
 
-                m = 0;
-                while( m < (dimension * (dimension - 1))/2 ){
-                // set pos to next field
-                    pos = strsep(&stringp, delimiter);
+        // define list of allowed first tokens
+            const char * zeta_line_inits[3] = { "Zeta_x:" , "Zeta_y:" , "Zeta_z:" };
 
-                // throw an error if no data found
-                    if(pos == NULL){
-                        fprintf(stderr,
-                            "\n (-) Error reading data from input-file \"%s\"."
-                            "\n     Too few entries in input line number %d (only found %d of expected %d columns)"
-                            "\n     Aborting, please check your input...\n\n"
-                            , inputfile, linenumber, m, (dimension * (dimension - 1))/2
-                        );
-                        exit(EXIT_FAILURE);
+            for(int i = 0; i < 3; ++i){
+                int recognised = 0;
+
+            // compare first token to entries of token list
+                if( strcasecmp(pos, zeta_line_inits[i]) == 0 ){
+                    recognised = 1;
+
+                // get zeta values
+                    for(int j = 0; j < zeta_column_count; ){
+
+                        do{
+                            pos = strsep(&stringp, delimit);
+                        }while( (pos != NULL) && (*pos == '\0') );
+
+                    // print an error if less than (dim*(dim-1)/2) entries are found
+                        if( pos == NULL ){
+                            ThrowInputError(inputfile, linenumber,
+                                "Too few entries in Zeta_%c: line"
+                                "(only found %d of expected %d columns)"
+                                , "xyz"[i], j+1, zeta_column_count
+                            );
+                        }
+
+                    // store data in double array
+                        zeta[i][j] = convertstring_to_double(pos, "zeta", NULL);
                     }
-
-                // ignore adjacent delimiters
-                    if(*pos == '\0'){ continue; }
-
-                    zeta[i][m++] = atof(pos);
                 }
-                break;
+
+                if( !recognised ){
+                    ThrowInputError(inputfile, linenumber, "Unrecognised keyword %s" , pos);
+                }
             }
         }
-        if(control == 1){ continue; }
 
 
     // Effective Reciprocal Moment of Inertia Tensor lines:
-    //  these lines start with <dimension> coordinates on the potential energy surface
+    //--------------------------------------------------------------------------
+    //  these lines start with <dim> coordinates on the potential energy surface
     //  followed by the upper triangle (with main diagonal) of the symmetric tensor
     //  <dim1>...<dimN> <mu_xx> <mu_xy> <mu_xz> <mu_yy> <mu_yz> <mu_zz>
 
-    // Coordinates:
-    //  reallocate memory
-        for(i = 0; i < dimension; ++i){
-            (*q)[i] = realloc((*q)[i], (entry_rows + 1)*sizeof(double));
-            if( (*q)[i] == NULL){ perror("Coriolis input function q[i]"); exit(errno); }
+    // Coordinates q
+    //----------------
+    //  reallocate memory for coordinates
+        for(int i = 0; i < dimension; ++i){
+            (*q)[i] = realloc( (*q)[i], (entryrows + 1) * sizeof(double) );
+            if( (*q)[i] == NULL ){ perror("Coriolis input function q[i]"); exit(errno); }
         }
 
     //  read data from input file and store it in coordinates
-        i = 0;
-        while(i < dimension){
-            pos = strsep(&stringp, delimiter);
+        for(int i = 0; i < dimension; ){
+
+        // get next token
+            do{
+                pos = strsep(&stringp, delimit);
+            }while( (pos != NULL) && (*pos == '\0') );
 
         // throw an error if no data found
-            if(pos == NULL){
-                fprintf(stderr,
-                    "\n (-) Error reading data from input-file \"%s\"."
-                    "\n     Too few entries in input line number %d (only found %d of expected %d columns)"
-                    "\n     Aborting, please check your input...\n\n"
-                    , inputfile, linenumber, i, (dimension + 6)
+            if( pos == NULL ){
+                ThrowInputError(inputfile, linenumber,
+                    "Too few entries in input line"
+                    "(only found %d of expected %d columns)"
+                    , i, (dimension+6)
                 );
-                exit(EXIT_FAILURE);
             }
 
-        // ignore adjacent delimiting characters
-            if(*pos == '\0'){ continue; }
-
-            (*q)[i++][entry_rows] = atof(pos);
+        // save value to coordinate array
+            (*q)[i++][entryrows] = convertstring_to_double(pos, "Coordinates q", NULL);
         }
-        n = i;
 
 
     // "Effective reciprocal inertia tensor" mu:
-    //  reallocate memory
-        for(i = 0; i < 3; ++i){
-            for(m = 0; m < 3; ++m){
-                (*mu)[i][m] = realloc((*mu)[i][m], (entry_rows + 1) * sizeof(double));
-                if( (*mu)[i][m] == NULL){ perror("Coriolis input function mu[m][n]"); exit(errno); }
+    //--------------------------------------------
+    //  reallocate memory, only the upper triangle of the 3x3 tensor is actually allocated memory,
+    //  the lower tringle just points to the values of the upper one
+        for(int i = 0; i < 3; ++i){
+            for(int j = i; j < 3; ++j){
+                (*mu)[i][j] = realloc((*mu)[i][j], (entryrows + 1) * sizeof(double));
+                if( (*mu)[i][j] == NULL){ perror("Coriolis input function mu[m][n]"); exit(errno); }
             }
         }
 
     //  read data from input file and store it in mu
-        for(m = 0; m < 3; ++m){
-
-            i = 0;
-            while( (i+m) < 3 ){
-                pos = strsep(&stringp, delimiter);
+        int count = 0;
+        for(int i = 0; i < 3; ++i){
+            for(int j = i; j < 3; ++j){
+            // get next token
+                do{
+                    pos = strsep(&stringp, delimit);
+                }while( (pos != NULL) && (*pos == '\0') );
 
             // throw an error if no data found
-                if(pos == NULL){
-                    fprintf(stderr,
-                        "\n (-) Error reading data from input-file \"%s\"."
-                        "\n     Too few entries in input line number %d (only found %d of expected %d columns)"
-                        "\n     Aborting, please check your input...\n\n"
-                        , inputfile, linenumber, n, (dimension + 6)
+                if( pos == NULL ){
+                    ThrowInputError(inputfile, linenumber,
+                        "Too few entries in input line"
+                        "(only found %d of expected %d columns)"
+                        , dimension+count, (dimension+6)
                     );
-                    exit(EXIT_FAILURE);
                 }
 
-            // ignore adjacent delimiting characters
-                if(*pos == '\0'){ continue; }
+            // save value to reciprocal moment of inertia tensor
+                (*mu)[i][j][entryrows] = convertstring_to_double(pos, "Coordinates q", NULL);
 
-                (*mu)[m][i+m][entry_rows] = atof(pos);
-                (*mu)[i+m][m][entry_rows] = (*mu)[m][i+m][entry_rows];
-                ++i;
-                ++n;
+            // increment count
+                count++;
             }
         }
 
+
     // increment number of rows by 1
-        ++entry_rows;
+        ++entryrows;
     }
     fclose(fd); fd = NULL;
 
-    return entry_rows;
+// point lower triangle of reciprocal moment of inertia 3x3 tensor to upper triangle
+    (*mu)[1][0] = (*mu)[0][1];
+    (*mu)[2][0] = (*mu)[0][2];
+    (*mu)[2][1] = (*mu)[1][2];
+
+    return entryrows;
 }

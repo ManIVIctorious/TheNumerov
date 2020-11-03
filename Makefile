@@ -56,9 +56,9 @@ include make.def
 # version files
 # GITHEAD changes with every branch switch
 # GITREF  changes with every new commit
-  GITHEAD = .git/HEAD
-  GITREF  = $(shell sed "s+^\s*ref:\s*+.git/+" .git/HEAD)
   ifndef PROGRAM_VERSION
+    GITHEAD = .git/HEAD
+    GITREF  = $(shell sed "s+^\s*ref:\s*+.git/+" .git/HEAD)
     PROGRAM_VERSION = $(shell git describe --tags --always)
   endif
 

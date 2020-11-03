@@ -126,13 +126,13 @@ int main(int argc, char* argv[]){
 // Input of external dipole file
 //------------------------------------------------------------------------------------------------------------
     if( prefs.ext_dip_file ){
-    // initialize arrays:
+    // initialise arrays:
     //  2D array double q_dip[D][entries] analogous to q
         double ** q_dip = malloc(prefs.dimension * sizeof(double*));
         if(q_dip == NULL){ perror("q_dip"); exit(errno); }
         for(int i = 0; i < prefs.dimension; ++i){ q_dip[i] = NULL; }
 
-    //  2D array double dip[3][entries] containing the dipole moment's {x,y,z}-components for all coordinates
+    //  2D array double dip[3][entries] containing the dipole moment's {x,y,z}-components for each coordinate
         dip = malloc(3 * sizeof(double*));
         if(dip == NULL){ perror("dip"); exit(errno); }
         for(int i = 0; i < 3; ++i){ dip[i] = NULL; }
@@ -141,7 +141,7 @@ int main(int argc, char* argv[]){
         control = InputDataFile(prefs.ext_dip_file, &q_dip, NULL, NULL, &dip, prefs.dimension, 0, 1);
 
     // for every entry in dipole input file there must be exactly one in the primary input file
-        if(control != n_points){
+        if( control != n_points ){
             fprintf(stderr,
                 "\n (-) Error reading data from input-file: \"%s\""
                 "\n     Number of Data points (%d) does not match number in \"%s\" (%d)"
@@ -167,12 +167,10 @@ int main(int argc, char* argv[]){
         }
 
     // when checks have passed free memory of q_dip
-        for(int i = 0; i < prefs.dimension; ++i){
-            free(q_dip[i]); q_dip[i] = NULL;
-        }
+        for(int i = 0; i < prefs.dimension; ++i){ free(q_dip[i]); q_dip[i] = NULL; }
         free(q_dip); q_dip = NULL;
 
-    // since dipole input was successful set prefs.dipole flag to true
+    // since dipole input was successful set prefs.dipole to true
         prefs.dipole = 1;
     }
 
@@ -180,25 +178,25 @@ int main(int argc, char* argv[]){
 // Input Coriolis coefficients file
 //------------------------------------------------------------------------------------------------------------
     double **  zeta = NULL;   // Coriolis coefficients for all D*(D-1)/2 mode combinations
-    double *** mu   = NULL;   // 3*3 "reciprocal moment of inertia tensor" for all coordinate entries
+    double *** mu   = NULL;   // 3x3 "reciprocal moment of inertia tensor" for all coordinate entries
 
-    if(prefs.coriolis_file_set){
-    // initialize arrays:
+    if( prefs.coriolis_file_set ){
+    // initialise arrays:
     //  2D array double q_coriolis[dimension][entries] analogue to q
-        double **  q_coriolis = malloc(prefs.dimension * sizeof(double*));
+        double ** q_coriolis = malloc( prefs.dimension * sizeof(double*) );
         if(q_coriolis == NULL){ perror("q_coriolis"); exit(errno); }
         for(int i = 0; i < prefs.dimension; ++i){ q_coriolis[i] = NULL; }
 
     //  2D array double zeta[3][(D*(D-1))/2] containing the Coriolis coefficients in {x,y,z}-direction
-        zeta = malloc(3 * sizeof(double*));
+        zeta = malloc( 3 * sizeof(double*) );
         if(zeta == NULL){ perror("zeta"); exit(errno); }
         for(int i = 0; i < 3; ++i){
-            zeta[i] = calloc((prefs.dimension*(prefs.dimension - 1))/2, sizeof(double));
+            zeta[i] = calloc( (prefs.dimension*(prefs.dimension - 1))/2 , sizeof(double));
             if(zeta[i] == NULL){ perror("zeta[i]"); exit(errno); }
         }
 
-    //  3D array double mu[3][3][entries] containing the 3*3 "inverse moment of inertia tensor" for each configuration
-        mu = malloc(3 * sizeof(double**));
+    //  3D array double mu[3][3][entries] containing the 3x3 "inverse moment of inertia tensor" for each configuration
+        mu = malloc( 3 * sizeof(double**) );
         if(mu == NULL){ perror("mu"); exit(errno); }
         for(int i = 0; i < 3; ++i){
             mu[i] = malloc(3 * sizeof(double*));
@@ -210,7 +208,7 @@ int main(int argc, char* argv[]){
         control = InputCoriolisCoefficients(prefs.coriolis_file, &q_coriolis, zeta, &mu, prefs.dimension);
 
     // for every entry in Coriolis input file there must be exactly one in the input file
-        if(control != n_points){
+        if( control != n_points ){
             fprintf(stderr,
                 "\n (-) Error reading data from input-file: \"%s\""
                 "\n     Number of Data points (%d) does not match number in \"%s\" (%d)"
@@ -236,9 +234,7 @@ int main(int argc, char* argv[]){
         }
 
     // free memory of q_coriolis
-        for(int i = 0; i < prefs.dimension; ++i){
-            free(q_coriolis[i]); q_coriolis[i] = NULL;
-        }
+        for(int i = 0; i < prefs.dimension; ++i){ free(q_coriolis[i]); q_coriolis[i] = NULL; }
         free(q_coriolis); q_coriolis = NULL;
     }
 
@@ -262,7 +258,7 @@ int main(int argc, char* argv[]){
     if(prefs.check_spacing){
         dq = CheckCoordinateSpacing(q, nq, prefs.threshold, prefs.dimension);
     }else{
-    // set default value if no spacing check is performed
+    // set default value if spacing check is omitted
         dq = q[prefs.dimension-1][1] - q[prefs.dimension-1][0];
     }
 
@@ -270,16 +266,17 @@ int main(int argc, char* argv[]){
 //------------------------------------------------------------------------------------------------------------
 //  Interpolation  Interpolation  Interpolation  Interpolation  Interpolation  Interpolation  Interpolation
 //------------------------------------------------------------------------------------------------------------
-    if(prefs.n_spline){
+    if( prefs.n_spline ){
 
     // Interpolation of potential
         n_points = MetaInterpolation(&v, nq, dq, prefs.dimension, prefs.n_spline);
 
     // Calculate and verify expected return value
-        for(int i = 0, control = 1; i < prefs.dimension; ++i){
+        int control = 1;
+        for(int i = 0; i < prefs.dimension; ++i){
             control *= ((nq[i] - 1) * (prefs.n_spline + 1) + 1);
         }
-        if(n_points != control){
+        if( n_points != control ){
             fprintf(stderr,
                 "\n (-) Error in execution of interpolation function."
                 "\n     Aborting...\n\n"
@@ -295,7 +292,7 @@ int main(int argc, char* argv[]){
 
 
     // if dipole moments are given interpolate them as well
-        if(prefs.dipole){
+        if( prefs.dipole ){
             int i = MetaInterpolation(&(dip[0]), nq, dq, prefs.dimension, prefs.n_spline);
             int j = MetaInterpolation(&(dip[1]), nq, dq, prefs.dimension, prefs.n_spline);
             int k = MetaInterpolation(&(dip[2]), nq, dq, prefs.dimension, prefs.n_spline);
@@ -314,8 +311,8 @@ int main(int argc, char* argv[]){
 
     // if Coriolis file is set also interpolate mu
         if(prefs.coriolis_file_set){
-        // mu is a symmetric 3 times 3 matrix, so an interpolation of the upper or
-        //  lower triangle should be identical to a full interpolation
+        // mu is a symmetric 3 times 3 matrix. The lower triangle just points to the values of the
+        // upper one, therefore an interpolation has only to be performed on the upper triangle
             int i = MetaInterpolation(&(mu[0][0]), nq, dq, prefs.dimension, prefs.n_spline);
             int j = MetaInterpolation(&(mu[0][1]), nq, dq, prefs.dimension, prefs.n_spline);
             int k = MetaInterpolation(&(mu[0][2]), nq, dq, prefs.dimension, prefs.n_spline);
@@ -338,11 +335,11 @@ int main(int argc, char* argv[]){
                 exit(EXIT_FAILURE);
             }
 
-        // make mu symmetric again:
-        //  free memory of lower triangle and point it to the upper one
-            free(mu[1][0]); mu[1][0] = mu[0][1];
-            free(mu[2][0]); mu[2][0] = mu[0][2];
-            free(mu[2][1]); mu[2][1] = mu[1][2];
+        // ensure mu is symmetric again
+        // (the mu returned by the interpolation function is at a different position in memory)
+            mu[1][0] = mu[0][1];
+            mu[2][0] = mu[0][2];
+            mu[2][1] = mu[1][2];
         }
 
 
@@ -556,11 +553,6 @@ int main(int argc, char* argv[]){
     //  lower and upper triangle point to the same memory address causing a double call to free()
     //  according to free() specification: "If ptr is NULL, no operation is performed"
     //  => pointing the redundant pointers to NULL is obligatory to prevent undefined behaviour
-        if(prefs.n_spline){
-            mu[1][0] = NULL;
-            mu[2][0] = NULL;
-            mu[2][1] = NULL;
-        }
         for(int i = 0; i < 3; ++i){
             for(int j = i; j < 3; ++j){
                 free(mu[i][j]); mu[i][j] = NULL;
