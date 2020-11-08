@@ -3,7 +3,6 @@
 # Source Files
 #----------------------------------------------------------------------
   SRC += main.c
-  SRC += CheckCoordinateSpacing.c
   SRC += FillDerivativeStencils.c
   SRC += nx1dInterpolation.c
   SRC += MetaEigensolver.c
@@ -19,6 +18,7 @@
   SRC += input/ParseControlFile.c
   SRC += input/GetSettingsGetopt.c
   SRC += input/ValidateSettings.c
+  SRC += input/CheckCoordinateSpacing.c
 ## Dispatchers
  # stencils
   SRC += dispatchers/MetaGetStencil.c

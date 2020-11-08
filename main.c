@@ -255,7 +255,7 @@ int main(int argc, char* argv[]){
 
 // perform spacing check
     double dq = 0;
-    if(prefs.check_spacing){
+    if( prefs.check_spacing ){
         dq = CheckCoordinateSpacing(q, nq, prefs.threshold, prefs.dimension);
     }else{
     // set default value if spacing check is omitted
