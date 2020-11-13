@@ -22,9 +22,9 @@ int InputCoriolisCoefficients(char* inputfile, double** *q, double** zeta, doubl
 double CheckCoordinateSpacing(double** q, int* nq, double threshold, int dimension);
 
 // meta functions
-int MetaGetStencil(double* stencil, int n_stencil, int dimension);
-int MetaInterpolation(double* *v, int* nq, double dq, int dimension, int n_spline);
-int MetaEigensolver(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double* *E, double* *X, double** q, double dq, double*** mu, double** zeta);
+void MetaGetStencil(double* stencil, int n_stencil, int dimension);
+int  MetaInterpolation(double* *v, int* nq, double dq, int dimension, int n_spline);
+int  MetaEigensolver(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double* *E, double* *X, double** q, double dq, double*** mu, double** zeta);
 double Integrate(int dimension, int* nq, double dx, double* integrand);
 
 // output functions
@@ -370,27 +370,32 @@ int main(int argc, char* argv[]){
 //------------------------------------------------------------------------------------------------------------
 //  Stencils    Stencils    Stencils    Stencils    Stencils    Stencils    Stencils    Stencils    Stencils
 //------------------------------------------------------------------------------------------------------------
-    double * stencil = NULL;
-
 // Allocate memory of n_stencil ** dimension for stencil
-    for(int i = 0, control = 1; i < prefs.dimension; ++i){ control *= prefs.n_stencil; }
-    stencil = calloc(control, sizeof(double));
+// Some of the filling routines only set the non zero values!
+// Hence, the memory must be initialised to zero.
+    control = 1;
+    for(int i = 0; i < prefs.dimension; ++i){ control *= prefs.n_stencil; }
+    double * stencil = calloc( control, sizeof(double) );
     if(stencil == NULL){ perror("Stencil"); exit(errno); }
 
-// The number of data points (n_points) must be at least as big as the number of
-//  stencil points (n_stencil ** dimension)
-    if(n_points < control){
-        fprintf(stderr,
-            "\n (-) Error reading data from input-file: '%s'"
-            "\n     Insufficient number of data points (%d) for stencil size %d (%d points)."
-            "\n     Aborting...\n\n"
-            , prefs.input_file, n_points, prefs.n_stencil, control
-        );
-        exit(EXIT_FAILURE);
+// The number of data points in each dimension must be greater or equal
+// to the number of stencil points in that direction
+    for(int i = 0; i < prefs.dimension; ++i){
+
+        if( nq[i] < prefs.n_stencil ){
+            fprintf(stderr,
+                "\n (-) Error: Insufficient number of data points."
+                "\n     Dimension %d only contains %d points whereas %d are required."
+                "\n     Aborting...\n\n"
+                , i, nq[i], prefs.n_stencil
+            );
+            exit(EXIT_FAILURE);
+        }
+
     }
 
 // Get stencil through meta function
-    control = MetaGetStencil(stencil, prefs.n_stencil, prefs.dimension);
+    MetaGetStencil(stencil, prefs.n_stencil, prefs.dimension);
 
 
 //------------------------------------------------------------------------------------------------------------

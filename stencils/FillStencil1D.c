@@ -4,7 +4,7 @@
 
 // provided prototypes
 int FillStencil1D(double* stencil, int n_stencil);
- 
+
 int FillStencil1D(double* stencil, int n_stencil){
 
 // fill the stencil array

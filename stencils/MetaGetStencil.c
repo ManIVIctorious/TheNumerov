@@ -10,34 +10,32 @@ int FillStencil4D(double* stencil, int n_stencil);
 
 
 // provided prototypes
-int MetaGetStencil(double* stencil, int n_stencil, int dimension);
+void MetaGetStencil(double* stencil, int n_stencil, int dimension);
 
-int MetaGetStencil(double* stencil, int n_stencil, int dimension){
-
-    int control = -1;
+void MetaGetStencil(double* stencil, int n_stencil, int dimension){
 
 // Assignment of stencil functions
     switch(dimension){
 
         case 1:
-            control = FillStencil1D(stencil, n_stencil);
+            FillStencil1D(stencil, n_stencil);
             break;
 
         case 2:
-            control = FillStencil2D(stencil, n_stencil);
+            FillStencil2D(stencil, n_stencil);
             break;
 
         case 3:
-            control = FillStencil3D(stencil, n_stencil);
+            FillStencil3D(stencil, n_stencil);
             break;
 
         case 4:
-            control = FillStencil4D(stencil, n_stencil);
+            FillStencil4D(stencil, n_stencil);
             break;
 
         default:
             fprintf(stderr,
-                "\n (-) Error currently there is no stencil of dimension %d implemented"
+                "\n (-) Error: Currently there is no stencil of dimension %d implemented"
                 "\n     Aborting...\n\n"
                 , dimension
             );
@@ -45,5 +43,4 @@ int MetaGetStencil(double* stencil, int n_stencil, int dimension){
             break;
     }
 
-    return control;
 }

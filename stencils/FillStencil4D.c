@@ -10,6 +10,7 @@ int FillStencil4D(double* stencil, int n_stencil){
 // fill the stencil array
     switch(n_stencil){
         case 5:
+        // 5x5x5x5 stencil {{{
             stencil[  62] =   -0.666666666666667;
             stencil[ 156] =    1.000000000000000;
             stencil[ 158] =    1.000000000000000;
@@ -68,9 +69,11 @@ int FillStencil4D(double* stencil, int n_stencil){
             stencil[ 468] =    1.000000000000000;
             stencil[ 562] =   -0.666666666666667;
 
-            return(0);
+            return 0;
+        //}}}
 
         case 7:
+        // 7x7x7x7 stencil {{{
             stencil[ 171] =    0.088888888888889;
             stencil[ 416] =   -0.027777777777778;
             stencil[ 465] =    0.111111111111111;
@@ -241,9 +244,11 @@ int FillStencil4D(double* stencil, int n_stencil){
             stencil[1984] =   -0.027777777777778;
             stencil[2229] =    0.088888888888889;
 
-            return(0);
+            return 0;
+        //}}}
 
         case 9:
+        // 9x9x9x9 stencil {{{
             stencil[ 364] =   -0.014285714285714;
             stencil[ 850] =   -0.000493827160494;
             stencil[ 931] =    0.002037037037037;
@@ -823,7 +828,8 @@ int FillStencil4D(double* stencil, int n_stencil){
             stencil[5710] =   -0.000493827160494;
             stencil[6196] =   -0.014285714285714;
 
-            return(0);
+            return 0;
+        //}}}
 
         default:
         // if stencil is not implemented print an error message and exit program
