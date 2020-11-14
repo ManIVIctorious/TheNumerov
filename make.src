@@ -45,7 +45,7 @@
 # GSL sources
 #----------------------------------------------------------------------
 ifeq ($(findstring HAVE_GSL_INSTALLED, $(PPF)), HAVE_GSL_INSTALLED)
-  GSLSRC += GSL_GenFiniteDifferenceStencils.c
+  GSLSRC += GSL/GSL_GenFiniteDifferenceStencils.c
 endif
 
 # MKL sources
