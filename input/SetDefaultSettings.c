@@ -41,7 +41,6 @@ settings SetDefaultSettings(void){
         .ext_dip_file      = NULL,
     //  coriolis file
         .coriolis_file     = NULL,
-        .coriolis_file_set = 0,
     //  output file
         .output_file       = "/dev/stdout",
         .output_file_set   = 0,

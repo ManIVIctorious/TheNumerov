@@ -109,10 +109,10 @@ fprintf(fd,
 "\n#\n#\n"
 "## Files:");
     fprintf(fd, "\n#\tInput_File           = %s;", prefs->input_file);
-  if(prefs->ext_dip_file){
+  if( prefs->ext_dip_file ){
     fprintf(fd, "\n#\tExternal_Dipole_File = %s;", prefs->ext_dip_file);
   }
-  if(prefs->coriolis_file_set){
+  if( prefs->coriolis_file ){
     fprintf(fd, "\n#\tCoriolis_File        = %s;", prefs->coriolis_file);
   }
     fprintf(fd, "\n#\tOutput_File          = %s;", prefs->output_file);

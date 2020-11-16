@@ -40,7 +40,7 @@ extern "C"{
             //  The first and second terms of the Watson Hamiltonian are to be set in the filling routine
             //  when a Coriolis file is given, the third term is already set in main (Watson term)
             //  At the moment only the basic Hamiltonian is supported.
-                if(prefs.coriolis_file_set){
+                if( prefs.coriolis_file ){
                     fprintf(stderr, "At the moment only the basic Hamiltonian is implemented for this"
                                     "\n2D problem. Nevertheless, the third term of the Watson Hamiltonian"
                                     "\nis already set in main() => be prepared for some wrong results!\n\n"
@@ -52,7 +52,7 @@ extern "C"{
             case 3:
             // three dimensional filling routine:
             //  At the moment only the basic Hamiltonian is supported.
-                if(prefs.coriolis_file_set){
+                if( prefs.coriolis_file ){
                     fprintf(stderr, "At the moment only the basic Hamiltonian is implemented for this"
                                     "\n3D problem. Nevertheless, the third term of the Watson Hamiltonian"
                                     "\nis already set in main() => be prepared for some wrong results!\n\n"

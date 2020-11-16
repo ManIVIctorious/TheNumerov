@@ -58,7 +58,7 @@ int FillMKL_2D(settings prefs, int* nq, double* v, double ekin_param, double* st
     double * sec_deriv = NULL;  // second derivative stencil
 
 
-    if(prefs.coriolis_file_set){
+    if( prefs.coriolis_file ){
     // allocate memory for derivative stencils
         nothing   = calloc(prefs.n_stencil,  sizeof(double));
         fst_deriv = malloc(prefs.n_stencil * sizeof(double));
@@ -107,7 +107,7 @@ int FillMKL_2D(settings prefs, int* nq, double* v, double ekin_param, double* st
 
                         // enable second term of Watson Hamiltonian when Coriolis file is set
                         //####################################################################################################
-                            if(prefs.coriolis_file_set){
+                            if( prefs.coriolis_file ){
                             // calculate pre-factor
                                 for(n = 0, prefactor = 0.0; n < 3; ++n){
                                     for(m = 0; m < 3; ++m){
@@ -148,7 +148,7 @@ int FillMKL_2D(settings prefs, int* nq, double* v, double ekin_param, double* st
     (*rows_A)[0] = 1;
 
 // free memory
-    if(prefs.coriolis_file_set){
+    if( prefs.coriolis_file ){
         free(nothing);   nothing   = NULL;
         free(fst_deriv); fst_deriv = NULL;
         free(sec_deriv); sec_deriv = NULL;

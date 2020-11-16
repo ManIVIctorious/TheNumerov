@@ -180,7 +180,7 @@ int main(int argc, char* argv[]){
     double **  zeta = NULL;   // Coriolis coefficients for all D*(D-1)/2 mode combinations
     double *** mu   = NULL;   // 3x3 "reciprocal moment of inertia tensor" for all coordinate entries
 
-    if( prefs.coriolis_file_set ){
+    if( prefs.coriolis_file ){
     // initialise arrays:
     //  2D array double q_coriolis[dimension][entries] analogue to q
         double ** q_coriolis = malloc( prefs.dimension * sizeof(double*) );
@@ -310,7 +310,7 @@ int main(int argc, char* argv[]){
 
 
     // if Coriolis file is set also interpolate mu
-        if(prefs.coriolis_file_set){
+        if( prefs.coriolis_file ){
         // mu is a symmetric 3 times 3 matrix. The lower triangle just points to the values of the
         // upper one, therefore an interpolation has only to be performed on the upper triangle
             int i = MetaInterpolation(&(mu[0][0]), nq, dq, prefs.dimension, prefs.n_spline);
@@ -432,7 +432,7 @@ int main(int argc, char* argv[]){
 //  mu                  is given in     g/mol/angstrom^2
 //  prefs.mu_factor     is given in     kJ/mol / [mu]
 //  prefs.ekin_factor   is given in     (output unit of energy) / (kJ/mol)
-    if(prefs.coriolis_file_set){
+    if( prefs.coriolis_file ){
         for(int i = 0; i < n_points; ++i){
             v[i] -= ((mu[0][0][i] + mu[1][1][i] + mu[2][2][i]) / 8.0 * (prefs.mu_factor * prefs.ekin_factor));
         }
@@ -452,7 +452,7 @@ int main(int argc, char* argv[]){
     n_out = MetaEigensolver(prefs, nq, v, ekin_param, stencil, &E, &X, q, dq, mu, zeta);
 
 // The x,y,z - Coriolis coefficients Zeta are not required anymore
-    if(prefs.coriolis_file_set){
+    if( prefs.coriolis_file ){
         free(zeta[0]); zeta[0] = NULL;
         free(zeta[1]); zeta[1] = NULL;
         free(zeta[2]); zeta[2] = NULL;
@@ -499,7 +499,7 @@ int main(int argc, char* argv[]){
         TextOut_Potential(fd, prefs.dimension, n_out, n_points, nq, integrand, dq, X, v);
 
     // output kinetic energy (i.e. <X[i]|ħ² * d²/dx²|X[j]>)
-        if(prefs.dimension == 2 && !prefs.coriolis_file_set){
+        if( (prefs.dimension == 2) && !prefs.coriolis_file ){
             TextOut_EKinetic(fd, prefs, n_out, n_points, nq, integrand, dq, X, stencil, ekin_param);
         }
 
@@ -553,7 +553,7 @@ int main(int argc, char* argv[]){
     }
 
 // mu (inverse moment of inertia 3x3 tensor):
-    if(prefs.coriolis_file_set){
+    if( prefs.coriolis_file ){
     // If interpolation is active the lower triangle is already freed.
     //  lower and upper triangle point to the same memory address causing a double call to free()
     //  according to free() specification: "If ptr is NULL, no operation is performed"

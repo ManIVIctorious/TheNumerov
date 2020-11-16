@@ -36,7 +36,7 @@ int TextOut_Eigenvectors(FILE* fd, settings* prefs, int n_out, int n_points, int
         fprintf(fd, "\t          dip_z         ");
     }
 
-    if(prefs->coriolis_file_set){
+    if( prefs->coriolis_file ){
         fprintf(fd, "\tv(q) - sum_i(mu[i][i])/8");
     }
 
@@ -60,7 +60,7 @@ int TextOut_Eigenvectors(FILE* fd, settings* prefs, int n_out, int n_points, int
         for(j = 0; j < prefs->dimension; ++j){
             fprintf(fd, "\t% 24.16lf", q[j][i]);
         }
-        if(prefs->coriolis_file_set){
+        if( prefs->coriolis_file ){
             fprintf(fd, "\t% 24.16lf", v[i] + ((mu[0][0][i] + mu[1][1][i] + mu[2][2][i])/8.0 * (prefs->mu_factor * prefs->ekin_factor)));
         }else{
             fprintf(fd, "\t% 24.16lf", v[i]);
@@ -75,7 +75,7 @@ int TextOut_Eigenvectors(FILE* fd, settings* prefs, int n_out, int n_points, int
 
 
     // output potential after addition of Watson potential term
-        if(prefs->coriolis_file_set){
+        if( prefs->coriolis_file ){
             fprintf(fd, "\t% 24.16lf", v[i]);
         }
 

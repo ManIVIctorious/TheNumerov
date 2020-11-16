@@ -185,7 +185,6 @@ void GetSettingsGetopt(int argc, char** argv, settings* preferences){
             case 'c':
             // point to optarg
                 preferences->coriolis_file = optarg;
-                ++preferences->coriolis_file_set;
                 break;
 
             case 'o':

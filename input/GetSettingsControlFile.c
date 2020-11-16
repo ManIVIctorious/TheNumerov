@@ -152,7 +152,6 @@ void GetSettingsControlFile(char* inputfile, settings* set){
 
             case 'c':
                 set->coriolis_file = set_string_values(optarg);
-                set->coriolis_file_set++;
                 break;
 
             case 'o':

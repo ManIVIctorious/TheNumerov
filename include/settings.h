@@ -34,7 +34,6 @@ typedef struct settings {
   char * ext_dip_file;
 
   char * coriolis_file;
-  char   coriolis_file_set;
 
   char * output_file;
   char   output_file_set;
