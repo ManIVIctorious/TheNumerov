@@ -1,8 +1,8 @@
 
 // provided prototypes
-double integrate_2d(int nq1, int nq2, double dx, double *integrand);
+double Integrate2D(int nq1, int nq2, double dx, double *integrand);
 
-double integrate_2d(int nq1, int nq2, double dx, double *integrand){
+double Integrate2D(int nq1, int nq2, double dx, double *integrand){
 
     int i, j, index;
     double integral = 0.0;

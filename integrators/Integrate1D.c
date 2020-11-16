@@ -1,8 +1,8 @@
- 
-// provided prototypes
-double integrate_1d(int n, double dx, double *integrand);
 
-double integrate_1d(int n, double dx, double *integrand){
+// provided prototypes
+double Integrate1D(int n, double dx, double *integrand);
+
+double Integrate1D(int n, double dx, double *integrand){
 
     int i;
     double integral = 0.0;

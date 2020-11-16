@@ -19,20 +19,19 @@
   SRC += input/GetSettingsGetopt.c
   SRC += input/ValidateSettings.c
   SRC += input/CheckCoordinateSpacing.c
-## Dispatchers
- # stencils
-  SRC += dispatchers/MetaGetStencil.c
-  SRC += dispatchers/1D/FillStencil1D.c
-  SRC += dispatchers/2D/FillStencil2D.c
-  SRC += dispatchers/3D/FillStencil3D.c
-  SRC += dispatchers/4D/FillStencil4D.c
- # integrators
-  SRC += dispatchers/Integrators.c
-  SRC += dispatchers/1D/integrate_1d.c
-  SRC += dispatchers/2D/integrate_2d.c
-  SRC += dispatchers/3D/integrate_3d.c
-  SRC += dispatchers/4D/integrate_4d.c
-# output
+## Stencils
+  SRC += stencils/MetaGetStencil.c
+  SRC += stencils/FillStencil1D.c
+  SRC += stencils/FillStencil2D.c
+  SRC += stencils/FillStencil3D.c
+  SRC += stencils/FillStencil4D.c
+## Integrators
+  SRC += integrators/Integrators.c
+  SRC += integrators/Integrate1D.c
+  SRC += integrators/Integrate2D.c
+  SRC += integrators/Integrate3D.c
+  SRC += integrators/Integrate4D.c
+## Output
   SRC += output/usage.c
   SRC += output/PrintSettings.c
   SRC += output/TextOut_Dipole.c

@@ -1,8 +1,8 @@
 
 // provided prototypes
-double integrate_4d(int nq1, int nq2, int nq3, int nq4, double dx, double integrand[]);
+double Integrate4D(int nq1, int nq2, int nq3, int nq4, double dx, double integrand[]);
 
-double integrate_4d(int nq1, int nq2, int nq3, int nq4, double dx, double integrand[]){
+double Integrate4D(int nq1, int nq2, int nq3, int nq4, double dx, double integrand[]){
 
   int i, j, k, l, index;
 

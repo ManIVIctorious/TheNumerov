@@ -1,8 +1,8 @@
 
 // provided prototypes
-double integrate_3d(int nq1, int nq2, int nq3, double dx, double *integrand);
+double Integrate3D(int nq1, int nq2, int nq3, double dx, double *integrand);
 
-double integrate_3d(int nq1, int nq2, int nq3, double dx, double *integrand){
+double Integrate3D(int nq1, int nq2, int nq3, double dx, double *integrand){
 
     int i, j, k, index;
     double integral = 0.0;
