@@ -24,7 +24,7 @@ double CheckCoordinateSpacing(double** q, int* nq, double threshold, int dimensi
 // meta functions
 void MetaGetStencil(double* stencil, int n_stencil, int dimension);
 int  MetaInterpolation(double* *v, int* nq, double dq, int dimension, int n_spline);
-int  MetaEigensolver(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double* *E, double* *X, double** q, double dq, double*** mu, double** zeta);
+int  MetaEigensolver(settings* prefs, int* nq, double* v, double ekin_param, double* stencil, double* *E, double* *X, double** q, double dq, double*** mu, double** zeta);
 double Integrate(int dimension, int* nq, double dx, double* integrand);
 
 // output functions
@@ -449,7 +449,7 @@ int main(int argc, char* argv[]){
 // Solve the matrix eigenvalue problem
 //  MetaEigensolver() forwards all arguments to the Solver<EigensolverName>() function.
 //  This function calls an adequate matrix fill routine and then solves the matrix problem
-    n_out = MetaEigensolver(prefs, nq, v, ekin_param, stencil, &E, &X, q, dq, mu, zeta);
+    n_out = MetaEigensolver(&prefs, nq, v, ekin_param, stencil, &E, &X, q, dq, mu, zeta);
 
 // The x,y,z - Coriolis coefficients Zeta are not required anymore
     if( prefs.coriolis_file ){

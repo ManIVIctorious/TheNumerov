@@ -82,7 +82,6 @@ int FiniteDifferenceStencil(double* stencil, unsigned int size, unsigned int der
     }
 
     int signum;
-    unsigned int i, j;
     gsl_matrix      * A     = NULL;
     gsl_matrix      * invA  = NULL;
     gsl_permutation * p     = NULL;
@@ -92,14 +91,14 @@ int FiniteDifferenceStencil(double* stencil, unsigned int size, unsigned int der
     p = gsl_permutation_alloc(size);
 
 // set values of first and second column
-    for(i = 0; i < size; ++i){
+    for(unsigned int i = 0; i < size; ++i){
         gsl_matrix_set(A, i, 0, 1.0);
         gsl_matrix_set(A, i, 1, stencil[i]);
     }
 
 // fill remaining columns
-    for(i = 2; i < size; ++i){
-        for(j = 0; j < size; ++j){
+    for(unsigned int i = 2; i < size; ++i){
+        for(unsigned int j = 0; j < size; ++j){
             gsl_matrix_set(A, j, i, pow(stencil[j], i) / (double)factorial(i));
         }
     }
@@ -124,7 +123,7 @@ int FiniteDifferenceStencil(double* stencil, unsigned int size, unsigned int der
     gsl_permutation_free(p);
 
 // store the requested stencil values in stencil
-    for(i = 0; i < size; ++i){
+    for(unsigned int i = 0; i < size; ++i){
         stencil[i] = gsl_matrix_get(invA, derivative, i);
     }
 
@@ -137,13 +136,11 @@ int FiniteDifferenceStencil(double* stencil, unsigned int size, unsigned int der
 
 static unsigned int factorial(unsigned int n){
 
-    unsigned int factorial = 1;
-
     if(n == 0){ return  1; }
 
-    while(n > 0){
+    unsigned int factorial = 1;
+    for(; n > 0; --n){
         factorial *= n;
-        --n;
     }
 
     return factorial;

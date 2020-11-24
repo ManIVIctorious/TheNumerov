@@ -44,22 +44,22 @@
 # GSL sources
 #----------------------------------------------------------------------
 ifeq ($(findstring HAVE_GSL_INSTALLED, $(PPF)), HAVE_GSL_INSTALLED)
-  GSLSRC += GSL/GSL_GenFiniteDifferenceStencils.c
+  GSLSRC += solvers/GSL_GenFiniteDifferenceStencils.c
 endif
 
 # MKL sources
 #----------------------------------------------------------------------
 ifeq ($(findstring HAVE_MKL_INSTALLED, $(PPF)), HAVE_MKL_INSTALLED)
-  MKLSRC += dispatchers/MKL_SolverFEAST.c
-  MKLSRC += dispatchers/1D/MKL_Fill_1D.c
-  MKLSRC += dispatchers/2D/MKL_Fill_2D.c
+  MKLSRC += solvers/MKL_SolverFEAST.c
+  MKLSRC += solvers/MKL_FillAMatrix1D.c
+  MKLSRC += solvers/MKL_FillAMatrix2D.c
 endif
 
 # Armadillo sources (require C++)
 #----------------------------------------------------------------------
 ifeq ($(findstring HAVE_ARMA_INSTALLED, $(PPF)), HAVE_ARMA_INSTALLED)
-  ARMASRC += dispatchers/Armadillo_SolverARPACK.cpp
-  ARMASRC += dispatchers/1D/Armadillo_Fill_1D.cpp
-  ARMASRC += dispatchers/2D/Armadillo_Fill_2D.cpp
-  ARMASRC += dispatchers/3D/Armadillo_Fill_3D.cpp
+  ARMASRC += solvers/Armadillo_SolverARPACK.cpp
+  ARMASRC += solvers/Armadillo_FillAMatrix1D.cpp
+  ARMASRC += solvers/Armadillo_FillAMatrix2D.cpp
+  ARMASRC += solvers/Armadillo_FillAMatrix3D.cpp
 endif

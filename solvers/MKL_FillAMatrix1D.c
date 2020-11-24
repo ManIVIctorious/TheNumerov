@@ -4,26 +4,18 @@
 #include <errno.h>
 #include <mkl_solvers_ee.h>
 
-#include "settings.h"
-
 // provided prototypes
-int FillMKL_1D(double* v, int* nq, double ekin_param, double* stencil, int n_stencil, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A);
+int MKL_FillAMatrix1D(double* v, int* nq, double ekin_param, double* stencil, int n_stencil, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A);
 
 
 // 1D fill
-int FillMKL_1D(double* v, int* nq, double ekin_param, double* stencil, int n_stencil, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A){
+int MKL_FillAMatrix1D(double* v, int* nq, double ekin_param, double* stencil, int n_stencil, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A){
 
-    int i, xsh;
-    int element;
+// Calculate the maximum number of non-zero entries in the A matrix
+//  Should be <n_points - (n_stencil/2)*2> lines with <n_stencil> entries, the
+//  first and last <n_stencil/2> lines are shortened via a triangular number sequence
     int n_points = nq[0];
-    int max_entries;
-    int entry_index;
-
-// calculate max_entries
-    for(i = n_stencil, max_entries = 0; i > n_stencil/2; --i){
-        max_entries += 2*i;
-    }
-    max_entries += n_stencil * (n_points - n_stencil + 1);
+    int max_entries = n_stencil*n_points - (n_stencil/2)*(n_stencil/2 + 1);
 
 // The sparse matrix eigensolver of Intel MKL saves the positions of non empty entries in
 //  two integer arrays (rows_A & cols_A), each non zero entry increments the counter by 1
@@ -43,18 +35,21 @@ int FillMKL_1D(double* v, int* nq, double ekin_param, double* stencil, int n_ste
 //  determine the non zero elements and store their positions in rows_A and cols_A
 //  and their values in vals_A
     (*rows_A)[0] = 1;
-    for(i = 0, entry_index = 0; i < n_points; ++i){
-        for(xsh = -(n_stencil/2); xsh < ((n_stencil/2) + 1); ++xsh){
+    int entry_index = 0;
 
-            element = i + xsh;
+    for(int i = 0; i < n_points; ++i){
 
-            if((element > -1) && (element < n_points)){
+        for(int xsh = -(n_stencil/2); xsh < ((n_stencil/2) + 1); ++xsh){
 
-                (*cols_A)[entry_index] = element + 1;
+            int element = i + xsh;
+
+            if( (element > -1) && (element < n_points) ){
+
                 (*vals_A)[entry_index] = ekin_param * stencil[xsh + n_stencil/2];
+                (*cols_A)[entry_index] = element + 1;
 
             // add potential to diagonal element
-                if(xsh == 0){
+                if( xsh == 0 ){
                     (*vals_A)[entry_index] += v[i];
                 }
                 ++entry_index;
@@ -64,6 +59,6 @@ int FillMKL_1D(double* v, int* nq, double ekin_param, double* stencil, int n_ste
         (*rows_A)[i+1] = entry_index + 1;
     }
 
+    printf("Matrix created, Potential added, %d entries\n", entry_index);
     return 0;
 }
-

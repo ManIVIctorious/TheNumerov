@@ -5,21 +5,21 @@
 
 // Dependencies
 #ifdef HAVE_MKL_INSTALLED
-int        SolverFEAST_MKL(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double** E, double** X, double** q, double dq, double*** mu, double** zeta);
+int        SolverFEAST_MKL(settings* prefs, int* nq, double* v, double ekin_param, double* stencil, double** E, double** X, double** q, double dq, double*** mu, double** zeta);
 #endif
 #ifdef HAVE_ARMA_INSTALLED
-int SolverARPACK_Armadillo(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double** E, double** X, double** q, double dq, double*** mu, double** zeta);
+int SolverARPACK_Armadillo(settings* prefs, int* nq, double* v, double ekin_param, double* stencil, double** E, double** X, double** q, double dq, double*** mu, double** zeta);
 #endif
 
 // provided prototypes
-int MetaEigensolver(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double* *E, double* *X, double** q, double dq, double*** mu, double** zeta);
+int MetaEigensolver(settings* prefs, int* nq, double* v, double ekin_param, double* stencil, double* *E, double* *X, double** q, double dq, double*** mu, double** zeta);
 
 
-int MetaEigensolver(settings prefs, int* nq, double* v, double ekin_param, double* stencil, double* *E, double* *X, double** q, double dq, double*** mu, double** zeta){
+int MetaEigensolver(settings* prefs, int* nq, double* v, double ekin_param, double* stencil, double* *E, double* *X, double** q, double dq, double*** mu, double** zeta){
 
     int n_out;
 
-    switch(prefs.Eigensolver){
+    switch( prefs->Eigensolver ){
 
 #ifdef HAVE_MKL_INSTALLED
         case 1:
