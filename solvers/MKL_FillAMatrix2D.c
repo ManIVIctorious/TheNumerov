@@ -7,8 +7,9 @@
 #include "settings.h"
 
 // Dependencies
-int FirstDerivative (int n_stencil, double*  first_derivative);
-int SecondDerivative(int n_stencil, double* second_derivative);
+void   init_watson_2d(settings* prefs);
+double exec_watson_2d(double*** mu, double** zeta, int* nq, double dq, double** q, int i, int j, int xsidx, int ysidx);
+void   free_watson_2d(void);
 
 // provided prototypes
 int MKL_FillAMatrix2D(settings* prefs, int* nq, double* v, double ekin_param, double* stencil, double** q, double dq, double*** mu, double** zeta, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A);
@@ -38,37 +39,8 @@ int MKL_FillAMatrix2D(settings* prefs, int* nq, double* v, double ekin_param, do
     if( (*vals_A) == NULL ){ perror("2D MKL Fill vals_A"); exit(errno); }
 
 
-// variables required for the calculation of the Watson Hamiltonian rotational terms
-    double * nothing   = NULL;  // "nothing" ensures the differentiation is only applied to one row/column/etc.
-    double * fst_deriv = NULL;  // first derivative stencil
-    double * sec_deriv = NULL;  // second derivative stencil
-
-    if( prefs->coriolis_file ){
-    // allocate memory for derivative stencils
-        nothing   = calloc(prefs->n_stencil,  sizeof(double));
-        fst_deriv = malloc(prefs->n_stencil * sizeof(double));
-        sec_deriv = malloc(prefs->n_stencil * sizeof(double));
-
-        if(nothing   == NULL){ perror("2D MKL \"nothing\""  ); exit(errno); }
-        if(fst_deriv == NULL){ perror("2D MKL \"fst_deriv\""); exit(errno); }
-        if(sec_deriv == NULL){ perror("2D MKL \"sec_deriv\""); exit(errno); }
-
-    //  set central point of "nothing" to 1.0
-        nothing[prefs->n_stencil/2] = 1.0;
-
-    //  fill first and second derivative stencils
-        int errone = FirstDerivative (prefs->n_stencil, fst_deriv);
-        int errtwo = SecondDerivative(prefs->n_stencil, sec_deriv);
-        if( errone || errtwo ){
-            fprintf(stderr,
-                "\n (-) Error initialising derivative stencil parameters."
-                "\n     Aborting..."
-                "\n\n"
-            );
-            exit(EXIT_FAILURE);
-        }
-    }
-
+// initialise for the calculation of the Watson Hamiltonian
+    if( prefs->coriolis_file ){ init_watson_2d(prefs); }
 
 // fill Numerov's A matrix
 //  determine the non zero elements and store their positions in rows_A and cols_A
@@ -88,34 +60,17 @@ int MKL_FillAMatrix2D(settings* prefs, int* nq, double* v, double ekin_param, do
                     int xsidx = xsh + prefs->n_stencil/2;    // stencil x index
                     int ysidx = ysh + prefs->n_stencil/2;    // stencil y index
 
-                // stencil entries have to be divided by 2 to get the right result
-                    (*vals_A)[entry_index] = ekin_param * stencil[ xsidx*prefs->n_stencil + ysidx ] / 2.0;
+                // set column index
                     (*cols_A)[entry_index] = (i + xsh)*nq[1] + (j + ysh) + 1;
 
-                // enable second term of Watson Hamiltonian when Coriolis file is set {{{
+                // set matrix value
+                    (*vals_A)[entry_index] = ekin_param * stencil[ xsidx*prefs->n_stencil + ysidx ];
+                //  apply second term of Watson Hamiltonian
                     if( prefs->coriolis_file ){
-                    // calculate pre-factor
-                        double prefactor = 0.0;
-                        for(int n = 0; n < 3; ++n){
-                            for(int m = 0; m < 3; ++m){
-                                prefactor -= zeta[n][0]*zeta[m][0] * mu[n][m][i*nq[1] + j];
-                            }
-                        }
-                    //  zeta is normalized      =>          non-dimensional
-                    //  mu                  is given in     g/mol/angstrom^2
-                    //  prefs->mu_factor     is given in     kJ/mol / [mu]
-                    //  prefs->ekin_factor   is given in     (output unit of energy) / (kJ/mol)
-                        prefactor *= ((prefs->mu_factor * prefs->ekin_factor)/2.0);
-
-                        (*vals_A)[entry_index] -= prefactor * (
-                                    q[0][i*nq[1] + j] *                     fst_deriv[xsidx] *   nothing[ysidx] / dq
-                                  + q[1][i*nq[1] + j] *                       nothing[xsidx] * fst_deriv[ysidx] / dq
-                                  - q[0][i*nq[1] + j] * q[0][i*nq[1] + j] * sec_deriv[xsidx] *   nothing[ysidx] / dq / dq
-                                  - q[1][i*nq[1] + j] * q[1][i*nq[1] + j] *   nothing[xsidx] * sec_deriv[ysidx] / dq / dq
-                            + 2.0 * q[0][i*nq[1] + j] * q[1][i*nq[1] + j] * fst_deriv[xsidx] * fst_deriv[ysidx] / dq / dq
-                        );
+                        (*vals_A)[entry_index] -= exec_watson_2d(mu, zeta, nq, dq, q, i, j, xsidx, ysidx);
                     }
-                //}}}
+                //  The stencil values have to be divided by a factor of two
+                    (*vals_A)[entry_index] *= 0.5;
 
                 // add potential to diagonal element
                     if( (xsh == 0) && (ysh == 0) ){
@@ -130,11 +85,7 @@ int MKL_FillAMatrix2D(settings* prefs, int* nq, double* v, double ekin_param, do
     }
 
 // free memory
-    if( prefs->coriolis_file ){
-        free(nothing);   nothing   = NULL;
-        free(fst_deriv); fst_deriv = NULL;
-        free(sec_deriv); sec_deriv = NULL;
-    }
+    if( prefs->coriolis_file ){ free_watson_2d(); }
 
     printf("Matrix created, Potential added, %d entries\n", entry_index);
     return 0;

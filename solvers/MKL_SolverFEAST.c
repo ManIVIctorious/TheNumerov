@@ -35,8 +35,8 @@ int SolverFEAST_MKL(settings* prefs, int* nq, double* v, double ekin_param, doub
             break;
 
         case 2:
-        // two dimensional filling routine, the second term of the Watson Hamiltonian is set in FillMKL
-        //  when a Coriolis file is given, the third term is already set in main (Watson term)
+        // two dimensional filling routine, the second term of the Watson Hamiltonian is set in the filling
+        //  routine if a Coriolis file is given, the third term is already set in main (Watson term)
             MKL_FillAMatrix2D(prefs, nq, v, ekin_param, stencil, q, dq, mu, zeta, &rows_A, &cols_A, &vals_A);
             break;
 

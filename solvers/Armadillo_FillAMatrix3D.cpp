@@ -21,7 +21,7 @@ arma::sp_mat FillArmadillo_3D(settings* prefs, int* nq, int n_points, double* v,
 // determine positions and values
     arma::umat locations(2, max_entries);
     arma::vec  values = arma::zeros(max_entries);
-    unsigned int index = 0;
+    unsigned int entry_index = 0;
 
     for(int i = 0; i < nq[0]; ++i){
         for(int j = 0; j < nq[1]; ++j){
@@ -41,11 +41,11 @@ arma::sp_mat FillArmadillo_3D(settings* prefs, int* nq, int n_points, double* v,
                             int zsidx = zsh + prefs->n_stencil/2;
 
                         // locations of stencil values around the main diagonal
-                            locations (0, index) = (    i     *nq[1] +    j      )*nq[2] +    k;
-                            locations (1, index) = ( (i + xsh)*nq[1] + (j + ysh) )*nq[2] + (k + zsh);
+                            locations (0, entry_index) = (    i     *nq[1] +    j      )*nq[2] +    k;
+                            locations (1, entry_index) = ( (i + xsh)*nq[1] + (j + ysh) )*nq[2] + (k + zsh);
                         //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                            values(index) = ekin_param * stencil[ (xsidx*prefs->n_stencil + ysidx*prefs->n_stencil)*prefs->n_stencil + zsidx ] / 4.0;
-                            ++index;
+                            values(entry_index) = ekin_param * stencil[ (xsidx*prefs->n_stencil + ysidx*prefs->n_stencil)*prefs->n_stencil + zsidx ] / 4.0;
+                            ++entry_index;
                         }}
                     }}
                 }}
@@ -62,6 +62,6 @@ arma::sp_mat FillArmadillo_3D(settings* prefs, int* nq, int n_points, double* v,
         A(i,i) += v[i];
     }
 
-    printf("Matrix created, Potential added, %u entries\n", index);
+    printf("Matrix created, Potential added, %u entries\n", entry_index);
     return A;
 }

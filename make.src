@@ -4,9 +4,10 @@
 #----------------------------------------------------------------------
   SRC += main.c
   SRC += FillDerivativeStencils.c
+  SRC += MetaInterpolation.c
   SRC += nx1dInterpolation.c
   SRC += MetaEigensolver.c
-  SRC += MetaInterpolation.c
+  SRC += solvers/Watson2D.c
 ## Input
   SRC += input/InputDataFile.c
   SRC += input/InputCoriolisCoefficients.c

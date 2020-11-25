@@ -34,16 +34,8 @@ extern "C"{
                 break;
 
             case 2:
-            // two dimensional filling routine:
-            //  The first and second terms of the Watson Hamiltonian are to be set in the filling routine
-            //  when a Coriolis file is given, the third term is already set in main (Watson term)
-            //  At the moment only the basic Hamiltonian is supported.
-                if( prefs->coriolis_file ){
-                    fprintf(stderr, "At the moment only the basic Hamiltonian is implemented for this"
-                                    "\n2D problem. Nevertheless, the third term of the Watson Hamiltonian"
-                                    "\nis already set in main() => be prepared for some wrong results!\n\n"
-                           );
-                }
+            // two dimensional filling routine, the second term of the Watson Hamiltonian is set in the filling
+            //  routine if a Coriolis file is given, the third term is already set in main (Watson term)
                 A = FillArmadillo_2D(prefs, nq, n_points, v, ekin_param, stencil, q, dq, mu, zeta);
                 break;
 
