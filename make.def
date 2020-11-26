@@ -13,6 +13,7 @@ OPT = -g -Og
   LIB      = -lm
   INC      = -Iinclude/
   PACKAGES = gsl mkl armadillo
+  WARN += -Wno-unused-parameter
 
 # Preprocessor flags
   PPF += -D HAVE_GSL_INSTALLED  # gnu scientific library support

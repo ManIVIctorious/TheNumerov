@@ -54,6 +54,7 @@ ifeq ($(findstring HAVE_MKL_INSTALLED, $(PPF)), HAVE_MKL_INSTALLED)
   MKLSRC += solvers/MKL_SolverFEAST.c
   MKLSRC += solvers/MKL_FillAMatrix1D.c
   MKLSRC += solvers/MKL_FillAMatrix2D.c
+  MKLSRC += solvers/MKL_FillAMatrix3D.c
 endif
 
 # Armadillo sources (require C++)

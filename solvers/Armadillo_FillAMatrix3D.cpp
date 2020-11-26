@@ -25,7 +25,7 @@ arma::sp_mat FillArmadillo_3D(settings* prefs, int* nq, int n_points, double* v,
 
     for(int i = 0; i < nq[0]; ++i){
         for(int j = 0; j < nq[1]; ++j){
-            for(int k = 0; k < nq[2]; k++){
+            for(int k = 0; k < nq[2]; ++k){
 
                 for(int xsh = -(prefs->n_stencil/2); xsh <= (prefs->n_stencil/2); ++xsh){
                 if( (i + xsh > -1) && (i + xsh < nq[0]) ){
@@ -40,11 +40,11 @@ arma::sp_mat FillArmadillo_3D(settings* prefs, int* nq, int n_points, double* v,
                             int ysidx = ysh + prefs->n_stencil/2;
                             int zsidx = zsh + prefs->n_stencil/2;
 
-                        // locations of stencil values around the main diagonal
+                        // locations of stencil values (rows 0 and columns 1)
                             locations (0, entry_index) = (    i     *nq[1] +    j      )*nq[2] +    k;
                             locations (1, entry_index) = ( (i + xsh)*nq[1] + (j + ysh) )*nq[2] + (k + zsh);
                         //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                            values(entry_index) = ekin_param * stencil[ (xsidx*prefs->n_stencil + ysidx*prefs->n_stencil)*prefs->n_stencil + zsidx ] / 4.0;
+                            values(entry_index) = ekin_param * stencil[ (xsidx*prefs->n_stencil + ysidx)*prefs->n_stencil + zsidx ] / 4.0;
                             ++entry_index;
                         }}
                     }}
