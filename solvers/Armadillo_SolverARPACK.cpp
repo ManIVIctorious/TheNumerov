@@ -8,6 +8,7 @@
 arma::sp_mat FillArmadillo_1D(int* nq, double* v, double ekin_param, double* stencil, int n_stencil);
 arma::sp_mat FillArmadillo_2D(settings* prefs, int* nq, int n_points, double* v, double ekin_param, double* stencil, double** q, double dq, double*** mu, double** zeta);
 arma::sp_mat FillArmadillo_3D(settings* prefs, int* nq, int n_points, double* v, double ekin_param, double* stencil, double** q, double dq, double*** mu, double** zeta);
+arma::sp_mat FillArmadillo_4D(settings* prefs, int* nq, int n_points, double* v, double ekin_param, double* stencil, double** q, double dq, double*** mu, double** zeta);
 
 // Provided Prototypes
 extern "C" int SolverARPACK_Armadillo(settings* prefs, int* nq, double* v, double ekin_param, double* stencil, double** E, double** X, double** q, double dq, double*** mu, double** zeta);
@@ -51,6 +52,18 @@ extern "C"{
                 A = FillArmadillo_3D(prefs, nq, n_points, v, ekin_param, stencil, q, dq, mu, zeta);
                 break;
 
+            case 4:
+            // four dimensional filling routine:
+            //  At the moment only the basic Hamiltonian is supported.
+                if( prefs->coriolis_file ){
+                    fprintf(stderr, "At the moment only the basic Hamiltonian is implemented for this"
+                                    "\n3D problem. Nevertheless, the third term of the Watson Hamiltonian"
+                                    "\nis already set in main() => be prepared for some wrong results!\n\n"
+                           );
+                }
+                A = FillArmadillo_4D(prefs, nq, n_points, v, ekin_param, stencil, q, dq, mu, zeta);
+                break;
+
             default:
                 fprintf(stderr,
                     "\n (-) Error: The requested ARPACK Armadillo filling routine"
@@ -69,7 +82,7 @@ extern "C"{
         success = eigs_sym(eigval, eigvec, A, prefs->n_out, "sm");
         if( !success ){
             fprintf(stderr,
-                "\n (-) Error: Failed eigen decomposition.\n"
+                "\n (-) Error: Failed eigen decomposition."
                 "\n     Aborting...\n\n"
             );
             exit(EXIT_FAILURE);
