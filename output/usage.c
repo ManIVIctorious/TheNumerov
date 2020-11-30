@@ -50,7 +50,8 @@ void usage(void){
            "\n\t    Set reduced mass of involved modes in g/mol"
            "\n\t    This setting is only required if the input is not given in mass weighted"
            "\n\t    coordinates. For dimensions greater than 1 the reduced masses are passed"
-           "\n\t    as a colon separated array of reduced masses"
+           "\n\t    as a colon separated array of reduced masses."
+           "\n\t    The default values can be restored by the string \"default\"."
            "\n\t    Keyword:\tReduced_Masses"
            "\n\t    Default:\t1.0:1.0"
     );

@@ -138,7 +138,6 @@ void GetSettingsControlFile(char* inputfile, settings* set){
         // strings set here must be freed afterwards (free_set_string_values())
             case 'm':
                 set->masses_string = set_string_values(optarg);
-                set->masses_string_set++;
                 break;
 
             case 'i':

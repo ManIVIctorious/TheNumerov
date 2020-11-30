@@ -9,7 +9,6 @@ typedef struct settings {
   int n_spline;       // Number of interpolation points
 
   char   * masses_string;   // String containing reduced masses
-  int      masses_string_set;
   double * masses;          // Actual reduced masses array
 
   double ekin_factor; // Kinetic     energy factor

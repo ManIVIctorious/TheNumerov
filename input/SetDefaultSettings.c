@@ -14,7 +14,6 @@ settings SetDefaultSettings(void){
         .n_spline  = 0,           // Number of interpolation points
 
         .masses_string = NULL,    // String containing reduced masses
-        .masses_string_set = 0,
         .masses = NULL,           // Actual reduced masses array
 
         .ekin_factor = 1.0/4.184, // Kinetic     energy factor

@@ -21,14 +21,23 @@ void ValidateSettings(settings *set){
 
     for(int i = 0; i < set->dimension; ++i){ set->masses[i] = 1.0; }
 
-// get reduced masses from masses_string
-    if( set->masses_string_set ){
+// if masses string is set and not set to "default" get reduced masses
+    if( set->masses_string && (strcasecmp(set->masses_string, "default") != 0) ){
 
         char * stringp = set->masses_string;
         char * token   = NULL;
 
         for(int i = 0; i < set->dimension; ++i){
             token = strsep(&stringp, ":");
+            if( !token ){
+                fprintf(stderr,
+                    "\n (-) Error: Invalid masses string detected."
+                    "\n     Only %d of %d expected entries found."
+                    "\n     Aborting...\n\n"
+                    , i+1, set->dimension
+                );
+                exit(EXIT_FAILURE);
+            }
             set->masses[i] = convertstring_to_double(token, "Reduced mass", NULL);
         }
     }

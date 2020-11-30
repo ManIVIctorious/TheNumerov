@@ -168,7 +168,6 @@ void GetSettingsGetopt(int argc, char** argv, settings* preferences){
             case 'm':
             // point to optarg
                 preferences->masses_string = optarg;
-                ++preferences->masses_string_set;
                 break;
 
             case 'i':
