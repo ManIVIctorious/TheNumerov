@@ -16,7 +16,7 @@
   SRC += input/SetDefaultSettings.c
   SRC += input/ConvertString.c
   SRC += input/GetSettingsControlFile.c
-  SRC += input/ParseControlFile.c
+  SRC += input/TokeniseControlFile.c
   SRC += input/GetSettingsGetopt.c
   SRC += input/ValidateSettings.c
   SRC += input/CheckCoordinateSpacing.c

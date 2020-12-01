@@ -10,8 +10,9 @@
 
 // Provided prototypes
 void GetSettingsControlFile(char* inputfile, settings* set);
-static char* set_string_values(char* source);
 void free_set_string_values(void);
+
+static char* set_string_values(char* source);
 
 
 void GetSettingsControlFile(char* inputfile, settings* set){
@@ -22,40 +23,40 @@ void GetSettingsControlFile(char* inputfile, settings* set){
  *  char      * keyword;
  *  int         set;
  *  const int   identifier;
- *  char        value[_MaxSettingsStringLength_];
+ *  char     ** value;
  *}}}*/
     struct keywords keywordlist[] = {
     // Boolean values (i.e. char):
-        {"Analyze",                 0,  'a',  "" },
-        {"Dipole",                  0,  'd',  "" },
-        {"Check_Spacing",           0,  'T',  "" },
+        {"Analyze",                 0,  'a', NULL },
+        {"Dipole",                  0,  'd', NULL },
+        {"Check_Spacing",           0,  'T', NULL },
     // integer values:
-        {"Dimensionality",          0,  'D',  "" },
-        {"Stencil_Size",            0,  'n',  "" },
-        {"Interpolation_points",    0,  's',  "" },
-        {"N_Eigenstates",           0,  'N',  "" },
+        {"Dimensionality",          0,  'D', NULL },
+        {"Stencil_Size",            0,  'n', NULL },
+        {"Interpolation_points",    0,  's', NULL },
+        {"N_Eigenstates",           0,  'N', NULL },
     // double values:
-        {"Kin_E_Factor",            0,  'k',  "" },
-        {"Pot_E_Factor",            0,  'v',  "" },
-        {"Dipole_Factor",           0,  'f',  "" },
-        {"IMOI_Factor",             0,  'M',  "" },
-        {"Spacing_Threshold",       0,  't',  "" },
-        {"Lower_Bound",             0,  'l',  "" },
-        {"Upper_Bound",             0,  'u',  "" },
+        {"Kin_E_Factor",            0,  'k', NULL },
+        {"Pot_E_Factor",            0,  'v', NULL },
+        {"Dipole_Factor",           0,  'f', NULL },
+        {"IMOI_Factor",             0,  'M', NULL },
+        {"Spacing_Threshold",       0,  't', NULL },
+        {"Lower_Bound",             0,  'l', NULL },
+        {"Upper_Bound",             0,  'u', NULL },
     // string values:
-        {"Reduced_Masses",          0,  'm',  "" },
-        {"Input_File",              0,  'i',  "" },
-        {"External_Dipole_File",    0,  'e',  "" },
-        {"Output_File",             0,  'o',  "" },
-        {"Coriolis_File",           0,  'c',  "" },
+        {"Reduced_Masses",          0,  'm', NULL },
+        {"Input_File",              0,  'i', NULL },
+        {"External_Dipole_File",    0,  'e', NULL },
+        {"Output_File",             0,  'o', NULL },
+        {"Coriolis_File",           0,  'c', NULL },
     // other:
-        {"Eigensolver",             0,  'E',  "" },
+        {"Eigensolver",             0,  'E', NULL },
     // NULL keyword as end condition
-        { NULL , 0 , 0 , "" }
+        { NULL , 0 , 0 , NULL }
     };
 
 // get keyword values
-    ControlFileParser(inputfile, keywordlist, 0);
+    TokeniseControlFile(inputfile, keywordlist, 0);
 
 // assign values to variables in settings struct
     for(int i = 0; keywordlist[i].keyword; ++i){
@@ -63,110 +64,121 @@ void GetSettingsControlFile(char* inputfile, settings* set){
     // only iterate over the values set by the parsing function
         if(!keywordlist[i].set){ continue; }
 
+    // print a warning if keyword was set multiple times
+        if( keywordlist[i].set > 1 ){
+            fprintf(stderr,
+                " (-) Warning: Keyword \"%s\" was set multiple times, only last value will be considered\n"
+                , keywordlist[i].keyword
+            );
+        }
+
     // create helper optarg (the string array)
-        char * optarg = keywordlist[i].value;
+        char ** optarg = keywordlist[i].value;
+        char *  optarglast = optarg[keywordlist[i].set - 1];
 
     // switch over identifiers
         switch(keywordlist[i].identifier){
 
         // Boolean values
             case 'a':
-                set->analyze = (char)convertstring_to_bool(optarg, keywordlist[i].keyword, NULL);
+                set->analyze = (char)convertstring_to_bool(optarglast, keywordlist[i].keyword, NULL);
                 break;
 
             case 'd':
-                set->dipole = (char)convertstring_to_bool(optarg, keywordlist[i].keyword, NULL);
+                set->dipole = (char)convertstring_to_bool(optarglast, keywordlist[i].keyword, NULL);
                 break;
 
             case 'T':
-                set->check_spacing = (char)convertstring_to_bool(optarg, keywordlist[i].keyword, NULL);
+                set->check_spacing = (char)convertstring_to_bool(optarglast, keywordlist[i].keyword, NULL);
                 break;
 
 
         // integer values
             case 'D':
-                set->dimension   = (int)convertstring_to_long(optarg, keywordlist[i].keyword, NULL);
+                set->dimension   = (int)convertstring_to_long(optarglast, keywordlist[i].keyword, NULL);
                 break;
 
             case 'n':
-                set->n_stencil   = (int)convertstring_to_long(optarg, keywordlist[i].keyword, NULL);
+                set->n_stencil   = (int)convertstring_to_long(optarglast, keywordlist[i].keyword, NULL);
                 break;
 
             case 's':
-                if( strcasecmp(optarg, "none") == 0 ){ set->n_spline = 0; }
+                if( strcasecmp(optarglast, "none") == 0 ){ set->n_spline = 0; }
                 else{
-                    set->n_spline    = (int)convertstring_to_long(optarg, keywordlist[i].keyword, NULL);
+                    set->n_spline    = (int)convertstring_to_long(optarglast, keywordlist[i].keyword, NULL);
                 }
                 break;
 
             case 'N':
-                set->n_out       = (int)convertstring_to_long(optarg, keywordlist[i].keyword, NULL);
+                set->n_out       = (int)convertstring_to_long(optarglast, keywordlist[i].keyword, NULL);
                 break;
 
 
         // double values
             case 'k':
-                set->ekin_factor = convertstring_to_double(optarg, keywordlist[i].keyword, NULL);
+                set->ekin_factor = convertstring_to_double(optarglast, keywordlist[i].keyword, NULL);
                 break;
 
             case 'v':
-                set->epot_factor = convertstring_to_double(optarg, keywordlist[i].keyword, NULL);
+                set->epot_factor = convertstring_to_double(optarglast, keywordlist[i].keyword, NULL);
                 break;
 
             case 'f':
-                set->DipToAsm    = convertstring_to_double(optarg, keywordlist[i].keyword, NULL);
+                set->DipToAsm    = convertstring_to_double(optarglast, keywordlist[i].keyword, NULL);
                 break;
 
             case 'M':
-                set->mu_factor   = convertstring_to_double(optarg, keywordlist[i].keyword, NULL);
+                set->mu_factor   = convertstring_to_double(optarglast, keywordlist[i].keyword, NULL);
                 break;
 
             case 't':
-                set->threshold   = convertstring_to_double(optarg, keywordlist[i].keyword, NULL);
+                set->threshold   = convertstring_to_double(optarglast, keywordlist[i].keyword, NULL);
                 break;
 
             case 'l':
-                set->e_min       = convertstring_to_double(optarg, keywordlist[i].keyword, NULL);
+                set->e_min       = convertstring_to_double(optarglast, keywordlist[i].keyword, NULL);
                 break;
 
             case 'u':
-                set->e_max       = convertstring_to_double(optarg, keywordlist[i].keyword, NULL);
+                set->e_max       = convertstring_to_double(optarglast, keywordlist[i].keyword, NULL);
                 break;
 
 
         // string values:
         // strings set here must be freed afterwards (free_set_string_values())
             case 'm':
-                set->masses_string = set_string_values(optarg);
+                set->masses_string = set_string_values(optarglast);
                 break;
 
             case 'i':
-                set->input_file = set_string_values(optarg);
+                set->input_file = set_string_values(optarglast);
                 break;
 
             case 'e':
-                set->ext_dip_file = set_string_values(optarg);
+                set->ext_dip_file = set_string_values(optarglast);
                 set->dipole = 1;
                 break;
 
             case 'c':
-                set->coriolis_file = set_string_values(optarg);
+                set->coriolis_file = set_string_values(optarglast);
                 break;
 
             case 'o':
-                set->output_file = set_string_values(optarg);
+                set->output_file = set_string_values(optarglast);
                 set->output_file_set++;
                 break;
 
 
         // other
             case 'E':
-                if     ( strcasecmp(optarg, "Intel_MKL_FEAST")  == 0 ){ set->Eigensolver = 1; }
-                else if( strcasecmp(optarg, "ARMADILLO_ARPACK") == 0 ){ set->Eigensolver = 2; }
-                else{ set->Eigensolver = (int)convertstring_to_long(optarg, keywordlist[i].keyword, NULL); }
+                if     ( strcasecmp(optarglast, "Intel_MKL_FEAST")  == 0 ){ set->Eigensolver = 1; }
+                else if( strcasecmp(optarglast, "ARMADILLO_ARPACK") == 0 ){ set->Eigensolver = 2; }
+                else{ set->Eigensolver = (int)convertstring_to_long(optarglast, keywordlist[i].keyword, NULL); }
                 break;
         }
     }
+
+    free_keywordlistvalues(keywordlist);
 }
 
 
