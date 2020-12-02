@@ -112,7 +112,7 @@ int TokeniseControlFile(char* filename, struct keywords* kwlist, int ExitOnError
                     kwlist[i].value = realloc(kwlist[i].value, kwlist[i].set * sizeof(char*));
                     if(kwlist[i].value == NULL){ perror("kwlist->value"); exit(errno); }
 
-                    kwlist[i].value[kwlist[i].set - 1] = malloc(_MaxValLength_ * sizeof(char));
+                    kwlist[i].value[kwlist[i].set - 1] = malloc( (_MaxValLength_) * sizeof(char));
                     if(kwlist[i].value[kwlist[i].set - 1] == NULL){ perror("kwlist->value[i]"); exit(errno); }
 
                 // copy value to kwlist array and ensure '\0' termination

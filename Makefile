@@ -2,12 +2,14 @@
 include make.def
 
 # Compiler and compiler flags
+  ifndef CC
     CC = gcc
+  endif
   ifndef CppC
     CppC = g++ -Wno-unused-parameter
   endif
   ifndef OPT
-    OPT  = -O2 -march=native
+    OPT  = -O2 -march=native -flto
   endif
   ifndef WARN
     WARN  = -Wall -Wextra -Werror

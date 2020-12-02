@@ -3,11 +3,8 @@
 # Source Files
 #----------------------------------------------------------------------
   SRC += main.c
-  SRC += FillDerivativeStencils.c
   SRC += MetaInterpolation.c
   SRC += nx1dInterpolation.c
-  SRC += MetaEigensolver.c
-  SRC += solvers/Watson2D.c
 ## Input
   SRC += input/InputDataFile.c
   SRC += input/InputCoriolisCoefficients.c
@@ -26,6 +23,10 @@
   SRC += stencils/FillStencil2D.c
   SRC += stencils/FillStencil3D.c
   SRC += stencils/FillStencil4D.c
+## Solvers
+  SRC += solvers/MetaEigensolver.c
+  SRC += solvers/Watson2D.c
+  SRC += solvers/FillDerivativeStencils.c
 ## Integrators
   SRC += integrators/Integrators.c
   SRC += integrators/Integrate1D.c

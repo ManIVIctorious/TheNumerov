@@ -7,13 +7,11 @@
 
 # Additional settings, including warnings, optimisation
 #   level, libraries, includes and packages (pkg-config files)
-# OPT      = -O2 -march=native -flto
-# WARN     = -Wall -Wextra -Werror -Wno-stringop-truncation -Wno-stringop-overflow
-OPT = -g -Og
+  CC       = gcc
+  WARN     = -Wall -Wextra -Werror -Wno-unused-parameter
   LIB      = -lm
   INC      = -Iinclude/
   PACKAGES = gsl mkl armadillo
-  WARN += -Wno-unused-parameter
 
 # Preprocessor flags
   PPF += -D HAVE_GSL_INSTALLED  # gnu scientific library support
