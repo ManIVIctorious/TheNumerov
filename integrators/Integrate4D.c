@@ -1,426 +1,278 @@
 
 // provided prototypes
-double Integrate4D(int nq1, int nq2, int nq3, int nq4, double dx, double integrand[]);
+double Integrate4D(int* nq, double dx, double* integrand);
 
-double Integrate4D(int nq1, int nq2, int nq3, int nq4, double dx, double integrand[]){
+double Integrate4D(int* nq, double dx, double* integrand){
 
-  int i, j, k, l, index;
+// shift inidces to reach the end of a given direction
+    int ishift =  nq[3]  *  nq[2]  *  nq[1]  * (nq[0]-1);
+    int jshift =  nq[3]  *  nq[2]  * (nq[1]-1);
+    int kshift =  nq[3]  * (nq[2]-1);
+    int lshift = (nq[3]-1);
 
-  double integral = 0.0;
+    double integral = 0.0;
+
 //--------------------------------------------------
-//inner part. without edges and boundary areas.
+//inner part without edges and boundary areas
 // factor: 1.0
-for (i = 1; i < nq1-1; i++)
-   {
-     for (j = 1; j < nq2-1; j++)
-     {
-       for ( k=1; k < nq3-1; k++)
-       {
-        for ( l=1; l < nq4-1; l++)
-         {
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index];
-         }// endfor l
-       }// endfor k
-     }// endfor j
-   }// endfor i
-//--------------------------------------------------
-// twelve hypercubes wit factor 8/16
-// factor: 4/8
-         l=nq4-1;
-for (i = 1; i < nq1-1; i++)
-   {
-     for (j = 1; j < nq2-1; j++)
-     {
-       for ( k=1; k < nq3-1; k++)
-       {
+    for(int i = 1; i < (nq[0]-1); ++i){
+        for(int j = 1; j < (nq[1]-1); ++j){
+            for(int k = 1; k < (nq[2]-1); ++k){
+                for(int l = 1; l < (nq[3]-1); ++l){
 
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4;
-         integral = integral + integrand[index]*0.5;
-
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*0.5;
-
-      } // endfor k
-     } // endfor j
-    } // endfor i
-k=nq3-1;
-for (i = 1; i < nq1-1; i++)
-   {
-     for (j = 1; j < nq2-1; j++)
-     {
-        for ( l=1; l < nq4-1; l++)
-         {
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + l;
-         integral = integral + integrand[index]*0.5;
-
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*0.5;
-       } // endfor l
-     } // endfor j
-    } // endfor i
-
-
-j=nq2-1;
-for (i = 1; i < nq1-1; i++)
-   {
-     for ( k=1; k < nq3-1; k++)
-      {
-        for ( l=1; l < nq4-1; l++)
-         {
-         index = i*nq2*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*0.5;
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*0.5;
-       } // endfor l
-      } // endfor k
-    } // endfor i
-
-i=nq1-1;
-     for (j = 1; j < nq2-1; j++)
-     {
-       for ( k=1; k < nq3-1; k++)
-       {
-        for ( l=1; l < nq4-1; l++)
-         {
-         index = j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*0.5;
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*0.5;
-       } // endfor l
-      } // endfor k
-     } // endfor j
-
-// done
-//--------------------------------------------------
-// side "walls"
-// factor: 4/16
-/*
-for (i = 1; i < nq1-1; i++)
-   {
-     for (j = 1; j < nq2-1; j++)
-     {
-       for ( k=1; k < nq3-1; k++)
-       {
-        for ( l=1; l < nq4-1; l++)
-         {
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*4/16;
-         }// endfor l
-       }// endfor k
-     }// endfor j
-   }// endfor i
-*/
-k=nq3-1;
-l=nq4-1;
-for (i = 1; i < nq1-1; i++)
-   {
-     for (j = 1; j < nq2-1; j++)
-     {
-         //k=l=0
-         index = i*nq2*nq3*nq4 + j*nq3*nq4;
-         integral = integral + integrand[index]*4/16;
-         //k=0,l=nq-1
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + l;
-         integral = integral + integrand[index]*4/16;
-         //k=nq-1,l=0
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4;
-         integral = integral + integrand[index]*4/16;
-         //k=nq-1,l=nq-1
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*4/16;
-     }// endfor j
-   }// endfor i
-
-j=nq2-1;
-l=nq4-1;
-for (i = 1; i < nq1-1; i++)
-   {
-       for ( k=1; k < nq3-1; k++)
-       {
-         //j=l=0;
-         index = i*nq2*nq3*nq4 + k*nq4;
-         integral = integral + integrand[index]*4/16;
-         //j=0,l=nq-1
-         index = i*nq2*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*4/16;
-         //j=nq-1,l=0
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4;
-         integral = integral + integrand[index]*4/16;
-         //j&l=nq-1
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*4/16;
-       }// endfor k
-   }// endfor i
-
-//j=nq2-1;
-k=nq3-1;
-for (i = 1; i < nq1-1; i++)
-   {
-        for ( l=1; l < nq4-1; l++)
-         {
-         //j=k=0;
-         index = i*nq2*nq3*nq4 + l;
-         integral = integral + integrand[index]*4/16;
-         //j=0,k=nq-1
-         index = i*nq2*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*4/16;
-         //j=nq-1,k=0
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + l;
-         integral = integral + integrand[index]*4/16;
-         //j&k=nq-1
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*4/16;
-         }// endfor l
-   }// endfor i
-
-i=nq1-1;
-l=nq4-1;
-     for (j = 1; j < nq2-1; j++)
-     {
-       for ( k=1; k < nq3-1; k++)
-       {
-         //i=l=0;
-         index = j*nq3*nq4 + k*nq4;
-         integral = integral + integrand[index]*4/16;
-         //i=0,l=nq-1
-         index = j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*4/16;
-         //i=nq-1,l=0
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4;
-         integral = integral + integrand[index]*4/16;
-         //i&l=nq-1
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*4/16;
-       }// endfor k
-     }// endfor j
-
-//i=nq1-1;
-k=nq3-1;
-     for (j = 1; j < nq2-1; j++)
-     {
-        for ( l=1; l < nq4-1; l++)
-         {
-         //i=k=0;
-         index = j*nq3*nq4 + l;
-         integral = integral + integrand[index]*4/16;
-         //i=0,k=nq-1
-         index = j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*4/16;
-         //i=nq-1,k=0
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + l;
-         integral = integral + integrand[index]*4/16;
-         //i&k=nq-1
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*4/16;
-         }// endfor l
-     }// endfor j
-
-//i=nq1-1;
-j=nq2-1;
-       for ( k=1; k < nq3-1; k++)
-       {
-        for ( l=1; l < nq4-1; l++)
-         {
-         //i=j=0;
-         index = k*nq4 + l;
-         integral = integral + integrand[index]*4/16;
-         //i=0,j=nq-1
-         index = j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*4/16;
-         //i=nq-1,j=0
-         index = i*nq2*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*4/16;
-         //i&j=nq-1
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*4/16;
-         }// endfor l
-       }// endfor k
-//done
+                    int index = ( (i*nq[1] + j)*nq[2] + k )*nq[3] + l;
+                    integral += integrand[index];
+                }
+            }
+        }
+    }
 
 //--------------------------------------------------
-// side "lines"
-// factor: 2/16
-/*
-for (i = 1; i < nq1-1; i++)
-   {
-     for (j = 1; j < nq2-1; j++)
-     {
-       for ( k=1; k < nq3-1; k++)
-       {
-        for ( l=1; l < nq4-1; l++)
-         {
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*2/16;
-         }// endfor l
-       }// endfor k
-     }// endfor j
-   }// endfor i
-*/
-j=nq2-1;
-k=nq3-1;
-l=nq4-1;
-for (i = 1; i < nq1-1; i++)
-   {
-         //j,k,l 0
-         index = i*nq2*nq3*nq4;
-         integral = integral + integrand[index]*2/16;
-         //j,k 0 | l nq
-         index = i*nq2*nq3*nq4 + l;
-         integral = integral + integrand[index]*2/16;
-         //j,l 0 | k nq
-         index = i*nq2*nq3*nq4 + k*nq4;
-         integral = integral + integrand[index]*2/16;
-         //j 0 | k,l nq
-         index = i*nq2*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*2/16;
-         //l,k 0 | j nq
-         index = i*nq2*nq3*nq4 + j*nq3*nq4;
-         integral = integral + integrand[index]*2/16;
-         //k 0 | j l nq
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + l;
-         integral = integral + integrand[index]*2/16;
-         //l 0 | j,k nq
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4;
-         integral = integral + integrand[index]*2/16;
-         //0 | j,k,l nq
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*2/16;
+// twelve hypercubes with factor 8/16
+// factor: 1/2
+// l = 0; l = lshift
+    for(int i = 1; i < (nq[0]-1); ++i){
+        for(int j = 1; j < (nq[1]-1); ++j){
+            for(int k = 1; k < (nq[2]-1); ++k){
 
-   }// endfor i
+                int index = ((i*nq[1] + j)*nq[2] + k)*nq[3];
 
-i=nq1-1;
-k=nq3-1;
-l=nq4-1;
-for (j = 1; j < nq2-1; j++)
-   {
-         //i,k,l 0
-         index = j*nq3*nq4;
-         integral = integral + integrand[index]*2/16;
-         //i,k 0 | l nq
-         index = j*nq3*nq4 + l;
-         integral = integral + integrand[index]*2/16;
-         //i,l 0 | k nq
-         index = j*nq3*nq4 + k*nq4;
-         integral = integral + integrand[index]*2/16;
-         //i 0 | k,l nq
-         index = j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*2/16;
-         //l,k 0 | i nq
-         index = i*nq2*nq3*nq4 + j*nq3*nq4;
-         integral = integral + integrand[index]*2/16;
-         //k 0 | i l nq
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + l;
-         integral = integral + integrand[index]*2/16;
-         //l 0 | i,k nq
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4;
-         integral = integral + integrand[index]*2/16;
-         //0 | i,k,l nq
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*2/16;
+                integral += integrand[index         ]*0.5;
+                integral += integrand[index + lshift]*0.5;
+            }
+        }
+    }
 
-   }// endfor j
+// k = 0; k = kshift
+    for(int i = 1; i < (nq[0]-1); ++i){
+        for(int j = 1; j < (nq[1]-1); ++j){
+            for(int l = 1; l < (nq[3]-1); ++l){
 
-i=nq1-1;
-j=nq2-1;
-l=nq4-1;
-for (k = 1; k < nq3-1; k++)
-   {
-         //i,j,l 0
-         index = k*nq4;
-         integral = integral + integrand[index]*2/16;
-         //i,j 0 | l nq
-         index = k*nq4 + l;
-         integral = integral + integrand[index]*2/16;
-         //i,l 0 | j nq
-         index = j*nq3*nq4 + k*nq4;
-         integral = integral + integrand[index]*2/16;
-         //i 0 | j,l nq
-         index = j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*2/16;
-         //l,j 0 | i nq
-         index = i*nq2*nq3*nq4 + k*nq4;
-         integral = integral + integrand[index]*2/16;
-         //j 0 | i l nq
-         index = i*nq2*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*2/16;
-         //l 0 | i,j nq
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4;
-         integral = integral + integrand[index]*2/16;
-         //0 | i,j,l nq
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*2/16;
+                int index = (i*nq[1] + j)*nq[2]*nq[3] + l;
 
-   }// endfor k
+                integral += integrand[index         ]*0.5;
+                integral += integrand[index + kshift]*0.5;
+            }
+        }
+    }
 
-i=nq1-1;
-j=nq2-1;
-k=nq3-1;
-for (l = 1; l < nq4-1; l++)
-   {
-         //i,j,k 0
-         index = l;
-         integral = integral + integrand[index]*2/16;
-         //i,j 0 | k nq
-         index = k*nq4 + l;
-         integral = integral + integrand[index]*2/16;
-         //i,k 0 | j nq
-         index = j*nq3*nq4 + l;
-         integral = integral + integrand[index]*2/16;
-         //i 0 | j,k nq
-         index = j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*2/16;
-         //k,j 0 | i nq
-         index = i*nq2*nq3*nq4 + l;
-         integral = integral + integrand[index]*2/16;
-         //j 0 | i k nq
-         index = i*nq2*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*2/16;
-         //k 0 | i,j nq
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + l;
-         integral = integral + integrand[index]*2/16;
-         //0 | i,j,k nq
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*2/16;
+// j = 0; j = jshift
+    for(int i = 1; i < (nq[0]-1); ++i){
+        for(int k = 1; k < (nq[2]-1); ++k){
+            for(int l = 1; l < (nq[3]-1); ++l){
 
-   }// endfor l
+                int index = (i*nq[1]*nq[2] + k)*nq[3] + l;
+
+                integral += integrand[index         ]*0.5;
+                integral += integrand[index + jshift]*0.5;
+            }
+        }
+    }
+
+// i = 0; i = ishift
+     for(int j = 1; j < (nq[1]-1); ++j){
+        for(int k = 1; k < (nq[2]-1); ++k){
+            for(int l = 1; l < (nq[3]-1); ++l){
+
+                int index = (j*nq[2] + k)*nq[3] + l;
+
+                integral += integrand[index         ]*0.5;
+                integral += integrand[index + ishift]*0.5;
+            }
+        }
+     }
+
+
 //--------------------------------------------------
-// sixteen edges
-//factor 1/16
-         i=nq1-1;
-         j=nq2-1;
-         k=nq3-1;
-         l=nq4-1;
-         integral = integral + integrand[  0  ]*1/16;
-         index = l;
-         integral = integral + integrand[index]*1/16;
-         index = k*nq4;
-         integral = integral + integrand[index]*1/16;
-         index = k*nq4 + l;
-         integral = integral + integrand[index]*1/16;
-         index = j*nq3*nq4;
-         integral = integral + integrand[index]*1/16;
-         index = j*nq3*nq4 + l;
-         integral = integral + integrand[index]*1/16;
-         index = j*nq3*nq4 + k*nq4;
-         integral = integral + integrand[index]*1/16;
-         index = j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*1/16;
-         index = i*nq2*nq3*nq4 ;
-         integral = integral + integrand[index]*1/16;
-         index = i*nq2*nq3*nq4 + l;
-         integral = integral + integrand[index]*1/16;
-         index = i*nq2*nq3*nq4 + k*nq4;
-         integral = integral + integrand[index]*1/16;
-         index = i*nq2*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*1/16;
-         index = i*nq2*nq3*nq4 + j*nq3*nq4;
-         integral = integral + integrand[index]*1/16;
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + l;
-         integral = integral + integrand[index]*1/16;
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4;
-         integral = integral + integrand[index]*1/16;
-         index = i*nq2*nq3*nq4 + j*nq3*nq4 + k*nq4 + l;
-         integral = integral + integrand[index]*1/16;
-  return integral * dx * dx * dx * dx; //
+// side "walls" with factor 4/16
+// factor: 1/4
+
+// all permutations of
+// k = 0; k = kshift;
+// l = 0; l = lshift;
+    for(int i = 1; i < (nq[0]-1); ++i){
+        for(int j = 1; j < (nq[1]-1); ++j){
+
+            int index = (i*nq[1] + j)*nq[2]*nq[3];
+
+            integral += integrand[index                  ]*0.25;
+            integral += integrand[index + kshift         ]*0.25;
+            integral += integrand[index + lshift         ]*0.25;
+            integral += integrand[index + kshift + lshift]*0.25;
+        }
+    }
+
+// all permutations of
+// j = 0; j = jshift;
+// l = 0; l = lshift;
+    for(int i = 1; i < (nq[0]-1); ++i){
+        for(int k = 1; k < (nq[2]-1); ++k){
+
+            int index = (i*nq[1]*nq[2] + k)*nq[3];
+
+            integral += integrand[index                  ]*0.25;
+            integral += integrand[index + jshift         ]*0.25;
+            integral += integrand[index + lshift         ]*0.25;
+            integral += integrand[index + jshift + lshift]*0.25;
+        }
+    }
+
+// all permutations of
+// j = 0; j = jshift;
+// k = 0; k = kshift;
+    for(int i = 1; i < (nq[0]-1); ++i){
+        for(int l = 1; l < (nq[3]-1); ++l){
+
+            int index = i*nq[1]*nq[2]*nq[3] + l;
+
+            integral += integrand[index                  ]*0.25;
+            integral += integrand[index + jshift         ]*0.25;
+            integral += integrand[index + kshift         ]*0.25;
+            integral += integrand[index + jshift + kshift]*0.25;
+        }
+    }
+
+// all permutations of
+// i = 0; i = ishift;
+// l = 0; l = lshift;
+    for(int j = 1; j < (nq[1]-1); ++j){
+        for(int k = 1; k < (nq[2]-1); ++k){
+
+            int index = (j*nq[2] + k)*nq[3];
+
+            integral += integrand[index                  ]*0.25;
+            integral += integrand[index + ishift         ]*0.25;
+            integral += integrand[index + lshift         ]*0.25;
+            integral += integrand[index + ishift + lshift]*0.25;
+        }
+    }
+
+// all permutations of
+// i = 0; i = ishift;
+// k = 0; k = kshift;
+    for(int j = 1; j < (nq[1]-1); ++j){
+        for(int l = 1; l < (nq[3]-1); ++l){
+
+            int index = j*nq[2]*nq[3] + l;
+
+            integral += integrand[index                  ]*0.25;
+            integral += integrand[index + ishift         ]*0.25;
+            integral += integrand[index + kshift         ]*0.25;
+            integral += integrand[index + ishift + kshift]*0.25;
+        }
+    }
+
+// all permutations of
+// i = 0; i = ishift;
+// j = 0; j = jshift;
+    for(int k = 1; k < (nq[2]-1); ++k){
+        for(int l = 1; l < (nq[3]-1); ++l){
+
+            int index = k*nq[3] + l;
+
+            integral += integrand[index                  ]*0.25;
+            integral += integrand[index + ishift         ]*0.25;
+            integral += integrand[index + jshift         ]*0.25;
+            integral += integrand[index + ishift + jshift]*0.25;
+        }
+    }
+
+//--------------------------------------------------
+// side "lines" with a factor of 2/16
+// factor: 1/8
+
+// j = 0; j = jshift;
+// k = 0; k = kshift;
+// l = 0; l = lshift;
+    for(int i = 1; i < (nq[0]-1); ++i){
+
+        int index = i*nq[1]*nq[2]*nq[3];
+
+        integral += integrand[index                           ]*0.125;
+        integral += integrand[index + jshift                  ]*0.125;
+        integral += integrand[index + kshift                  ]*0.125;
+        integral += integrand[index + lshift                  ]*0.125;
+        integral += integrand[index + jshift + kshift         ]*0.125;
+        integral += integrand[index + jshift + lshift         ]*0.125;
+        integral += integrand[index + kshift + lshift         ]*0.125;
+        integral += integrand[index + jshift + kshift + lshift]*0.125;
+   }
+
+// i = 0; i = ishift;
+// k = 0; k = kshift;
+// l = 0; l = lshift;
+    for(int j = 1; j < (nq[1]-1); ++j){
+
+        int index = j*nq[2]*nq[3];
+
+        integral += integrand[index                           ]*0.125;
+        integral += integrand[index + ishift                  ]*0.125;
+        integral += integrand[index + kshift                  ]*0.125;
+        integral += integrand[index + lshift                  ]*0.125;
+        integral += integrand[index + ishift + kshift         ]*0.125;
+        integral += integrand[index + ishift + lshift         ]*0.125;
+        integral += integrand[index + kshift + lshift         ]*0.125;
+        integral += integrand[index + ishift + kshift + lshift]*0.125;
+    }
+
+// i = 0; i = ishift;
+// j = 0; j = jshift;
+// l = 0; l = lshift;
+    for(int k = 1; k < (nq[2]-1); ++k){
+
+        int index = k*nq[3];
+
+        integral += integrand[index                           ]*0.125;
+        integral += integrand[index + ishift                  ]*0.125;
+        integral += integrand[index + jshift                  ]*0.125;
+        integral += integrand[index + lshift                  ]*0.125;
+        integral += integrand[index + ishift + jshift         ]*0.125;
+        integral += integrand[index + ishift + lshift         ]*0.125;
+        integral += integrand[index + jshift + lshift         ]*0.125;
+        integral += integrand[index + ishift + jshift + lshift]*0.125;
+    }
+
+// i = 0; i = ishift;
+// j = 0; j = jshift;
+// k = 0; k = kshift;
+    for(int l = 1; l < (nq[3]-1); ++l){
+
+        int index = l;
+
+        integral += integrand[index                           ]*0.125;
+        integral += integrand[index + ishift                  ]*0.125;
+        integral += integrand[index + jshift                  ]*0.125;
+        integral += integrand[index + kshift                  ]*0.125;
+        integral += integrand[index + ishift + jshift         ]*0.125;
+        integral += integrand[index + ishift + kshift         ]*0.125;
+        integral += integrand[index + jshift + kshift         ]*0.125;
+        integral += integrand[index + ishift + jshift + kshift]*0.125;
+    }
+
+
+//--------------------------------------------------
+// sixteen "corners"
+// factor: 1/16
+    integral += integrand[   0  ]*0.0625;
+
+    integral += integrand[ishift]*0.0625;
+    integral += integrand[jshift]*0.0625;
+    integral += integrand[kshift]*0.0625;
+    integral += integrand[lshift]*0.0625;
+
+    integral += integrand[ishift + jshift]*0.0625;
+    integral += integrand[ishift + kshift]*0.0625;
+    integral += integrand[ishift + lshift]*0.0625;
+    integral += integrand[jshift + kshift]*0.0625;
+    integral += integrand[jshift + lshift]*0.0625;
+    integral += integrand[kshift + lshift]*0.0625;
+
+    integral += integrand[ishift + jshift + kshift]*0.0625;
+    integral += integrand[ishift + jshift + lshift]*0.0625;
+    integral += integrand[ishift + kshift + lshift]*0.0625;
+    integral += integrand[jshift + kshift + lshift]*0.0625;
+
+    integral += integrand[ishift + jshift + kshift + lshift]*0.0625;
+
+    return integral * dx * dx * dx * dx;
 }

@@ -3,10 +3,10 @@
 #include <stdlib.h>
 
 // dependencies
-double Integrate1D(int n, double dx, double* integrand);
-double Integrate2D(int nq1, int nq2, double dx, double* integrand);
-double Integrate3D(int nq1, int nq2, int nq3, double dx, double* integrand);
-double Integrate4D(int nq1, int nq2, int nq3, int nq4, double dx, double* integrand);
+double Integrate1D(int* nq, double dx, double* integrand);
+double Integrate2D(int* nq, double dx, double* integrand);
+double Integrate3D(int* nq, double dx, double* integrand);
+double Integrate4D(int* nq, double dx, double* integrand);
 
 
 // provided prototypes
@@ -19,19 +19,19 @@ double Integrate(int dimension, int* nq, double dx, double* integrand){
     switch(dimension){
 
         case 1:
-            integral = Integrate1D(nq[0], dx, integrand);
+            integral = Integrate1D(nq, dx, integrand);
             break;
 
         case 2:
-            integral = Integrate2D(nq[0], nq[1], dx, integrand);
+            integral = Integrate2D(nq, dx, integrand);
             break;
 
         case 3:
-            integral = Integrate3D(nq[0], nq[1], nq[2], dx, integrand);
+            integral = Integrate3D(nq, dx, integrand);
             break;
 
         case 4:
-            integral = Integrate4D(nq[0], nq[1], nq[2], nq[3], dx, integrand);
+            integral = Integrate4D(nq, dx, integrand);
             break;
 
         default:
