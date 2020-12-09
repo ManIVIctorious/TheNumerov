@@ -21,7 +21,7 @@ void GetSettingsGetopt(int argc, char** argv, settings* preferences){
 
 // optstring contains a list of all short option indices,
 //  indices followed by a colon are options requiring an argument.
-    const char * optstring = "a::c:d::e:f:hi:k:l:m:n:o:s:t:u:v:C:D:M:N:PT::V";
+    const char * optstring = "a::c:d::e:f:hi:k:l:m:n:o:p::s:t:u:v:C:D:M:N:PT::V";
 
 // create an array of option structs
 /* struct description
@@ -39,6 +39,7 @@ void GetSettingsGetopt(int argc, char** argv, settings* preferences){
         {"analyze",          optional_argument, NULL, 'a'},
         {"dipole",           optional_argument, NULL, 'd'},
         {"no-spacing-check", optional_argument, NULL, 'T'},
+        {"periodic",         optional_argument, NULL, 'p'},
     // integer values:
         {"dimension",        required_argument, NULL, 'D'},
         {"n-stencil",        required_argument, NULL, 'n'},
@@ -105,6 +106,13 @@ void GetSettingsGetopt(int argc, char** argv, settings* preferences){
                 if(optarg == NULL){ preferences->dipole = 1; }
                 else{
                     preferences->dipole = (char)convertstring_to_bool(optarg, "Dipole", NULL);
+                }
+                break;
+
+            case 'p':
+                if(optarg == NULL){ preferences->periodic = 1; }
+                else{
+                    preferences->periodic = (char)convertstring_to_bool(optarg, "Periodic", NULL);
                 }
                 break;
 

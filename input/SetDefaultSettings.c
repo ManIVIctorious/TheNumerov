@@ -26,6 +26,7 @@ settings SetDefaultSettings(void){
         .analyze = 0,
         .dipole  = 0,
         .check_spacing = 1,
+        .periodic = 0,
 
     // Eigensolver specific values
         .Eigensolver = 2,     // Which eigensolver to use (1 FEAST, 2 ARPACK)

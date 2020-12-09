@@ -33,34 +33,34 @@ arma::sp_mat FillArmadillo_2D(settings* prefs, int* nq, int n_points, double* v,
     unsigned int entry_index = 0;
 
     for(int i = 0; i < nq[0]; ++i){
-        for(int j = 0; j < nq[1]; ++j){
+    for(int j = 0; j < nq[1]; ++j){
 
-            for(int xsh = -(prefs->n_stencil/2); xsh < ((prefs->n_stencil/2) + 1); ++xsh){
-            if( (i + xsh > -1) && (i + xsh < nq[0]) ){
+        for(int xsh = -(prefs->n_stencil/2); xsh < ((prefs->n_stencil/2) + 1); ++xsh){
+        if( (i + xsh > -1) && (i + xsh < nq[0]) ){
 
-                for(int ysh = -(prefs->n_stencil/2); ysh < ((prefs->n_stencil/2) + 1); ++ysh){
-                if( (j + ysh > -1) && (j + ysh < nq[1]) ){
+            for(int ysh = -(prefs->n_stencil/2); ysh < ((prefs->n_stencil/2) + 1); ++ysh){
+            if( (j + ysh > -1) && (j + ysh < nq[1]) ){
 
-                    int xsidx = xsh + prefs->n_stencil/2;
-                    int ysidx = ysh + prefs->n_stencil/2;
+                int xsidx = xsh + prefs->n_stencil/2;
+                int ysidx = ysh + prefs->n_stencil/2;
 
-                // locations of stencil values
-                    locations(0, entry_index) =    i     *nq[1] +    j;
-                    locations(1, entry_index) = (i + xsh)*nq[1] + (j + ysh);
-                //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                    values(entry_index) = ekin_param * stencil[ xsidx*prefs->n_stencil + ysidx ];
-                //  apply second term of Watson Hamiltonian
-                    if( prefs->coriolis_file ){
-                        values(entry_index) -= exec_watson_2d(mu, zeta, nq, dq, q, i, j, xsidx, ysidx);
-                    }
-                //  The stencil values have to be divided by a factor of two
-                    values(entry_index) *= 0.5;
-
-                    ++entry_index;
-                }}
+            // locations of stencil values
+                locations(0, entry_index) =    i     *nq[1] +    j;
+                locations(1, entry_index) = (i + xsh)*nq[1] + (j + ysh);
+            //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                values(entry_index) = ekin_param * stencil[ xsidx*prefs->n_stencil + ysidx ];
+            //  apply second term of Watson Hamiltonian
+                if( prefs->coriolis_file ){
+                    values(entry_index) -= exec_watson_2d(mu, zeta, nq, dq, q, i, j, xsidx, ysidx);
+                }
+            //  The stencil values have to be divided by 2^(D-1)
+                values(entry_index) *= 0.5;
+            // increment number of entries
+                ++entry_index;
             }}
+        }}
 
-        }
+    }
     }
 
 // actual sparse matrix fill

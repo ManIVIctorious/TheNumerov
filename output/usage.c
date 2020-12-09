@@ -176,6 +176,14 @@ void usage(void){
     );
 
     printf("\n"
+           "\n\t-p, --periodic"
+           "\n\t    For periodic problems (e.g. rotations) use a periodic implementation"
+           "\n\t    of the matrix filling routine."
+           "\n\t    Keyword:\tPeriodic"
+           "\n\t    Default:\t%s", defaults.periodic ? "true" : "false"
+    );
+
+    printf("\n"
            "\n\t-a, --analyze"
            "\n\t    Perform additional calculations, giving insight to"
            "\n\t    Orthonormality, Potential, kinetic energy and coupling"

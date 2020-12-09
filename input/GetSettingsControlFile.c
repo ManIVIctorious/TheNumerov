@@ -30,6 +30,7 @@ void GetSettingsControlFile(char* inputfile, settings* set){
         {"Analyze",                 0,  'a', NULL },
         {"Dipole",                  0,  'd', NULL },
         {"Check_Spacing",           0,  'T', NULL },
+        {"Periodic",                0,  'p', NULL },
     // integer values:
         {"Dimensionality",          0,  'D', NULL },
         {"Stencil_Size",            0,  'n', NULL },
@@ -86,6 +87,10 @@ void GetSettingsControlFile(char* inputfile, settings* set){
 
             case 'd':
                 set->dipole = (char)convertstring_to_bool(optarglast, keywordlist[i].keyword, NULL);
+                break;
+
+            case 'p':
+                set->periodic = (char)convertstring_to_bool(optarglast, keywordlist[i].keyword, NULL);
                 break;
 
             case 'T':

@@ -25,42 +25,43 @@ arma::sp_mat FillArmadillo_4D(settings* prefs, int* nq, int n_points, double* v,
     unsigned int entry_index = 0;
 
     for(int i = 0; i < nq[0]; ++i){
-        for(int j = 0; j < nq[1]; ++j){
-            for(int k = 0; k < nq[2]; ++k){
-                for(int l = 0; l < nq[3]; ++l){
+    for(int j = 0; j < nq[1]; ++j){
+    for(int k = 0; k < nq[2]; ++k){
+    for(int l = 0; l < nq[3]; ++l){
 
-                    for(int ash = -(prefs->n_stencil/2); ash <= (prefs->n_stencil/2); ++ash){
-                    if( (i + ash > -1) && (i + ash < nq[0]) ){
+        for(int ash = -(prefs->n_stencil/2); ash <= (prefs->n_stencil/2); ++ash){
+        if( (i + ash > -1) && (i + ash < nq[0]) ){
 
-                        for(int bsh = -(prefs->n_stencil/2); bsh <= (prefs->n_stencil/2); ++bsh){
-                        if( (j + bsh > -1) && (j + bsh < nq[1]) ){
+            for(int bsh = -(prefs->n_stencil/2); bsh <= (prefs->n_stencil/2); ++bsh){
+            if( (j + bsh > -1) && (j + bsh < nq[1]) ){
 
-                            for(int csh = -(prefs->n_stencil/2); csh <= (prefs->n_stencil/2); ++csh){
-                            if( (k + csh > -1) && (k + csh < nq[2]) ){
+                for(int csh = -(prefs->n_stencil/2); csh <= (prefs->n_stencil/2); ++csh){
+                if( (k + csh > -1) && (k + csh < nq[2]) ){
 
-                                for(int dsh = -(prefs->n_stencil/2); dsh <= (prefs->n_stencil/2); ++dsh){
-                                if( (l + dsh > -1) && (l + dsh < nq[3]) ){
+                    for(int dsh = -(prefs->n_stencil/2); dsh <= (prefs->n_stencil/2); ++dsh){
+                    if( (l + dsh > -1) && (l + dsh < nq[3]) ){
 
-                                    int asidx = ash + prefs->n_stencil/2;
-                                    int bsidx = bsh + prefs->n_stencil/2;
-                                    int csidx = csh + prefs->n_stencil/2;
-                                    int dsidx = dsh + prefs->n_stencil/2;
+                        int asidx = ash + prefs->n_stencil/2;
+                        int bsidx = bsh + prefs->n_stencil/2;
+                        int csidx = csh + prefs->n_stencil/2;
+                        int dsidx = dsh + prefs->n_stencil/2;
 
-                                // locations of stencil values (rows 0 and columns 1)
-                                    locations (0, entry_index) = ( (    i     *nq[1] +    j      )*nq[2] +    k      )*nq[3] +    l;
-                                    locations (1, entry_index) = ( ( (i + ash)*nq[1] + (j + bsh) )*nq[2] + (k + csh) )*nq[3] + (l + dsh);
-                                //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                                    values(entry_index) = ekin_param * stencil[ ( (asidx*prefs->n_stencil + bsidx)*prefs->n_stencil + csidx )*prefs->n_stencil + dsidx ];
-                                // stencil entries have to be divided by a factor of eight
-                                    values(entry_index) *= 0.125;
-                                    ++entry_index;
-                                }}
-                            }}
-                        }}
+                    // locations of stencil values (rows 0 and columns 1)
+                        locations (0, entry_index) = ( (    i     *nq[1] +    j      )*nq[2] +    k      )*nq[3] +    l;
+                        locations (1, entry_index) = ( ( (i + ash)*nq[1] + (j + bsh) )*nq[2] + (k + csh) )*nq[3] + (l + dsh);
+                    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                        values(entry_index) = ekin_param * stencil[ ( (asidx*prefs->n_stencil + bsidx)*prefs->n_stencil + csidx )*prefs->n_stencil + dsidx ];
+                    // stencil entries have to be divided by 2^(D-1)
+                        values(entry_index) *= 0.125;
+                    // increment number of entries
+                        ++entry_index;
                     }}
-                }
-            }
-        }
+                }}
+            }}
+        }}
+    }
+    }
+    }
     }
 
 // actual sparse matrix fill

@@ -28,6 +28,15 @@ int SolverFEAST_MKL(settings* prefs, int* nq, double* v, double ekin_param, doub
     double  * vals_A = NULL;
 
 // depending on the dimensionality use the appropriate filling routine
+
+    if( prefs->periodic ){
+        fprintf(stderr,
+            "Periodic filling routines are currently not implemented for the Intel MKL FEAST solver."
+            "\nAborting..."
+        );
+        exit(EXIT_FAILURE);
+    }
+
     switch( prefs->dimension ){
 
         case 1:

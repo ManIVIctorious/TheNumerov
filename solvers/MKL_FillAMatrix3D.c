@@ -50,46 +50,46 @@ int MKL_FillAMatrix3D(settings* prefs, int* nq, double* v, double ekin_param, do
     int entry_index = 0;
 
     for(int i = 0; i < nq[0]; ++i){
-        for(int j = 0; j < nq[1]; ++j){
-            for(int k = 0; k < nq[2]; ++k){
+    for(int j = 0; j < nq[1]; ++j){
+    for(int k = 0; k < nq[2]; ++k){
 
-                for(int xsh = -(prefs->n_stencil/2); xsh <= (prefs->n_stencil/2); ++xsh){
-                if( (i + xsh > -1) && (i + xsh < nq[0]) ){
+        for(int xsh = -(prefs->n_stencil/2); xsh <= (prefs->n_stencil/2); ++xsh){
+        if( (i + xsh > -1) && (i + xsh < nq[0]) ){
 
-                    for(int ysh = -(prefs->n_stencil/2); ysh <= (prefs->n_stencil/2); ++ysh){
-                    if( (j + ysh > -1) && (j + ysh < nq[1]) ){
+            for(int ysh = -(prefs->n_stencil/2); ysh <= (prefs->n_stencil/2); ++ysh){
+            if( (j + ysh > -1) && (j + ysh < nq[1]) ){
 
-                        for(int zsh = -(prefs->n_stencil/2); zsh <= (prefs->n_stencil/2); ++zsh){
-                        if( (k + zsh > -1) && (k + zsh < nq[2]) ){
+                for(int zsh = -(prefs->n_stencil/2); zsh <= (prefs->n_stencil/2); ++zsh){
+                if( (k + zsh > -1) && (k + zsh < nq[2]) ){
 
-                            int xsidx = xsh + prefs->n_stencil/2;    // stencil x index
-                            int ysidx = ysh + prefs->n_stencil/2;    // stencil y index
-                            int zsidx = zsh + prefs->n_stencil/2;    // stencil z index
+                    int xsidx = xsh + prefs->n_stencil/2;    // stencil x index
+                    int ysidx = ysh + prefs->n_stencil/2;    // stencil y index
+                    int zsidx = zsh + prefs->n_stencil/2;    // stencil z index
 
-                        // set column index
-                            (*cols_A)[entry_index] = ( (i + xsh)*nq[1] + (j + ysh) )*nq[2] + (k + zsh) + 1;
+                // set column index
+                    (*cols_A)[entry_index] = ( (i + xsh)*nq[1] + (j + ysh) )*nq[2] + (k + zsh) + 1;
 
-                        // set matrix value
-                            (*vals_A)[entry_index] = ekin_param * stencil[ (xsidx*prefs->n_stencil + ysidx)*prefs->n_stencil + zsidx ];
-//                        //  apply second term of Watson Hamiltonian
-//                            if( prefs->coriolis_file ){
-//                                (*vals_A)[entry_index] -= exec_watson_3d(mu, zeta, nq, dq, q, i, j, xsidx, ysidx);
-//                            }
-                        //  The stencil values have to be divided by a factor of four
-                            (*vals_A)[entry_index] *= 0.25;
+                // set matrix value
+                    (*vals_A)[entry_index] = ekin_param * stencil[ (xsidx*prefs->n_stencil + ysidx)*prefs->n_stencil + zsidx ];
+//              //  apply second term of Watson Hamiltonian
+//                  if( prefs->coriolis_file ){
+//                      (*vals_A)[entry_index] -= exec_watson_3d(mu, zeta, nq, dq, q, i, j, xsidx, ysidx);
+//                  }
+                //  The stencil values have to be divided by 2^(D-1)
+                    (*vals_A)[entry_index] *= 0.25;
 
-                        // add potential to diagonal element
-                            if( (xsh == 0) && (ysh == 0) && (zsh == 0) ){
-                                (*vals_A)[entry_index] += v[ (i*nq[1] + j)*nq[2] + k ];
-                            }
-                            ++entry_index;
-                        }}
-                    }}
+                // add potential to diagonal element
+                    if( (xsh == 0) && (ysh == 0) && (zsh == 0) ){
+                        (*vals_A)[entry_index] += v[ (i*nq[1] + j)*nq[2] + k ];
+                    }
+                    ++entry_index;
                 }}
-            // after inserting all entries in a row the total number of entries is inserted in the CSR format.
-                (*rows_A)[ (i*nq[1] + j)*nq[2] + k + 1] = entry_index + 1;
-            }
-        }
+            }}
+        }}
+    // after inserting all entries in a row the total number of entries is inserted in the CSR format.
+        (*rows_A)[ (i*nq[1] + j)*nq[2] + k + 1] = entry_index + 1;
+    }
+    }
     }
 
 //// free memory

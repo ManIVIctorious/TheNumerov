@@ -14,17 +14,16 @@ int MKL_FillAMatrix1D(double* v, int* nq, double ekin_param, double* stencil, in
 // Calculate the maximum number of non-zero entries in the A matrix
 //  Should be <n_points - (n_stencil/2)*2> lines with <n_stencil> entries, the
 //  first and last <n_stencil/2> lines are shortened via a triangular number sequence
-    int n_points = nq[0];
-    int max_entries = n_stencil*n_points - (n_stencil/2)*(n_stencil/2 + 1);
+    int max_entries = n_stencil*nq[0] - (n_stencil/2)*(n_stencil/2 + 1);
 
 // The sparse matrix eigensolver of Intel MKL saves the positions of non empty entries in
 //  two integer arrays (rows_A & cols_A), each non zero entry increments the counter by 1
 //  rows_A contains the counter value of each first element in a line -> max entries n_points (+1 because Intel...)
 //  cols_A contains the counter values of all non zero elements -> max entries n_stencil*n_points - borders
 //  vals_A contains the values of all non zero entries -> max entries n_stencil*n_points - borders
-    (*rows_A) = calloc(n_points + 1, sizeof(MKL_INT));
-    (*cols_A) = calloc(max_entries,  sizeof(MKL_INT));
-    (*vals_A) = calloc(max_entries,  sizeof(double));
+    (*rows_A) = calloc(nq[0] + 1,   sizeof(MKL_INT));
+    (*cols_A) = calloc(max_entries, sizeof(MKL_INT));
+    (*vals_A) = calloc(max_entries, sizeof(double));
 
     if( (*rows_A) == NULL ){ perror("1D MKL Fill rows_A"); exit(errno); }
     if( (*cols_A) == NULL ){ perror("1D MKL Fill cols_A"); exit(errno); }
@@ -37,13 +36,13 @@ int MKL_FillAMatrix1D(double* v, int* nq, double ekin_param, double* stencil, in
     (*rows_A)[0] = 1;
     int entry_index = 0;
 
-    for(int i = 0; i < n_points; ++i){
+    for(int i = 0; i < nq[0]; ++i){
 
         for(int xsh = -(n_stencil/2); xsh < ((n_stencil/2) + 1); ++xsh){
 
             int element = i + xsh;
 
-            if( (element > -1) && (element < n_points) ){
+            if( (element > -1) && (element < nq[0]) ){
 
                 (*vals_A)[entry_index] = ekin_param * stencil[xsh + n_stencil/2];
                 (*cols_A)[entry_index] = element + 1;

@@ -21,6 +21,7 @@ typedef struct settings {
   char analyze;
   char dipole;
   char check_spacing;
+  char periodic;
 
 // Eigensolver specific values
   int Eigensolver;  // Which eigensolver to use (1 FEAST, 2 ARPACK)

@@ -86,8 +86,9 @@ fprintf(fd,
 "\n#\n#\n"
 "## Flags:");
     fprintf(fd, "\n#\tAnalyze        = %s;", prefs->analyze        ? "true" : "false");
-    fprintf(fd, "\n#\tDipole         = %s;", prefs->dipole         ? "true" : "false");
     fprintf(fd, "\n#\tCheck_Spacing  = %s;", prefs->check_spacing  ? "true" : "false");
+    fprintf(fd, "\n#\tDipole         = %s;", prefs->dipole         ? "true" : "false");
+    fprintf(fd, "\n#\tPeriodic       = %s;", prefs->periodic       ? "true" : "false");
 
 
 // Eigensolver

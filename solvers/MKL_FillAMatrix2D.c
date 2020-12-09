@@ -49,39 +49,39 @@ int MKL_FillAMatrix2D(settings* prefs, int* nq, double* v, double ekin_param, do
     int entry_index = 0;
 
     for(int i = 0; i < nq[0]; ++i){
-        for(int j = 0; j < nq[1]; ++j){
+    for(int j = 0; j < nq[1]; ++j){
 
-            for(int xsh = -(prefs->n_stencil/2); xsh < ((prefs->n_stencil/2) + 1); ++xsh){
-            if( (i + xsh > -1) && (i + xsh < nq[0]) ){
+        for(int xsh = -(prefs->n_stencil/2); xsh < ((prefs->n_stencil/2) + 1); ++xsh){
+        if( (i + xsh > -1) && (i + xsh < nq[0]) ){
 
-                for(int ysh = -(prefs->n_stencil/2); ysh < ((prefs->n_stencil/2) + 1); ++ysh){
-                if( (j + ysh > -1) && (j + ysh < nq[1]) ){
+            for(int ysh = -(prefs->n_stencil/2); ysh < ((prefs->n_stencil/2) + 1); ++ysh){
+            if( (j + ysh > -1) && (j + ysh < nq[1]) ){
 
-                    int xsidx = xsh + prefs->n_stencil/2;    // stencil x index
-                    int ysidx = ysh + prefs->n_stencil/2;    // stencil y index
+                int xsidx = xsh + prefs->n_stencil/2;    // stencil x index
+                int ysidx = ysh + prefs->n_stencil/2;    // stencil y index
 
-                // set column index
-                    (*cols_A)[entry_index] = (i + xsh)*nq[1] + (j + ysh) + 1;
+            // set column index
+                (*cols_A)[entry_index] = (i + xsh)*nq[1] + (j + ysh) + 1;
 
-                // set matrix value
-                    (*vals_A)[entry_index] = ekin_param * stencil[ xsidx*prefs->n_stencil + ysidx ];
-                //  apply second term of Watson Hamiltonian
-                    if( prefs->coriolis_file ){
-                        (*vals_A)[entry_index] -= exec_watson_2d(mu, zeta, nq, dq, q, i, j, xsidx, ysidx);
-                    }
-                //  The stencil values have to be divided by a factor of two
-                    (*vals_A)[entry_index] *= 0.5;
+            // set matrix value
+                (*vals_A)[entry_index] = ekin_param * stencil[ xsidx*prefs->n_stencil + ysidx ];
+            //  apply second term of Watson Hamiltonian
+                if( prefs->coriolis_file ){
+                    (*vals_A)[entry_index] -= exec_watson_2d(mu, zeta, nq, dq, q, i, j, xsidx, ysidx);
+                }
+            //  The stencil values have to be divided by 2^(D-1)
+                (*vals_A)[entry_index] *= 0.5;
 
-                // add potential to diagonal element
-                    if( (xsh == 0) && (ysh == 0) ){
-                        (*vals_A)[entry_index] += v[i*nq[1] + j];
-                    }
-                    ++entry_index;
-                }}
+            // add potential to diagonal element
+                if( (xsh == 0) && (ysh == 0) ){
+                    (*vals_A)[entry_index] += v[i*nq[1] + j];
+                }
+                ++entry_index;
             }}
-        // after inserting all entries in a row the total number of entries is inserted in the CSR format.
-            (*rows_A)[i*nq[1] + (j + 1)] = entry_index + 1;
-        }
+        }}
+    // after inserting all entries in a row the total number of entries is inserted in the CSR format.
+        (*rows_A)[i*nq[1] + (j + 1)] = entry_index + 1;
+    }
     }
 
 // free memory
