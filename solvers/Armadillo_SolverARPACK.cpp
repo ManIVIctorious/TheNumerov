@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include "settings.h"
 
+// Provided Prototypes
+extern "C" int SolverARPACK_Armadillo(settings* prefs, int* nq, double* v, double ekin_param, double* stencil, double** E, double** X, double** q, double dq, double*** mu, double** zeta);
+
 // Dependencies
 arma::sp_mat FillArmadillo_1D(int* nq, double* v, double ekin_param, double* stencil, int n_stencil);
 arma::sp_mat FillArmadillo_2D(settings* prefs, int* nq, int n_points, double* v, double ekin_param, double* stencil, double** q, double dq, double*** mu, double** zeta);
@@ -14,9 +17,6 @@ arma::sp_mat FillPeriodicArmadillo_1D(int* nq, double* v, double ekin_param, dou
 arma::sp_mat FillPeriodicArmadillo_2D(settings* prefs, int* nq, int n_points, double* v, double ekin_param, double* stencil, double** q, double dq, double*** mu, double** zeta);
 arma::sp_mat FillPeriodicArmadillo_3D(settings* prefs, int* nq, int n_points, double* v, double ekin_param, double* stencil, double** q, double dq, double*** mu, double** zeta);
 arma::sp_mat FillPeriodicArmadillo_4D(settings* prefs, int* nq, int n_points, double* v, double ekin_param, double* stencil, double** q, double dq, double*** mu, double** zeta);
-
-// Provided Prototypes
-extern "C" int SolverARPACK_Armadillo(settings* prefs, int* nq, double* v, double ekin_param, double* stencil, double** E, double** X, double** q, double dq, double*** mu, double** zeta);
 
 
 extern "C"{
