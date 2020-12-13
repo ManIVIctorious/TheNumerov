@@ -9,15 +9,14 @@
 // provided prototypes
 int MKL_FillPeriodicAMatrix3D(settings* prefs, int* nq, double* v, double ekin_param, double* stencil, double** q, double dq, double*** mu, double** zeta, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A);
 
-// Dependencies
+// dependencies
 void   init_watson_3d(settings* prefs);
 double exec_watson_3d(double*** mu, double** zeta, int* nq, double dq, double** q, int i, int j, int xsidx, int ysidx);
 void   free_watson_3d(void);
-void mkl_sort_matrix_rows(int n_rows, MKL_INT* row_start_index, MKL_INT* column_index, double* value);
+void HeapSort(MKL_INT* array, double* values, int arraysize);
 
 
-
-// 2D fill
+// 3D fill
 int MKL_FillPeriodicAMatrix3D(settings* prefs, int* nq, double* v, double ekin_param, double* stencil, double** q, double dq, double*** mu, double** zeta, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A){
 
 // Calculate the maximum number of non-zero entries in the A matrix
@@ -96,7 +95,13 @@ int MKL_FillPeriodicAMatrix3D(settings* prefs, int* nq, double* v, double ekin_p
 // The MKL CSR format requires the matrix entries to be in order, i.e. from left to right.
 // Due to the modulo arithmetics this cannot be ascertained by the filling routine,
 // hence values are sorted in retrospection
-    mkl_sort_matrix_rows(n_points, (*rows_A), (*cols_A), (*vals_A));
+    for(int i = 0; i < n_points; ++i){
+        int       width  = (*rows_A)[i+1] - (*rows_A)[i];
+        MKL_INT * colidx = (*cols_A) + (*rows_A)[ i ] - 1;
+        double  * values = (*vals_A) + (*rows_A)[ i ] - 1;
+
+        HeapSort(colidx, values, width);
+    }
 
     printf("Matrix created, Potential added, %d entries\n", entry_index);
     return 0;

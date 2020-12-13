@@ -56,7 +56,7 @@ ifeq ($(findstring HAVE_MKL_INSTALLED, $(PPF)), HAVE_MKL_INSTALLED)
   MKLSRC += solvers/MKL_FillAMatrix1D.c
   MKLSRC += solvers/MKL_FillAMatrix2D.c
   MKLSRC += solvers/MKL_FillAMatrix3D.c
-  MKLSRC += solvers/MKL_SortMatrixRows.c
+  MKLSRC += solvers/MKL_HeapSort.c
   MKLSRC += solvers/MKL_FillPeriodicAMatrix1D.c
   MKLSRC += solvers/MKL_FillPeriodicAMatrix2D.c
   MKLSRC += solvers/MKL_FillPeriodicAMatrix3D.c
