@@ -66,15 +66,15 @@ int InputCoriolisCoefficients(char* inputfile, double** *q, double** zeta, doubl
         // define list of allowed first tokens
             const char * zeta_line_inits[3] = { "Zeta_x:" , "Zeta_y:" , "Zeta_z:" };
 
+            int recognised = 0;
             for(int i = 0; i < 3; ++i){
-                int recognised = 0;
 
             // compare first token to entries of token list
                 if( strcasecmp(pos, zeta_line_inits[i]) == 0 ){
                     recognised = 1;
 
                 // get zeta values
-                    for(int j = 0; j < zeta_column_count; ){
+                    for(int j = 0; j < zeta_column_count; ++j){
 
                         do{
                             pos = strsep(&stringp, delimit);
@@ -83,8 +83,8 @@ int InputCoriolisCoefficients(char* inputfile, double** *q, double** zeta, doubl
                     // print an error if less than (dim*(dim-1)/2) entries are found
                         if( pos == NULL ){
                             ThrowInputError(inputfile, linenumber,
-                                "Too few entries in Zeta_%c: line"
-                                "(only found %d of expected %d columns)"
+                                "Too few entries in Zeta_%c line: "
+                                "only found %d of expected %d columns"
                                 , "xyz"[i], j+1, zeta_column_count
                             );
                         }
@@ -93,11 +93,12 @@ int InputCoriolisCoefficients(char* inputfile, double** *q, double** zeta, doubl
                         zeta[i][j] = convertstring_to_double(pos, "zeta", NULL);
                     }
                 }
-
-                if( !recognised ){
-                    ThrowInputError(inputfile, linenumber, "Unrecognised keyword %s" , pos);
-                }
             }
+
+            if( !recognised ){
+                ThrowInputError(inputfile, linenumber, "Unrecognised keyword %s" , pos);
+            }
+            continue;
         }
 
 
@@ -126,8 +127,8 @@ int InputCoriolisCoefficients(char* inputfile, double** *q, double** zeta, doubl
         // throw an error if no data found
             if( pos == NULL ){
                 ThrowInputError(inputfile, linenumber,
-                    "Too few entries in input line"
-                    "(only found %d of expected %d columns)"
+                    "Too few entries in data line: "
+                    "only found %d of expected %d columns"
                     , i, (dimension+6)
                 );
             }
@@ -160,8 +161,8 @@ int InputCoriolisCoefficients(char* inputfile, double** *q, double** zeta, doubl
             // throw an error if no data found
                 if( pos == NULL ){
                     ThrowInputError(inputfile, linenumber,
-                        "Too few entries in input line"
-                        "(only found %d of expected %d columns)"
+                        "Too few entries in data line: "
+                        "only found %d of expected %d columns"
                         , dimension+count, (dimension+6)
                     );
                 }
