@@ -9,12 +9,12 @@
 
 // Constants
 // constants of exact numeric values defined by SI redefinition 2019
-    static const double lightspeed       = 299792458;       // m/s
-    static const double planck           = 6.62607015E-34;  // J.s
-    static const double elementarycharge = 1.602176634E-19; // A.s
-    static const double avogadro         = 6.02214076E23;   // 1/mol
+    static const double lightspeed  = 299792458;       // m/s
+    static const double planck      = 6.62607015E-34;  // J.s
+    static const double elcharge    = 1.602176634E-19; // A.s
+    static const double avogadro    = 6.02214076E23;   // 1/mol
 
 // other constants
-    static const double elmass           = 9.109383E-31;  // kg
+    static const double elmass      = 9.109383E-31;  // kg
 
 #endif

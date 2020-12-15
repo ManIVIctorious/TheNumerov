@@ -27,7 +27,8 @@ void GetSettingsControlFile(char* inputfile, settings* set){
  *}}}*/
     struct keywords keywordlist[] = {
     // Boolean values (i.e. char):
-        {"Analyze",                 0,  'a', NULL },
+        {"Frequencies",             0,  'F', NULL },
+        {"Analyse",                 0,  'a', NULL },
         {"Dipole",                  0,  'd', NULL },
         {"Check_Spacing",           0,  'T', NULL },
         {"Periodic",                0,  'p', NULL },
@@ -81,8 +82,12 @@ void GetSettingsControlFile(char* inputfile, settings* set){
         switch(keywordlist[i].identifier){
 
         // Boolean values
+            case 'F':
+                set->frequencies = (char)convertstring_to_bool(optarglast, keywordlist[i].keyword, NULL);
+                break;
+
             case 'a':
-                set->analyze = (char)convertstring_to_bool(optarglast, keywordlist[i].keyword, NULL);
+                set->analyse = (char)convertstring_to_bool(optarglast, keywordlist[i].keyword, NULL);
                 break;
 
             case 'd':
@@ -125,7 +130,7 @@ void GetSettingsControlFile(char* inputfile, settings* set){
                 break;
 
             case 'v':
-                set->epot_factor = convertstring_to_double(optarglast, keywordlist[i].keyword, NULL);
+                set->epot_to_oue = convertstring_to_double(optarglast, keywordlist[i].keyword, NULL);
                 break;
 
             case 'f':
@@ -170,7 +175,6 @@ void GetSettingsControlFile(char* inputfile, settings* set){
 
             case 'o':
                 set->output_file = set_string_values(optarglast);
-                set->output_file_set++;
                 break;
 
 

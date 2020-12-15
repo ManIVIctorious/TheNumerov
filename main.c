@@ -13,7 +13,7 @@ settings SetDefaultSettings(void);
 void GetSettingsControlFile(char* inputfile,  settings *defaults);
 void GetSettingsGetopt(int argc, char** argv, settings *defaults);
 void ValidateSettings(settings *set);
-void PrintSettings(settings* prefs, FILE *fd);
+void PrintSettings(settings *prefs, FILE *fd);
 void free_set_string_values(void);
 
 //  data input
@@ -24,16 +24,16 @@ double CheckCoordinateSpacing(double** q, int* nq, double threshold, int dimensi
 // meta functions
 void MetaGetStencil(double* stencil, int n_stencil, int dimension);
 int  MetaInterpolation(double* *v, int* nq, double dq, int dimension, int n_spline);
-int  MetaEigensolver(settings* prefs, int* nq, double* v, double ekin_param, double* stencil, double* *E, double* *X, double** q, double dq, double*** mu, double** zeta);
+int  MetaEigensolver(settings *prefs, int* nq, double* v, double ekin_param, double* stencil, double* *E, double* *X, double** q, double dq, double*** mu, double** zeta);
 double Integrate(int dimension, int* nq, double dx, double* integrand);
 
 // output functions
-int    TextOut_Frequencies(FILE* fd, double ekin_factor, int n_out, double* E);
-int TextOut_Orthonormality(FILE* fd, int dimensionality, int n_out, int n_points, int* nq, double* integrand, double dq, double* X);
-int      TextOut_Potential(FILE* fd, int dimensionality, int n_out, int n_points, int* nq, double* integrand, double dq, double* X, double* v);
-int       TextOut_EKinetic(FILE* fd, settings prefs, int n_out, int n_points, int* nq, double* integrand, double dq, double* X, double* stencil, double ekin_param);
-int         TextOut_Dipole(FILE* fd, settings prefs, int n_out, int n_points, int* nq, double* integrand, double dq, double* E, double* X, double** dip);
-int   TextOut_Eigenvectors(FILE* fd, settings *prefs, int n_out, int n_points, int* nq, double** q, double* v, double*** mu, double* X, double** dip);
+void    PrintFrequencies(FILE* fd, double kJpermole_to_oue, int n_out, double* E);
+void PrintOrthonormality(FILE* fd, int dimensionality, int n_out, int n_points, int* nq, double dq, double* X);
+void           PrintEPot(FILE* fd, int dimensionality, int n_out, int n_points, int* nq, double dq, double* X, double* v);
+void           PrintEKin(FILE* fd, settings *prefs, int n_out, int n_points, int* nq, double dq, double* X, double* stencil, double ekin_param);
+void         PrintDipole(FILE* fd, settings *prefs, int n_out, int n_points, int* nq, double dq, double* E, double* X, double** dip);
+void   PrintEigenvectors(FILE* fd, settings *prefs, int n_out, int n_points, int* nq, double** q, double* v, double*** mu, double* X, double** dip);
 
 
 int main(int argc, char* argv[]){
@@ -401,9 +401,9 @@ int main(int argc, char* argv[]){
 //------------------------------------------------------------------------------------------------------------
 //      Potential and kinetic energy      Potential and kinetic energy      Potential and kinetic energy
 //------------------------------------------------------------------------------------------------------------
-// convert potential to output unit of energy
+// convert potential to output unit of energy (oue)
     for(int i = 0; i < n_points; ++i){
-        v[i] *= prefs.epot_factor;
+        v[i] *= prefs.epot_to_oue;
     }
 
 // shift potential minimum to zero
@@ -460,7 +460,7 @@ int main(int argc, char* argv[]){
     }
 
 
-// Normalize eigen vectors
+// Normalise eigenvectors
     double   integral;
     double * integrand = malloc(n_points * sizeof(double));
     if(integrand == NULL){ perror("Integrand"); exit(errno); }
@@ -476,6 +476,7 @@ int main(int argc, char* argv[]){
             X[i*n_points + j] = X[i*n_points + j] / sqrt(integral);
         }
     }
+    free(integrand); integrand = NULL;
 
 
 //------------------------------------------------------------------------------------------------------------
@@ -485,43 +486,35 @@ int main(int argc, char* argv[]){
     FILE * fd = fopen(prefs.output_file, "a");
     if(fd == NULL){ perror(prefs.output_file); exit(errno); }
 
-// output eigenvalues and frequencies (in cm^-1)
-    TextOut_Frequencies(fd, prefs.ekin_factor, n_out, E);
+// output eigenvalues in output unit of energy (oue) and frequencies in cm^-1
+    if( prefs.frequencies ){
+        PrintFrequencies(fd, prefs.ekin_factor, n_out, E);
+    }
 
-// Analyze section
-//------------------------------------------------------------------------------------------------------------
-    if(prefs.analyze){
-
+// analyse section
+    if( prefs.analyse ){
     // output ortho-normality check (i.e. <X[i]|X[j]>)
-        TextOut_Orthonormality(fd, prefs.dimension, n_out, n_points, nq, integrand, dq, X);
-
+        PrintOrthonormality(fd, prefs.dimension, n_out, n_points, nq, dq, X);
     // output potential energy (i.e. <X[i]|V|X[j]>)
-        TextOut_Potential(fd, prefs.dimension, n_out, n_points, nq, integrand, dq, X, v);
-
+        PrintEPot(fd, prefs.dimension, n_out, n_points, nq, dq, X, v);
     // output kinetic energy (i.e. <X[i]|ħ² * d²/dx²|X[j]>)
         if( (prefs.dimension == 2) && !prefs.coriolis_file ){
-            TextOut_EKinetic(fd, prefs, n_out, n_points, nq, integrand, dq, X, stencil, ekin_param);
+            PrintEKin(fd, &prefs, n_out, n_points, nq, dq, X, stencil, ekin_param);
         }
-
     }
-// last use of stencil in kinetic energy part
+// last use of stencil in kinetic energy calculation
     free(stencil); stencil = NULL;
 
-
-// dipole section
-//------------------------------------------------------------------------------------------------------------
-    if(prefs.dipole){
-    // Intensities and oscillator strength
-        TextOut_Dipole(fd, prefs, n_out, n_points, nq, integrand, dq, E, X, dip);
+// Intensities and oscillator strengths
+    if( prefs.dipole ){
+        PrintDipole(fd, &prefs, n_out, n_points, nq, dq, E, X, dip);
     }
-// last use of integrand in dipole moment part
-    free(integrand); integrand = NULL;
 
 
 // Coordinate dependent
 //------------------------------------------------------------------------------------------------------------
 //  output coordinates, potential, dipole moments and wave functions
-    TextOut_Eigenvectors(fd, &prefs, n_out, n_points, nq, q, v, mu, X, dip);
+    PrintEigenvectors(fd, &prefs, n_out, n_points, nq, q, v, mu, X, dip);
 
 // close output file
     fclose(fd); fd = NULL;
@@ -530,7 +523,6 @@ int main(int argc, char* argv[]){
 //------------------------------------------------------------------------------------------------------------
 //  free memory    free memory    free memory    free memory    free memory    free memory    free memory
 //------------------------------------------------------------------------------------------------------------
-// free unused memory
     free_set_string_values();
 // coordinates q and dimensions nq
     for(int i = 0; i < prefs.dimension; ++i){

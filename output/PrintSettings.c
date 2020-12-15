@@ -67,7 +67,7 @@ fprintf(fd,
     fprintf(fd, "\n#");
 
     fprintf(fd, "\n#\tKin_E_Factor         = % 12.8lf;\t# in x per kJ/mol", prefs->ekin_factor);
-    fprintf(fd, "\n#\tPot_E_Factor         = % 12.8lf;\t# input (v)  -> output unit of energy", prefs->epot_factor);
+    fprintf(fd, "\n#\tPot_E_Factor         = % 12.8lf;\t# input (v)  -> output unit of energy (oue)", prefs->epot_to_oue);
     fprintf(fd, "\n#\tIMOI_Factor          = % 12.8le;\t# input (mu) -> kJ/mol", prefs->mu_factor);
     fprintf(fd, "\n#\tSpacing_Threshold    = % 12.8le;", prefs->threshold);
     fprintf(fd, "\n#");
@@ -85,7 +85,8 @@ fprintf(fd,
 fprintf(fd,
 "\n#\n#\n"
 "## Flags:");
-    fprintf(fd, "\n#\tAnalyze        = %s;", prefs->analyze        ? "true" : "false");
+    fprintf(fd, "\n#\tFrequencies    = %s;", prefs->frequencies    ? "true" : "false");
+    fprintf(fd, "\n#\tAnalyse        = %s;", prefs->analyse        ? "true" : "false");
     fprintf(fd, "\n#\tCheck_Spacing  = %s;", prefs->check_spacing  ? "true" : "false");
     fprintf(fd, "\n#\tDipole         = %s;", prefs->dipole         ? "true" : "false");
     fprintf(fd, "\n#\tPeriodic       = %s;", prefs->periodic       ? "true" : "false");

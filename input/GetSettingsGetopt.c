@@ -21,7 +21,7 @@ void GetSettingsGetopt(int argc, char** argv, settings* preferences){
 
 // optstring contains a list of all short option indices,
 //  indices followed by a colon are options requiring an argument.
-    const char * optstring = "a::c:d::e:f:hi:k:l:m:n:o:p::s:t:u:v:C:D:M:N:PT::V";
+    const char * optstring = "a::c:d::e:f:hi:k:l:m:n:o:p::s:t:u:v:C:D:F::M:N:PT::V";
 
 // create an array of option structs
 /* struct description
@@ -36,7 +36,8 @@ void GetSettingsGetopt(int argc, char** argv, settings* preferences){
         {"version",                no_argument, NULL, 'V'},
         {"pipe",                   no_argument, NULL, 'P'},
     // Boolean values:
-        {"analyze",          optional_argument, NULL, 'a'},
+        {"frequencies",      optional_argument, NULL, 'F'},
+        {"analyse",          optional_argument, NULL, 'a'},
         {"dipole",           optional_argument, NULL, 'd'},
         {"no-spacing-check", optional_argument, NULL, 'T'},
         {"periodic",         optional_argument, NULL, 'p'},
@@ -95,10 +96,17 @@ void GetSettingsGetopt(int argc, char** argv, settings* preferences){
 
 
         // Boolean values
-            case 'a':
-                if(optarg == NULL){ preferences->analyze = 1; }
+            case 'F':
+                if(optarg == NULL){ preferences->frequencies = 1; }
                 else{
-                    preferences->analyze = (char)convertstring_to_bool(optarg, "Analyze", NULL);
+                    preferences->frequencies = (char)convertstring_to_bool(optarg, "Frequencies", NULL);
+                }
+                break;
+
+            case 'a':
+                if(optarg == NULL){ preferences->analyse = 1; }
+                else{
+                    preferences->analyse = (char)convertstring_to_bool(optarg, "Analyse", NULL);
                 }
                 break;
 
@@ -148,7 +156,7 @@ void GetSettingsGetopt(int argc, char** argv, settings* preferences){
                 break;
 
             case 'v':
-                preferences->epot_factor = convertstring_to_double(optarg, "epot factor", NULL);
+                preferences->epot_to_oue = convertstring_to_double(optarg, "epot factor", NULL);
                 break;
 
             case 'f':
@@ -197,7 +205,6 @@ void GetSettingsGetopt(int argc, char** argv, settings* preferences){
             case 'o':
             // point to optarg
                 preferences->output_file = optarg;
-                ++preferences->output_file_set;
                 break;
 
         }

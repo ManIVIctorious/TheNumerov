@@ -84,7 +84,7 @@ extern "C"{
         success = eigs_sym(eigval, eigvec, A, prefs->n_out, "sm");
         if( !success ){
             fprintf(stderr,
-                "\n (-) Error: Failed eigen decomposition."
+                "\n (-) Error: Failed eigendecomposition."
                 "\n     Aborting...\n\n"
             );
             exit(EXIT_FAILURE);

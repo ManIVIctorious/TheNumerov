@@ -17,16 +17,17 @@ settings SetDefaultSettings(void){
         .masses = NULL,           // Actual reduced masses array
 
         .ekin_factor = 1.0/4.184, // Kinetic     energy factor
-        .epot_factor = 1.0,       // Potential   energy factor
+        .epot_to_oue = 1.0,       // Potential   energy factor
         .mu_factor   = 1.0E20 * avogadro*avogadro * planck*planck/(4.0*M_PI*M_PI),   // Watson term energy factor
         .DipToAsm    = 3.3356E-30,// Conversion from input dipole moment to A.s.m
         .threshold   = 1.0E-10,   // Spacing threshold for double comparison
 
     // Flags
-        .analyze = 0,
-        .dipole  = 0,
+        .frequencies   = 1,
+        .analyse       = 0,
+        .dipole        = 0,
         .check_spacing = 1,
-        .periodic = 0,
+        .periodic      = 0,
 
     // Eigensolver specific values
         .Eigensolver = 2,     // Which eigensolver to use (1 FEAST, 2 ARPACK)
@@ -43,7 +44,6 @@ settings SetDefaultSettings(void){
         .coriolis_file     = NULL,
     //  output file
         .output_file       = "/dev/stdout",
-        .output_file_set   = 0,
     };
 
     return defaults;

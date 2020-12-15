@@ -74,7 +74,7 @@ void usage(void){
            "\n\t    kinetic energy factor [-k, -fkin] has to be set too."
            "\n\t    E.g. above example requires the option \"-k 1.0\"."
            "\n\t    Keyword:\tPot_E_Factor"
-           "\n\t    Default:\t% le", defaults.epot_factor
+           "\n\t    Default:\t% le", defaults.epot_to_oue
     );
 
     printf("\n"
@@ -184,11 +184,18 @@ void usage(void){
     );
 
     printf("\n"
-           "\n\t-a, --analyze"
+           "\n\t-F, --frequencies"
+           "\n\t    Calculate the energy differences between all eigenvalues in wavenumbers"
+           "\n\t    Keyword:\tFrequencies"
+           "\n\t    Default:\t%s", defaults.frequencies ? "true" : "false"
+    );
+
+    printf("\n"
+           "\n\t-a, --analyse"
            "\n\t    Perform additional calculations, giving insight to"
            "\n\t    Orthonormality, Potential, kinetic energy and coupling"
-           "\n\t    Keyword:\tAnalyze"
-           "\n\t    Default:\t%s", defaults.analyze ? "true" : "false"
+           "\n\t    Keyword:\tAnalyse"
+           "\n\t    Default:\t%s", defaults.analyse ? "true" : "false"
     );
 
     printf("\n"
@@ -220,11 +227,11 @@ void usage(void){
 
 #ifdef HAVE_MKL_INSTALLED
     printf("\n\n");
-    printf("\tOptions for the Intel Math Kernel Library FEAST eigen solver:");
+    printf("\tOptions for the Intel Math Kernel Library FEAST eigensolver:");
 
     printf("\n"
            "\n\t    Flags               Keywords          Description"
-           "\n\t    --mkl               Intel_MKL_FEAST   Use the Intel Math Kernel Library FEAST eigen solver"
+           "\n\t    --mkl               Intel_MKL_FEAST   Use the Intel Math Kernel Library FEAST eigensolver"
            "\n\t    -l, --lower-bound   Lower_Bound       Set lower energy bound of calculated eigenstates"
            "\n\t    -u, --upper-bound   Upper_Bound       Set upper energy bound of calculated eigenstates"
     );
@@ -236,7 +243,7 @@ void usage(void){
 
     printf("\n"
            "\n\t    Flags               Keywords          Description"
-           "\n\t    --armadillo         Armadillo_ARPACK  Use the Armadillo ARPACK eigen solver"
+           "\n\t    --armadillo         Armadillo_ARPACK  Use the Armadillo ARPACK eigensolver"
            "\n\t    -N, --n-out         N_Eigenstates     Set number of eigenstates to be calculated"
     );
 #endif

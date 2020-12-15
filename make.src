@@ -36,12 +36,12 @@
 ## Output
   SRC += output/usage.c
   SRC += output/PrintSettings.c
-  SRC += output/TextOut_Dipole.c
-  SRC += output/TextOut_EKinetic.c
-  SRC += output/TextOut_Eigenvectors.c
-  SRC += output/TextOut_Frequencies.c
-  SRC += output/TextOut_Orthonormality.c
-  SRC += output/TextOut_Potential.c
+  SRC += output/PrintFrequencies.c
+  SRC += output/PrintOrthonormality.c
+  SRC += output/PrintEPot.c
+  SRC += output/PrintEKin.c
+  SRC += output/PrintDipole.c
+  SRC += output/PrintEigenvectors.c
 
 # GSL sources
 #----------------------------------------------------------------------
