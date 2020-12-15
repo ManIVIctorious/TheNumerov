@@ -42,6 +42,12 @@ int main(int argc, char* argv[]){
 //  Settings    Settings    Settings    Settings    Settings    Settings    Settings    Settings    Settings
 //------------------------------------------------------------------------------------------------------------
 
+    for(int i = 1; i < argc; ++i){
+        if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0){
+            usage();
+            exit(EXIT_SUCCESS);
+        }
+    }
 // get preferences from default values, control file and command line flags:
 /*{{{
  *  1. Initialise settings struct with the default values

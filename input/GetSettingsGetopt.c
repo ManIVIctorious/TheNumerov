@@ -19,9 +19,16 @@ void GetSettingsGetopt(int argc, char** argv, settings* preferences);
 
 void GetSettingsGetopt(int argc, char** argv, settings* preferences){
 
+/* the following flags are already handled in the calling function
+ * and therefore can't be used here:
+ *
+ * -h, --help           print the usage() function and exit
+ * -C, --control-file   read control file to populate settings
+ */
+
 // optstring contains a list of all short option indices,
 //  indices followed by a colon are options requiring an argument.
-    const char * optstring = "a::c:d::e:f:hi:k:l:m:n:o:p::s:t:u:v:C:D:F::M:N:PT::V";
+    const char * optstring = "a::c:d::e:f:i:k:l:m:n:o:p::s:t:u:v:C:D:F::M:N:PT::V";
 
 // create an array of option structs
 /* struct description
@@ -32,7 +39,6 @@ void GetSettingsGetopt(int argc, char** argv, settings* preferences){
  *  int          val     return value if flat == NULL
  *}}}*/
     const struct option longopts[] = {
-        {"help",                   no_argument, NULL, 'h'},
         {"version",                no_argument, NULL, 'V'},
         {"pipe",                   no_argument, NULL, 'P'},
     // Boolean values:
@@ -78,11 +84,6 @@ void GetSettingsGetopt(int argc, char** argv, settings* preferences){
     // compare control with "val" from longopts to determine the desired action
         if(control == -1){ break; }
         switch( control ){
-
-        // print usage
-            case 'h':
-                usage();
-                exit(EXIT_SUCCESS);
 
         // print version information
             case 'V':
