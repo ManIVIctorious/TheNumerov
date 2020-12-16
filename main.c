@@ -24,14 +24,14 @@ double CheckCoordinateSpacing(double** q, int* nq, double threshold, int dimensi
 // meta functions
 void MetaGetStencil(double* stencil, int n_stencil, int dimension);
 int  MetaInterpolation(double* *v, int* nq, double dq, int dimension, int n_spline);
-int  MetaEigensolver(settings *prefs, int* nq, double* v, double ekin_param, double* stencil, double* *E, double* *X, double** q, double dq, double*** mu, double** zeta);
+int  MetaEigensolver(settings *prefs, int* nq, double* v, double ekin_to_oue, double* stencil, double* *E, double* *X, double** q, double dq, double*** mu, double** zeta);
 double Integrate(int dimension, int* nq, double dx, double* integrand);
 
 // output functions
-void    PrintFrequencies(FILE* fd, double kJpermole_to_oue, int n_out, double* E);
+void    PrintFrequencies(FILE* fd, double kJpermol_to_oue, int n_out, double* E);
 void PrintOrthonormality(FILE* fd, int dimensionality, int n_out, int n_points, int* nq, double dq, double* X);
 void           PrintEPot(FILE* fd, int dimensionality, int n_out, int n_points, int* nq, double dq, double* X, double* v);
-void           PrintEKin(FILE* fd, settings *prefs, int n_out, int n_points, int* nq, double dq, double* X, double* stencil, double ekin_param);
+void           PrintEKin(FILE* fd, settings *prefs, int n_out, int n_points, int* nq, double dq, double* X, double* stencil, double ekin_to_oue);
 void         PrintDipole(FILE* fd, settings *prefs, int n_out, int n_points, int* nq, double dq, double* E, double* X, double** dip);
 void   PrintEigenvectors(FILE* fd, settings *prefs, int n_out, int n_points, int* nq, double** q, double* v, double*** mu, double* X, double** dip);
 
@@ -422,25 +422,37 @@ int main(int argc, char* argv[]){
     }
 
 
-// kinetic energy parameter:    [ekin_param] = kJ/mol / (mol/g/angstrom^2)
-//  - hbar^2/2 * 10^20          * 1000 * avogadro^2 / 1000 = -10^20 * hbar^2/2 * avogadro^2
-//    J kg m^2 * angstrom^2/m^2 * g/kg * (1/mol)^2  / kJ/J =  kJ/mol * g / mol * angstrom^2
-    double ekin_param = -1.0E20 * avogadro*avogadro * planck*planck/(8.0*M_PI*M_PI);
+// Conversion factor of kinetic energy to output unit of energy (oue)
+/*
+ *      E_kin = - hbar^2/2m d^2/dQ^2 Psi = - hbar^2/2 / (sqrt(m).dQ)^2 f.Psi
+ *
+ *  The mass and coordinates are expected to be in g/mol and Ångstrom, respectively
+ *  which are then combined to mass weighted coordinates q = sqrt(m).Q resulting in
+ *  [q] = sqrt(g/mol).Å
+ *
+ *        J.kg.m^2 * Å^2/m^2 * g/kg *  1/mol^2   * kJ/J / Å^2.g/mol
+ *      - hbar^2/2 * 10^20   * 1000 * avogadro^2 / 1000 / dq / dq   =
+ *
+ *            = (-10^20 * avogadro^2 * hbar^2/2 / dq^2) kJ/mol
+ */
+// begin with ekin_to_kJ/mol and then convert it to output unit of energy
+    double ekin_to_oue = -1.0E20 * 0.5*hbar*hbar * avogadro*avogadro / dq / dq;
+    ekin_to_oue *= prefs.kJpermol_to_oue;
 
-// convert kinetic energy parameter to output unit of energy
-//  ekin_param          is given in     kJ/mol / (mol/g/angstrom^2)
-//  dq                  is given in     angstrom * sqrt(g/mol)
-//  prefs.ekin_factor   is given in     (output unit of energy) / (kJ/mol)
-    ekin_param *= (prefs.ekin_factor / dq / dq);
 
-
-// if Coriolis file is set apply potential term of the Watson Hamiltonian ( -1/8 sum_{i=0}^2 mu_ii )
-//  mu                  is given in     g/mol/angstrom^2
-//  prefs.mu_factor     is given in     kJ/mol / [mu]
-//  prefs.ekin_factor   is given in     (output unit of energy) / (kJ/mol)
+// if Coriolis file is set apply potential term of the Watson Hamiltonian
+/*
+ *                 V = V - 1/8 hbar^2 sum_{i=0}^2 mu_ii
+ *
+ *                 J.s.J.s <=> kJ.g.m^2    mol/(g*Å^2)
+ *            - 0.125 * hbar*hbar  * (mu_xx + mu_yy + mu_zz)
+ */
     if( prefs.coriolis_file ){
+        double prefactor = 0.125 * 1.0E20*hbar*hbar*avogadro*avogadro //   kJ/mol . g.angstrom^2/mol
+                         * prefs.InvInertia_to_molpergAasq            // * mol/(g.angstrom^2) / [mu]
+                         * prefs.kJpermol_to_oue;                     // * oue / (kJ/mol)
         for(int i = 0; i < n_points; ++i){
-            v[i] -= ((mu[0][0][i] + mu[1][1][i] + mu[2][2][i]) / 8.0 * (prefs.mu_factor * prefs.ekin_factor));
+            v[i] -= prefactor * (mu[0][0][i] + mu[1][1][i] + mu[2][2][i]);
         }
     }
 
@@ -455,7 +467,7 @@ int main(int argc, char* argv[]){
 // Solve the matrix eigenvalue problem
 //  MetaEigensolver() forwards all arguments to the Solver<EigensolverName>() function.
 //  This function calls an adequate matrix fill routine and then solves the matrix problem
-    n_out = MetaEigensolver(&prefs, nq, v, ekin_param, stencil, &E, &X, q, dq, mu, zeta);
+    n_out = MetaEigensolver(&prefs, nq, v, ekin_to_oue, stencil, &E, &X, q, dq, mu, zeta);
 
 // The x,y,z - Coriolis coefficients Zeta are not required anymore
     if( prefs.coriolis_file ){
@@ -494,7 +506,7 @@ int main(int argc, char* argv[]){
 
 // output eigenvalues in output unit of energy (oue) and frequencies in cm^-1
     if( prefs.frequencies ){
-        PrintFrequencies(fd, prefs.ekin_factor, n_out, E);
+        PrintFrequencies(fd, prefs.kJpermol_to_oue, n_out, E);
     }
 
 // analyse section
@@ -505,7 +517,7 @@ int main(int argc, char* argv[]){
         PrintEPot(fd, prefs.dimension, n_out, n_points, nq, dq, X, v);
     // output kinetic energy (i.e. <X[i]|ħ² * d²/dx²|X[j]>)
         if( (prefs.dimension == 2) && !prefs.coriolis_file ){
-            PrintEKin(fd, &prefs, n_out, n_points, nq, dq, X, stencil, ekin_param);
+            PrintEKin(fd, &prefs, n_out, n_points, nq, dq, X, stencil, ekin_to_oue);
         }
     }
 // last use of stencil in kinetic energy calculation

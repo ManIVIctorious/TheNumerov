@@ -1,5 +1,5 @@
-#ifndef _TYPEDEFINITIONS_H
-#define _TYPEDEFINITIONS_H
+#ifndef _SETTINGS_H
+#define _SETTINGS_H
 
 #define _MaxSettingsStringLength_ 1024
 
@@ -11,11 +11,11 @@ typedef struct settings {
   char   * masses_string;   // String containing reduced masses
   double * masses;          // Actual reduced masses array
 
-  double ekin_factor;   // Kinetic energy factor
-  double epot_to_oue;   // Conversion factor of potential to output unit of energy
-  double mu_factor;     // Watson term energy factor
-  double DipToAsm;      // Conversion from input dipole moment to A.s.m
-  double threshold;     // Spacing threshold for double comparison
+  double kJpermol_to_oue;           // kJ/mol -> output unit of energy
+  double epot_to_oue;               // Conversion factor of potential to output unit of energy
+  double InvInertia_to_molpergAasq; // reciprocal moment of inertia -> mol/(g.Å^2)
+  double dip_to_Asm;                // Conversion from input dipole moment to A.s.m
+  double threshold;                 // Spacing threshold for double comparison
 
 // Flags
   char frequencies;     // output frequencies

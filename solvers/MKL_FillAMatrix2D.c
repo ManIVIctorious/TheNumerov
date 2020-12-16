@@ -12,11 +12,11 @@ double exec_watson_2d(double*** mu, double** zeta, int* nq, double dq, double** 
 void   free_watson_2d(void);
 
 // provided prototypes
-int MKL_FillAMatrix2D(settings* prefs, int* nq, double* v, double ekin_param, double* stencil, double** q, double dq, double*** mu, double** zeta, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A);
+int MKL_FillAMatrix2D(settings* prefs, int* nq, double* v, double ekin_to_oue, double* stencil, double** q, double dq, double*** mu, double** zeta, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A);
 
 
 // 2D fill
-int MKL_FillAMatrix2D(settings* prefs, int* nq, double* v, double ekin_param, double* stencil, double** q, double dq, double*** mu, double** zeta, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A){
+int MKL_FillAMatrix2D(settings* prefs, int* nq, double* v, double ekin_to_oue, double* stencil, double** q, double dq, double*** mu, double** zeta, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A){
 
 // Calculate the maximum number of non-zero entries in the A matrix
 //  Should be <n_points - (n_stencil/2)*2> lines with <n_stencil> entries, the
@@ -64,7 +64,7 @@ int MKL_FillAMatrix2D(settings* prefs, int* nq, double* v, double ekin_param, do
                 (*cols_A)[entry_index] = (i + xsh)*nq[1] + (j + ysh) + 1;
 
             // set matrix value
-                (*vals_A)[entry_index] = ekin_param * stencil[ xsidx*prefs->n_stencil + ysidx ];
+                (*vals_A)[entry_index] = ekin_to_oue * stencil[ xsidx*prefs->n_stencil + ysidx ];
             //  apply second term of Watson Hamiltonian
                 if( prefs->coriolis_file ){
                     (*vals_A)[entry_index] -= exec_watson_2d(mu, zeta, nq, dq, q, i, j, xsidx, ysidx);

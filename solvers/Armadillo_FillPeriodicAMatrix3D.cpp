@@ -4,11 +4,11 @@
 #include "settings.h"
 
 // Provided Prototypes
-arma::sp_mat FillPeriodicArmadillo_3D(settings* prefs, int* nq, int n_points, double* v, double ekin_param, double* stencil, double** q, double dq, double*** mu, double** zeta);
+arma::sp_mat FillPeriodicArmadillo_3D(settings* prefs, int* nq, int n_points, double* v, double ekin_to_oue, double* stencil, double** q, double dq, double*** mu, double** zeta);
 
 
 // 3D fill
-arma::sp_mat FillPeriodicArmadillo_3D(settings* prefs, int* nq, int n_points, double* v, double ekin_param, double* stencil, double** q, double dq, double*** mu, double** zeta){
+arma::sp_mat FillPeriodicArmadillo_3D(settings* prefs, int* nq, int n_points, double* v, double ekin_to_oue, double* stencil, double** q, double dq, double*** mu, double** zeta){
 
 // Calculate the maximum number of non-zero entries in the A matrix
 //  Should be <n_points - (n_stencil/2)*2> lines with <n_stencil> entries
@@ -38,7 +38,7 @@ arma::sp_mat FillPeriodicArmadillo_3D(settings* prefs, int* nq, int n_points, do
             locations (0, entry_index) = (  i  *nq[1] +  j   )*nq[2] +  k;
             locations (1, entry_index) = ( xidx*nq[1] + yidx )*nq[2] + zidx;
         //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            values(entry_index) = ekin_param * stencil[ (xsh*prefs->n_stencil + ysh)*prefs->n_stencil + zsh ];
+            values(entry_index) = ekin_to_oue * stencil[ (xsh*prefs->n_stencil + ysh)*prefs->n_stencil + zsh ];
         //  The stencil values have to be divided by 2^(D-1)
             values(entry_index) *= 0.25;
         // increment number of entries

@@ -16,11 +16,11 @@ settings SetDefaultSettings(void){
         .masses_string = NULL,    // String containing reduced masses
         .masses = NULL,           // Actual reduced masses array
 
-        .ekin_factor = 1.0/4.184, // Kinetic     energy factor
-        .epot_to_oue = 1.0,       // Potential   energy factor
-        .mu_factor   = 1.0E20 * avogadro*avogadro * planck*planck/(4.0*M_PI*M_PI),   // Watson term energy factor
-        .DipToAsm    = 3.3356E-30,// Conversion from input dipole moment to A.s.m
-        .threshold   = 1.0E-10,   // Spacing threshold for double comparison
+        .kJpermol_to_oue = 1.0/4.184,       // kJ/mol -> output unit of energy
+        .epot_to_oue = 1.0,                 // E_pot  -> output unit of energy
+        .InvInertia_to_molpergAasq = 1.0,   // [reciprocal moment of inertia] -> mol/(g.Å^2)
+        .dip_to_Asm  = 3.3356E-30,          // Conversion from input dipole moment to A.s.m
+        .threshold   = 1.0E-10,             // Spacing threshold for double comparison
 
     // Flags
         .frequencies   = 1,

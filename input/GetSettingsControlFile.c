@@ -38,10 +38,10 @@ void GetSettingsControlFile(char* inputfile, settings* set){
         {"Interpolation_points",    0,  's', NULL },
         {"N_Eigenstates",           0,  'N', NULL },
     // double values:
-        {"Kin_E_Factor",            0,  'k', NULL },
-        {"Pot_E_Factor",            0,  'v', NULL },
-        {"Dipole_Factor",           0,  'f', NULL },
-        {"IMOI_Factor",             0,  'M', NULL },
+        {"EPotToOUE",               0,  'v', NULL },
+        {"kJpermolToOUE",           0,  'k', NULL },
+        {"DipToAsm",                0,  'f', NULL },
+        {"IMOITomolpergAasq",       0,  'M', NULL },
         {"Spacing_Threshold",       0,  't', NULL },
         {"Lower_Bound",             0,  'l', NULL },
         {"Upper_Bound",             0,  'u', NULL },
@@ -126,7 +126,7 @@ void GetSettingsControlFile(char* inputfile, settings* set){
 
         // double values
             case 'k':
-                set->ekin_factor = convertstring_to_double(optarglast, keywordlist[i].keyword, NULL);
+                set->kJpermol_to_oue = convertstring_to_double(optarglast, keywordlist[i].keyword, NULL);
                 break;
 
             case 'v':
@@ -134,11 +134,11 @@ void GetSettingsControlFile(char* inputfile, settings* set){
                 break;
 
             case 'f':
-                set->DipToAsm    = convertstring_to_double(optarglast, keywordlist[i].keyword, NULL);
+                set->dip_to_Asm  = convertstring_to_double(optarglast, keywordlist[i].keyword, NULL);
                 break;
 
             case 'M':
-                set->mu_factor   = convertstring_to_double(optarglast, keywordlist[i].keyword, NULL);
+                set->InvInertia_to_molpergAasq = convertstring_to_double(optarglast, keywordlist[i].keyword, NULL);
                 break;
 
             case 't':

@@ -4,11 +4,11 @@
 #include "settings.h"
 
 // Provided Prototypes
-arma::sp_mat FillPeriodicArmadillo_1D(int* nq, double* v, double ekin_param, double* stencil, int n_stencil);
+arma::sp_mat FillPeriodicArmadillo_1D(int* nq, double* v, double ekin_to_oue, double* stencil, int n_stencil);
 
 
 // 1D fill
-arma::sp_mat FillPeriodicArmadillo_1D(int* nq, double* v, double ekin_param, double* stencil, int n_stencil){
+arma::sp_mat FillPeriodicArmadillo_1D(int* nq, double* v, double ekin_to_oue, double* stencil, int n_stencil){
 
 // Calculate the matximum number of non-zero entries in the A matrix
 //  Should be <n_points - (n_stencil/2)*2> lines with <n_stencil> entries
@@ -30,7 +30,7 @@ arma::sp_mat FillPeriodicArmadillo_1D(int* nq, double* v, double ekin_param, dou
             locations(0, entry_index) =  i;     // rows
             locations(1, entry_index) = xidx;   // columns
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            values(entry_index) = ekin_param * stencil[xsh];
+            values(entry_index) = ekin_to_oue * stencil[xsh];
             ++entry_index;
         }
     }

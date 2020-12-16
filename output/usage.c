@@ -62,8 +62,8 @@ void usage(void){
            "\n\t    e.g. 1.0/4.184 (kcal/kJ) gives output in kcal/mol (default)"
            "\n\t    assuming the mass input is given in g/mol and the coordinate"
            "\n\t    input is given in angstrom"
-           "\n\t    Keyword:\tKin_E_Factor"
-           "\n\t    Default:\t% le", defaults.ekin_factor
+           "\n\t    Keyword:\tkJpermolToOUE"
+           "\n\t    Default:\t% le", defaults.kJpermol_to_oue
     );
 
     printf("\n"
@@ -73,7 +73,7 @@ void usage(void){
            "\n\t    Be aware that for output energy units different from kcal/mol the"
            "\n\t    kinetic energy factor [-k, -fkin] has to be set too."
            "\n\t    E.g. above example requires the option \"-k 1.0\"."
-           "\n\t    Keyword:\tPot_E_Factor"
+           "\n\t    Keyword:\tEPotToOUE"
            "\n\t    Default:\t% le", defaults.epot_to_oue
     );
 
@@ -83,18 +83,16 @@ void usage(void){
            "\n\t    The conversion is performed from the input dimension to Asm"
            "\n\t    (Ampere Second Meter), further conversions are handled by the"
            "\n\t    kinetic energy factor [-k, --fkin]."
-           "\n\t    Keyword:\tDipole_Factor"
-           "\n\t    Default:\t% le", defaults.DipToAsm
+           "\n\t    Keyword:\tDipToAsm"
+           "\n\t    Default:\t% le", defaults.dip_to_Asm
     );
 
     printf("\n"
            "\n\t-M, --fmu"
            "\n\t    Conversion factor for the \"effective reciprocal inertia tensor\"."
-           "\n\t    The conversion is performed from the input dimension to kJ/mol,"
-           "\n\t    further conversion to the desired output unit of energy is handled"
-           "\n\t    by the kinetic energy factor [-k, --fkin]."
-           "\n\t    Keyword:\tIMOI_Factor"
-           "\n\t    Default:\t% le", defaults.mu_factor
+           "\n\t    The conversion is performed from the input dimension to mol/(g.Å^2)."
+           "\n\t    Keyword:\tIMOITomolpergAasq"
+           "\n\t    Default:\t% le", defaults.InvInertia_to_molpergAasq
     );
 
     printf("\n"
@@ -129,8 +127,8 @@ void usage(void){
     printf("\n"
            "\n\t-i, --input-file"
            "\n\t    Path to input file. The program expects the following structure of input:"
-           "\n\t    <dimension> columns containing the coordinates and one column containing"
-           "\n\t    the potential energy values. (e.g. 2D expects 3 columns)"
+           "\n\t    <dimension> columns containing the coordinates in Ångstrom and one column"
+           "\n\t    containing the potential energy values. (e.g. 2D expects 3 columns)"
            "\n\t    Keyword:\tInput_File"
     );
 

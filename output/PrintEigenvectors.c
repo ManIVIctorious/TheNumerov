@@ -1,5 +1,8 @@
 
 #include <stdio.h>
+#include <math.h>
+
+#include "constants.h"
 #include "settings.h"
 
 // provided prototypes
@@ -60,8 +63,13 @@ void PrintEigenvectors(FILE* fd, settings* prefs, int n_out, int n_points, int* 
         for(int j = 0; j < prefs->dimension; ++j){
             fprintf(fd, "\t% .14le", q[j][i]);
         }
+
+    // if Coriolis file is set first print the potential without/undo the modifications
         if( prefs->coriolis_file ){
-            fprintf(fd, "\t% .14le", v[i] + ((mu[0][0][i] + mu[1][1][i] + mu[2][2][i])*0.125 * (prefs->mu_factor * prefs->ekin_factor)));
+            double prefactor = 1.25E19 * hbar*hbar*avogadro*avogadro
+                                       * prefs->InvInertia_to_molpergAasq
+                                       * prefs->kJpermol_to_oue;
+            fprintf(fd, "\t% .14le", v[i] + prefactor * (mu[0][0][i] + mu[1][1][i] + mu[2][2][i]));
         }else{
             fprintf(fd, "\t% .14le", v[i]);
         }
@@ -74,7 +82,7 @@ void PrintEigenvectors(FILE* fd, settings* prefs, int n_out, int n_points, int* 
         }
 
 
-    // output potential after addition of Watson potential term
+    // output potential after addition of (negative) Watson potential term
         if( prefs->coriolis_file ){
             fprintf(fd, "\t% .14le", v[i]);
         }

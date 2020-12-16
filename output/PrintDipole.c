@@ -75,13 +75,13 @@ void PrintDipole(FILE* fd, settings *prefs, int n_out, int n_points, int* nq, do
 // Evaluate and print oscillator strengths f_ij ( [f_ij] = 1 ):
 //--------------------------------------------------------------------------------
 /*
- *  f_ij =   (4*pi * elmass) / (3 * hbar * elcharge^2)          // 1 / (A^2 s m^2)
- *         * || sum_m { <Psi_i|mu_m|Psi_j> } ||^2 * DipToAsm^2  // * A^2 s^2 m^2
- *         * (E_j - E_i) / (planck * avogadro / 1000)           // * 1 / s
+ *  f_ij = (4*pi * elmass) / (3 * hbar * elcharge^2)           	// 1 / (A^2 s m^2)
+ *       * || sum_m { <Psi_i|mu_m|Psi_j> } ||^2 * dip_to_Asm^2  // * A^2 s^2 m^2
+ *       * (E_j - E_i) / (planck * avogadro / 1000)           	// * 1 / s
  */
     const double f_perDipsq = (8.0 * M_PI*M_PI * elmass) / (3.0 * planck * elcharge*elcharge);
-    const double E_to_freq  = 1000.0 / (avogadro * planck) / prefs->ekin_factor;
-    const double prefactor  = f_perDipsq * E_to_freq * prefs->DipToAsm*prefs->DipToAsm;
+    const double E_to_freq  = 1000.0 / (avogadro * planck) / prefs->kJpermol_to_oue;
+    const double prefactor  = f_perDipsq * E_to_freq * prefs->dip_to_Asm*prefs->dip_to_Asm;
 
 // print header and index line
     fprintf(fd, "\n# Oscillator strength:\n#\n#");

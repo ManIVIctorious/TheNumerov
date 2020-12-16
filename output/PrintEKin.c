@@ -5,13 +5,13 @@
 #include "settings.h"
 
 // provided prototypes
-void PrintEKin(FILE* fd, settings *prefs, int n_out, int n_points, int* nq, double dq, double* X, double* stencil, double ekin_param);
+void PrintEKin(FILE* fd, settings *prefs, int n_out, int n_points, int* nq, double dq, double* X, double* stencil, double ekin_to_oue);
 
 // Dependencies
 double Integrate(int dimension, int* nq, double dx, double* integrand);
 
 
-void PrintEKin(FILE* fd, settings *prefs, int n_out, int n_points, int* nq, double dq, double* X, double* stencil, double ekin_param){
+void PrintEKin(FILE* fd, settings *prefs, int n_out, int n_points, int* nq, double dq, double* X, double* stencil, double ekin_to_oue){
 
 // allocate memory for integrand
     double * integrand = malloc(n_points * sizeof(double));
@@ -43,8 +43,8 @@ void PrintEKin(FILE* fd, settings *prefs, int n_out, int n_points, int* nq, doub
                                     int element = (k + xsh)*nq[1] + l + ysh;
 
                                 // integrand has to be divided by d^2,
-                                //  but the division is already set in the "ekin_param" parameter
-                                    integrand[k*nq[1] + l] += X[element + i*n_points] * ekin_param * stencil[(xsh + prefs->n_stencil/2)*prefs->n_stencil + ysh + prefs->n_stencil/2]/2;
+                                //  but the division is already set in the "ekin_to_oue" parameter
+                                    integrand[k*nq[1] + l] += X[element + i*n_points] * ekin_to_oue * stencil[(xsh + prefs->n_stencil/2)*prefs->n_stencil + ysh + prefs->n_stencil/2]/2;
                                 }
                             }
                         }

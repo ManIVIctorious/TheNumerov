@@ -153,7 +153,7 @@ void GetSettingsGetopt(int argc, char** argv, settings* preferences){
 
         // double values
             case 'k':
-                preferences->ekin_factor = convertstring_to_double(optarg, "ekin factor", NULL);
+                preferences->kJpermol_to_oue = convertstring_to_double(optarg, "ekin factor", NULL);
                 break;
 
             case 'v':
@@ -161,11 +161,11 @@ void GetSettingsGetopt(int argc, char** argv, settings* preferences){
                 break;
 
             case 'f':
-                preferences->DipToAsm    = convertstring_to_double(optarg, "convert dip to Asm", NULL);
+                preferences->dip_to_Asm  = convertstring_to_double(optarg, "convert dip to Asm", NULL);
                 break;
 
             case 'M':
-                preferences->mu_factor   = convertstring_to_double(optarg, "ERIT to kJ/mol", NULL);
+                preferences->InvInertia_to_molpergAasq = convertstring_to_double(optarg, "ERIT to kJ/mol", NULL);
                 break;
 
             case 't':

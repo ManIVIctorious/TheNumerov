@@ -2,7 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <math.h>
 
+#include "constants.h"
 #include "settings.h"
 
 // Dependencies
@@ -53,12 +55,15 @@ void init_watson_2d(settings* prefs){
     }
 
 // Pre-calculate conversion factor from Watson-term to output unit of energy
-//--------------------------------------------------------------------------
-//  zeta is normalised      =>          non-dimensional
-//  mu                  is given in     g/mol/angstrom^2
-//  prefs->mu_factor    is given in     kJ/mol / [mu]
-//  prefs->ekin_factor  is given in     (output unit of energy) / (kJ/mol)
-    conversion_factor = (prefs->mu_factor * prefs->ekin_factor);
+/*--------------------------------------------------------------------------
+ *  [zeta]                              1
+ *  [mu]                                g/mol/angstrom^2 (per default)
+ *  [prefs->InvInertia_to_molpergAasq]  kJ/mol / [mu]
+ *  [prefs->kJpermol_to_oue]            (output unit of energy) / (kJ/mol)
+ */
+    conversion_factor = 1.0E20 * hbar*hbar*avogadro*avogadro //   kJ/mol . g.angstrom^2/mol
+                      * prefs->InvInertia_to_molpergAasq     // * mol/(g.angstrom^2) / [mu]
+                      * prefs->kJpermol_to_oue;              // * oue / (kJ/mol)
 }//}}}
 
 double exec_watson_2d(double*** mu, double** zeta, int* nq, double dq, double** q, int i, int j, int xsidx, int ysidx){

@@ -1,3 +1,6 @@
+
+// For extended functionality his header should be included AFTER math.h
+
 #ifndef _CONSTANTS_H
 #define _CONSTANTS_H
 
@@ -15,6 +18,11 @@
     static const double avogadro    = 6.02214076E23;   // 1/mol
 
 // other constants
-    static const double elmass      = 9.109383E-31;  // kg
+    static const double elmass      = 9.109383E-31;    // kg
+
+// derived constants requiring math.h
+#ifdef _MATH_H
+    static const double hbar = 6.62607015E-34 / (2.0*M_PI); // J.s
+#endif
 
 #endif

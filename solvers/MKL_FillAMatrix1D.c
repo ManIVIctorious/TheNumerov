@@ -5,11 +5,11 @@
 #include <mkl_solvers_ee.h>
 
 // provided prototypes
-int MKL_FillAMatrix1D(double* v, int* nq, double ekin_param, double* stencil, int n_stencil, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A);
+int MKL_FillAMatrix1D(double* v, int* nq, double ekin_to_oue, double* stencil, int n_stencil, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A);
 
 
 // 1D fill
-int MKL_FillAMatrix1D(double* v, int* nq, double ekin_param, double* stencil, int n_stencil, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A){
+int MKL_FillAMatrix1D(double* v, int* nq, double ekin_to_oue, double* stencil, int n_stencil, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A){
 
 // Calculate the maximum number of non-zero entries in the A matrix
 //  Should be <n_points - (n_stencil/2)*2> lines with <n_stencil> entries, the
@@ -44,7 +44,7 @@ int MKL_FillAMatrix1D(double* v, int* nq, double ekin_param, double* stencil, in
 
             if( (element > -1) && (element < nq[0]) ){
 
-                (*vals_A)[entry_index] = ekin_param * stencil[xsh + n_stencil/2];
+                (*vals_A)[entry_index] = ekin_to_oue * stencil[xsh + n_stencil/2];
                 (*cols_A)[entry_index] = element + 1;
 
             // add potential to diagonal element

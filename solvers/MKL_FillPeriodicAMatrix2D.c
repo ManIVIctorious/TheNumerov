@@ -7,7 +7,7 @@
 #include "settings.h"
 
 // provided prototypes
-int MKL_FillPeriodicAMatrix2D(settings* prefs, int* nq, double* v, double ekin_param, double* stencil, double** q, double dq, double*** mu, double** zeta, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A);
+int MKL_FillPeriodicAMatrix2D(settings* prefs, int* nq, double* v, double ekin_to_oue, double* stencil, double** q, double dq, double*** mu, double** zeta, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A);
 
 // dependencies
 void   init_watson_2d(settings* prefs);
@@ -17,7 +17,7 @@ void HeapSort(MKL_INT* array, double* values, int arraysize);
 
 
 // 2D fill
-int MKL_FillPeriodicAMatrix2D(settings* prefs, int* nq, double* v, double ekin_param, double* stencil, double** q, double dq, double*** mu, double** zeta, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A){
+int MKL_FillPeriodicAMatrix2D(settings* prefs, int* nq, double* v, double ekin_to_oue, double* stencil, double** q, double dq, double*** mu, double** zeta, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A){
 
 // Calculate the maximum number of non-zero entries in the A matrix
 //  Should be <n_points - (n_stencil/2)*2> lines with <n_stencil> entries, the
@@ -63,7 +63,7 @@ int MKL_FillPeriodicAMatrix2D(settings* prefs, int* nq, double* v, double ekin_p
             (*cols_A)[entry_index] = xidx*nq[1] + yidx + 1;
 
         // set matrix value
-            (*vals_A)[entry_index] = ekin_param * stencil[ xsh*prefs->n_stencil + ysh ];
+            (*vals_A)[entry_index] = ekin_to_oue * stencil[ xsh*prefs->n_stencil + ysh ];
         //  apply second term of Watson Hamiltonian
             if( prefs->coriolis_file ){
                 (*vals_A)[entry_index] -= exec_watson_2d(mu, zeta, nq, dq, q, i, j, xsh, ysh);

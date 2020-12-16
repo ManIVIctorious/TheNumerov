@@ -4,14 +4,14 @@
 #include "constants.h"
 
 // provided prototypes
-void PrintFrequencies(FILE* fd, double kJpermole_to_oue, int n_out, double* E);
+void PrintFrequencies(FILE* fd, double kJpermol_to_oue, int n_out, double* E);
 
 // Output eigenvalues and calculate Frequencies
-void PrintFrequencies(FILE* fd, double kJpermole_to_oue, int n_out, double* E){
+void PrintFrequencies(FILE* fd, double kJpermol_to_oue, int n_out, double* E){
 
 // calculate conversion factor from output unit of energy (oue) to wavenumbers
-    const double kJpermole_to_wavenumber = 10.0 / (avogadro*planck*lightspeed); // cm^-1 / (kJ/mol)
-    double oue_to_wavenumber = kJpermole_to_wavenumber / kJpermole_to_oue;      // cm^-1 / oue
+    const double kJpermol_to_wavenumber = 10.0 / (avogadro*planck*lightspeed); // cm^-1 / (kJ/mol)
+    double oue_to_wavenumber = kJpermol_to_wavenumber / kJpermol_to_oue;       // cm^-1 / oue
 
 // output eigenvalues in output unit of energy (oue)
     fprintf(fd, "# Eigenvalues:");

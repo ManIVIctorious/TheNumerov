@@ -5,17 +5,17 @@
 
 // Dependencies
 #ifdef HAVE_MKL_INSTALLED
-int        SolverFEAST_MKL(settings* prefs, int* nq, double* v, double ekin_param, double* stencil, double** E, double** X, double** q, double dq, double*** mu, double** zeta);
+int        SolverFEAST_MKL(settings* prefs, int* nq, double* v, double ekin_to_oue, double* stencil, double** E, double** X, double** q, double dq, double*** mu, double** zeta);
 #endif
 #ifdef HAVE_ARMA_INSTALLED
-int SolverARPACK_Armadillo(settings* prefs, int* nq, double* v, double ekin_param, double* stencil, double** E, double** X, double** q, double dq, double*** mu, double** zeta);
+int SolverARPACK_Armadillo(settings* prefs, int* nq, double* v, double ekin_to_oue, double* stencil, double** E, double** X, double** q, double dq, double*** mu, double** zeta);
 #endif
 
 // provided prototypes
-int MetaEigensolver(settings* prefs, int* nq, double* v, double ekin_param, double* stencil, double* *E, double* *X, double** q, double dq, double*** mu, double** zeta);
+int MetaEigensolver(settings* prefs, int* nq, double* v, double ekin_to_oue, double* stencil, double* *E, double* *X, double** q, double dq, double*** mu, double** zeta);
 
 
-int MetaEigensolver(settings* prefs, int* nq, double* v, double ekin_param, double* stencil, double* *E, double* *X, double** q, double dq, double*** mu, double** zeta){
+int MetaEigensolver(settings* prefs, int* nq, double* v, double ekin_to_oue, double* stencil, double* *E, double* *X, double** q, double dq, double*** mu, double** zeta){
 
     int n_out;
 
@@ -23,13 +23,13 @@ int MetaEigensolver(settings* prefs, int* nq, double* v, double ekin_param, doub
 
 #ifdef HAVE_MKL_INSTALLED
         case 1:
-            n_out =        SolverFEAST_MKL(prefs, nq, v, ekin_param, stencil, E, X, q, dq, mu, zeta);
+            n_out =        SolverFEAST_MKL(prefs, nq, v, ekin_to_oue, stencil, E, X, q, dq, mu, zeta);
             break;
 #endif
 
 #ifdef HAVE_ARMA_INSTALLED
         case 2:
-            n_out = SolverARPACK_Armadillo(prefs, nq, v, ekin_param, stencil, E, X, q, dq, mu, zeta);
+            n_out = SolverARPACK_Armadillo(prefs, nq, v, ekin_to_oue, stencil, E, X, q, dq, mu, zeta);
             break;
 #endif
 

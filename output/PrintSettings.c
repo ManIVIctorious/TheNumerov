@@ -19,11 +19,6 @@ void PrintSettings(settings* prefs, FILE *fd){
     time_t current_time = time(NULL);
     char * Hostname = malloc(16 * sizeof(char));
 
-    const char * Eigensolver[3];
-    Eigensolver[0] = "unknown";
-    Eigensolver[1] = "Intel_MKL_FEAST";
-    Eigensolver[2] = "Armadillo_ARPACK";
-
     if(fd == NULL){
     // open file for writing
         fd = fopen(prefs->output_file, "w");
@@ -66,9 +61,10 @@ fprintf(fd,
 // double values
     fprintf(fd, "\n#");
 
-    fprintf(fd, "\n#\tKin_E_Factor         = % 12.8lf;\t# in x per kJ/mol", prefs->ekin_factor);
-    fprintf(fd, "\n#\tPot_E_Factor         = % 12.8lf;\t# input (v)  -> output unit of energy (oue)", prefs->epot_to_oue);
-    fprintf(fd, "\n#\tIMOI_Factor          = % 12.8le;\t# input (mu) -> kJ/mol", prefs->mu_factor);
+    fprintf(fd, "\n#\tEPotToOUE            = % 12.8lf;\t# input (v)  -> output unit of energy (oue)", prefs->epot_to_oue);
+    fprintf(fd, "\n#\tkJpermolToOUE        = % 12.8lf;\t# in x per kJ/mol", prefs->kJpermol_to_oue);
+    fprintf(fd, "\n#\tIMOITomolpergAasq    = % 12.8le;\t# input (mu) -> mol/(g.Å^2)", prefs->InvInertia_to_molpergAasq);
+    fprintf(fd, "\n#\tDipToAsm             = % 12.8le;\t# input (dipole moment) -> A.s.m", prefs->dip_to_Asm);
     fprintf(fd, "\n#\tSpacing_Threshold    = % 12.8le;", prefs->threshold);
     fprintf(fd, "\n#");
 
@@ -93,6 +89,11 @@ fprintf(fd,
 
 
 // Eigensolver
+    const char * Eigensolver[3];
+    Eigensolver[0] = "unknown";
+    Eigensolver[1] = "Intel_MKL_FEAST";
+    Eigensolver[2] = "Armadillo_ARPACK";
+
 fprintf(fd,
 "\n#\n#\n"
 "## Eigensolver specific settings:");

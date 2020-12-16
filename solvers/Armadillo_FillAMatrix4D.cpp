@@ -4,11 +4,11 @@
 #include "settings.h"
 
 // Provided Prototypes
-arma::sp_mat FillArmadillo_4D(settings* prefs, int* nq, int n_points, double* v, double ekin_param, double* stencil, double** q, double dq, double*** mu, double** zeta);
+arma::sp_mat FillArmadillo_4D(settings* prefs, int* nq, int n_points, double* v, double ekin_to_oue, double* stencil, double** q, double dq, double*** mu, double** zeta);
 
 
 // 3D fill
-arma::sp_mat FillArmadillo_4D(settings* prefs, int* nq, int n_points, double* v, double ekin_param, double* stencil, double** q, double dq, double*** mu, double** zeta){
+arma::sp_mat FillArmadillo_4D(settings* prefs, int* nq, int n_points, double* v, double ekin_to_oue, double* stencil, double** q, double dq, double*** mu, double** zeta){
 
 // Calculate the maximum number of non-zero entries in the A matrix
 //  Should be <n_points - (n_stencil/2)*2> lines with <n_stencil> entries, the
@@ -50,7 +50,7 @@ arma::sp_mat FillArmadillo_4D(settings* prefs, int* nq, int n_points, double* v,
                         locations (0, entry_index) = ( (    i     *nq[1] +    j      )*nq[2] +    k      )*nq[3] +    l;
                         locations (1, entry_index) = ( ( (i + ash)*nq[1] + (j + bsh) )*nq[2] + (k + csh) )*nq[3] + (l + dsh);
                     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                        values(entry_index) = ekin_param * stencil[ ( (asidx*prefs->n_stencil + bsidx)*prefs->n_stencil + csidx )*prefs->n_stencil + dsidx ];
+                        values(entry_index) = ekin_to_oue * stencil[ ( (asidx*prefs->n_stencil + bsidx)*prefs->n_stencil + csidx )*prefs->n_stencil + dsidx ];
                     // stencil entries have to be divided by 2^(D-1)
                         values(entry_index) *= 0.125;
                     // increment number of entries
