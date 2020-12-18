@@ -51,7 +51,7 @@ arma::sp_mat FillPeriodicArmadillo_2D(settings* prefs, int* nq, double* v, doubl
 // actual sparse matrix fill
     arma::sp_mat A(locations, values, n_points, n_points, true, true);
 
-// add potential value
+// add potential values to main diagonal
     for(int i = 0; i < n_points; ++i){ A(i,i) += v[i]; }
 
     printf("Matrix created, Potential added, %u entries\n", entry_index);

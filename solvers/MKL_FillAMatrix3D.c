@@ -6,6 +6,7 @@
 
 #include "settings.h"
 #include "MKLFillers.h"
+#include "Watson.h"
 
 
 int MKL_FillAMatrix3D(settings* prefs, int* nq, double* v, double ekin_to_oue, double* stencil, double** q, double dq, double*** mu, double** zeta, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A){
@@ -31,6 +32,9 @@ int MKL_FillAMatrix3D(settings* prefs, int* nq, double* v, double ekin_to_oue, d
     if( (*cols_A) == NULL ){ perror("3D MKL Fill cols_A"); exit(errno); }
     if( (*vals_A) == NULL ){ perror("3D MKL Fill vals_A"); exit(errno); }
 
+
+// initialise for the calculation of the Watson Hamiltonian
+    if( prefs->coriolis_file ){ init_watson(prefs); }
 
 // fill Numerov's A matrix
 //  determine the non zero elements and store their positions in rows_A and cols_A
@@ -69,6 +73,10 @@ int MKL_FillAMatrix3D(settings* prefs, int* nq, double* v, double ekin_to_oue, d
 
         // set matrix value, the stencil values have to be divided by 2^(D-1)
             (*vals_A)[entry_index] = ekin_to_oue * 0.25*stencil[ stencilidx ];
+//        //  apply second term of Watson Hamiltonian
+//            if( prefs->coriolis_file ){
+//                (*vals_A)[entry_index] -= exec_watson(mu, zeta, nq, dq, q, row, s);
+//            }
 
         // add potential to diagonal element
             if( (xsh == 0) && (ysh == 0) && (zsh == 0) ){
@@ -83,6 +91,9 @@ int MKL_FillAMatrix3D(settings* prefs, int* nq, double* v, double ekin_to_oue, d
     }
     }
     }
+
+// free memory
+    if( prefs->coriolis_file ){ free_watson(); }
 
     printf("Matrix created, Potential added, %d entries\n", entry_index);
     return 0;

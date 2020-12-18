@@ -7,14 +7,13 @@
 #include "constants.h"
 #include "settings.h"
 
+// Provided prototypes
+#include "Watson.h"
+
 // Dependencies
 int FirstDerivative (int n_stencil, double*  first_derivative);
 int SecondDerivative(int n_stencil, double* second_derivative);
 
-// Provided prototypes
-void   init_watson_2d(settings* prefs);
-double exec_watson_2d(double*** mu, double** zeta, int* nq, double dq, double** q, int i, int j, int xsidx, int ysidx);
-void   free_watson_2d(void);
 
 // The rotational terms of the molecular Hamiltionian require a first-
 //  and second-derivative of the inverse moment of inertia tensor mu
@@ -28,7 +27,7 @@ static double * sec_deriv = NULL;
 
 static double conversion_factor = 0.0;
 
-void init_watson_2d(settings* prefs){
+void init_watson(settings* prefs){
 //{{{
 // allocate memory for derivative stencils
     donothing = calloc(prefs->n_stencil,  sizeof(double));
@@ -66,7 +65,7 @@ void init_watson_2d(settings* prefs){
                       * prefs->kJpermol_to_oue;              // * oue / (kJ/mol)
 }//}}}
 
-double exec_watson_2d(double*** mu, double** zeta, int* nq, double dq, double** q, int i, int j, int xsidx, int ysidx){
+double exec_watson(double*** mu, double** zeta, int* nq, double dq, double** q, int index, int* shift){
 //{{{
 
 // Memory layout of mu and zeta:
@@ -78,24 +77,24 @@ double exec_watson_2d(double*** mu, double** zeta, int* nq, double dq, double** 
     double prefactor = 0.0;
     for(int n = 0; n < 3; ++n){
         for(int m = 0; m < 3; ++m){
-            prefactor -= zeta[n][0]*zeta[m][0] * mu[n][m][i*nq[1] + j];
+            prefactor -= zeta[n][0]*zeta[m][0] * mu[n][m][index];
         }
     }
 
     prefactor *= conversion_factor;
 
     double watson2d = prefactor * (
-                q[0][i*nq[1] + j] *                     fst_deriv[xsidx] * donothing[ysidx] / dq
-              + q[1][i*nq[1] + j] *                     donothing[xsidx] * fst_deriv[ysidx] / dq
-              - q[0][i*nq[1] + j] * q[0][i*nq[1] + j] * sec_deriv[xsidx] * donothing[ysidx] / dq / dq
-              - q[1][i*nq[1] + j] * q[1][i*nq[1] + j] * donothing[xsidx] * sec_deriv[ysidx] / dq / dq
-        + 2.0 * q[0][i*nq[1] + j] * q[1][i*nq[1] + j] * fst_deriv[xsidx] * fst_deriv[ysidx] / dq / dq
+                q[0][index] *               fst_deriv[shift[0]] * donothing[shift[1]] / dq
+              + q[1][index] *               donothing[shift[0]] * fst_deriv[shift[1]] / dq
+              - q[0][index] * q[0][index] * sec_deriv[shift[0]] * donothing[shift[1]] / dq / dq
+              - q[1][index] * q[1][index] * donothing[shift[0]] * sec_deriv[shift[1]] / dq / dq
+        + 2.0 * q[0][index] * q[1][index] * fst_deriv[shift[0]] * fst_deriv[shift[1]] / dq / dq
     );
 
-    return watson2d;
+    return 0.5*watson2d;
 }//}}}
 
-void free_watson_2d(void){
+void free_watson(void){
 //{{{
 
     free(donothing); donothing = NULL;

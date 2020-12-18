@@ -6,11 +6,8 @@
 
 #include "settings.h"
 #include "MKLFillers.h"
+#include "Watson.h"
 
-// Dependencies
-void   init_watson_2d(settings* prefs);
-double exec_watson_2d(double*** mu, double** zeta, int* nq, double dq, double** q, int i, int j, int xsidx, int ysidx);
-void   free_watson_2d(void);
 
 int MKL_FillAMatrix2D(settings* prefs, int* nq, double* v, double ekin_to_oue, double* stencil, double** q, double dq, double*** mu, double** zeta, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A){
 
@@ -36,7 +33,7 @@ int MKL_FillAMatrix2D(settings* prefs, int* nq, double* v, double ekin_to_oue, d
 
 
 // initialise for the calculation of the Watson Hamiltonian
-    if( prefs->coriolis_file ){ init_watson_2d(prefs); }
+    if( prefs->coriolis_file ){ init_watson(prefs); }
 
 // fill Numerov's A matrix
 //  determine the non zero elements and store their positions in rows_A and cols_A
@@ -61,6 +58,7 @@ int MKL_FillAMatrix2D(settings* prefs, int* nq, double* v, double ekin_to_oue, d
             int xidx = i + xsh;
             int yidx = j + ysh;
 
+            int row        =   i    *nq[1] +   j;
             int stencilidx = s[0]*prefs->n_stencil + s[1];
 
         // set column index
@@ -70,7 +68,7 @@ int MKL_FillAMatrix2D(settings* prefs, int* nq, double* v, double ekin_to_oue, d
             (*vals_A)[entry_index] = ekin_to_oue * 0.5*stencil[ stencilidx ];
         //  apply second term of Watson Hamiltonian
             if( prefs->coriolis_file ){
-                (*vals_A)[entry_index] -= 0.5*exec_watson_2d(mu, zeta, nq, dq, q, i, j, s[0], s[1]);
+                (*vals_A)[entry_index] -= exec_watson(mu, zeta, nq, dq, q, row, s);
             }
 
         // add potential to diagonal element
@@ -86,7 +84,7 @@ int MKL_FillAMatrix2D(settings* prefs, int* nq, double* v, double ekin_to_oue, d
     }
 
 // free memory
-    if( prefs->coriolis_file ){ free_watson_2d(); }
+    if( prefs->coriolis_file ){ free_watson(); }
 
     printf("Matrix created, Potential added, %d entries\n", entry_index);
     return 0;

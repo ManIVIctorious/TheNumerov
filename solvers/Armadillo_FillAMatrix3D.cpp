@@ -4,6 +4,9 @@
 
 #include "settings.h"
 #include "ArmadilloFillers.h"
+extern "C" {
+#include "Watson.h"
+}
 
 // Provided Prototypes
 arma::sp_mat FillArmadillo_3D(settings* prefs, int* nq, int n_points, double* v, double ekin_to_oue, double* stencil, double** q, double dq, double*** mu, double** zeta);
@@ -19,6 +22,9 @@ arma::sp_mat FillArmadillo_3D(settings* prefs, int* nq, double* v, double ekin_t
                      *(prefs->n_stencil*nq[1] - (prefs->n_stencil/2)*(prefs->n_stencil/2 + 1))
                      *(prefs->n_stencil*nq[2] - (prefs->n_stencil/2)*(prefs->n_stencil/2 + 1));
 
+
+// initialise for the calculation of the Watson Hamiltonian
+    if( prefs->coriolis_file ){ init_watson(prefs); }
 
 // determine positions and values
     arma::umat locations(2, max_entries);
@@ -54,6 +60,10 @@ arma::sp_mat FillArmadillo_3D(settings* prefs, int* nq, double* v, double ekin_t
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         //  The stencil values have to be divided by 2^(D-1)
             values(entry_index) = ekin_to_oue * 0.25*stencil[ stencilidx ];
+//        //  apply second term of Watson Hamiltonian
+//            if( prefs->coriolis_file ){
+//                values(entry_index) -= exec_watson(mu, zeta, nq, dq, q, row, s);
+//            }
         // increment number of entries
             ++entry_index;
         }}
@@ -67,7 +77,10 @@ arma::sp_mat FillArmadillo_3D(settings* prefs, int* nq, double* v, double ekin_t
 // actual sparse matrix fill
     arma::sp_mat A(locations, values, n_points, n_points, true, true);
 
-// add potential value to main diagonal
+// free memory
+    if( prefs->coriolis_file ){ free_watson(); }
+
+// add potential values to main diagonal
     for(int i = 0; i < n_points; ++i){ A(i,i) += v[i]; }
 
     printf("Matrix created, Potential added, %u entries\n", entry_index);

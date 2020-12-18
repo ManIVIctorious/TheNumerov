@@ -4,12 +4,8 @@
 
 #include "settings.h"
 #include "ArmadilloFillers.h"
-
-// Dependencies
 extern "C" {
-    void   init_watson_2d(settings* prefs);
-    double exec_watson_2d(double*** mu, double** zeta, int* nq, double dq, double** q, int i, int j, int xsidx, int ysidx);
-    void   free_watson_2d(void);
+#include "Watson.h"
 }
 
 
@@ -24,7 +20,7 @@ arma::sp_mat FillArmadillo_2D(settings* prefs, int* nq, double* v, double ekin_t
 
 
 // initialise for the calculation of the Watson Hamiltonian
-    if( prefs->coriolis_file ){ init_watson_2d(prefs); }
+    if( prefs->coriolis_file ){ init_watson(prefs); }
 
 // determine positions and values
     arma::umat locations(2, max_entries);
@@ -57,7 +53,7 @@ arma::sp_mat FillArmadillo_2D(settings* prefs, int* nq, double* v, double ekin_t
             values(entry_index) = ekin_to_oue * 0.5*stencil[ stencilidx ];
         //  apply second term of Watson Hamiltonian
             if( prefs->coriolis_file ){
-                values(entry_index) -= 0.5*exec_watson_2d(mu, zeta, nq, dq, q, i, j, s[0], s[1]);
+                values(entry_index) -= exec_watson(mu, zeta, nq, dq, q, row, s);
             }
         // increment number of entries
             ++entry_index;
@@ -71,9 +67,9 @@ arma::sp_mat FillArmadillo_2D(settings* prefs, int* nq, double* v, double ekin_t
     arma::sp_mat A(locations, values, n_points, n_points, true, true);
 
 // free memory
-    if( prefs->coriolis_file ){ free_watson_2d(); }
+    if( prefs->coriolis_file ){ free_watson(); }
 
-// add potential value to main diagonal
+// add potential values to main diagonal
     for(int i = 0; i < n_points; ++i){ A(i,i) += v[i]; }
 
     printf("Matrix created, Potential added, %u entries\n", entry_index);

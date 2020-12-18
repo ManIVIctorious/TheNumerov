@@ -25,7 +25,7 @@
   SRC += stencils/FillStencil4D.c
 ## Solvers
   SRC += solvers/MetaEigensolver.c
-  SRC += solvers/Watson2D.c
+  SRC += solvers/Watson.c
   SRC += solvers/FillDerivativeStencils.c
 ## Integrators
   SRC += integrators/Integrators.c
