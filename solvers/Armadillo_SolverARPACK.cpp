@@ -2,7 +2,9 @@
 #define ARMA_BLAS_LONG
 #include <armadillo>
 #include <stdio.h>
+
 #include "settings.h"
+#include "ArmadilloFillers.h"
 
 // Provided Prototypes
 extern "C" int SolverARPACK_Armadillo(settings* prefs, int* nq, double* v, double ekin_to_oue, double* stencil, double** E, double** X, double** q, double dq, double*** mu, double** zeta);
@@ -12,11 +14,6 @@ arma::sp_mat FillArmadillo_1D(int* nq, double* v, double ekin_to_oue, double* st
 arma::sp_mat FillArmadillo_2D(settings* prefs, int* nq, int n_points, double* v, double ekin_to_oue, double* stencil, double** q, double dq, double*** mu, double** zeta);
 arma::sp_mat FillArmadillo_3D(settings* prefs, int* nq, int n_points, double* v, double ekin_to_oue, double* stencil, double** q, double dq, double*** mu, double** zeta);
 arma::sp_mat FillArmadillo_4D(settings* prefs, int* nq, int n_points, double* v, double ekin_to_oue, double* stencil, double** q, double dq, double*** mu, double** zeta);
-
-arma::sp_mat FillPeriodicArmadillo_1D(int* nq, double* v, double ekin_to_oue, double* stencil, int n_stencil);
-arma::sp_mat FillPeriodicArmadillo_2D(settings* prefs, int* nq, int n_points, double* v, double ekin_to_oue, double* stencil, double** q, double dq, double*** mu, double** zeta);
-arma::sp_mat FillPeriodicArmadillo_3D(settings* prefs, int* nq, int n_points, double* v, double ekin_to_oue, double* stencil, double** q, double dq, double*** mu, double** zeta);
-arma::sp_mat FillPeriodicArmadillo_4D(settings* prefs, int* nq, int n_points, double* v, double ekin_to_oue, double* stencil, double** q, double dq, double*** mu, double** zeta);
 
 
 extern "C"{
@@ -35,12 +32,12 @@ extern "C"{
         switch( prefs->dimension ){
 
           case 1:
-            if( prefs->periodic ){ A = FillPeriodicArmadillo_1D(nq, v, ekin_to_oue, stencil, prefs->n_stencil); }
+            if( prefs->periodic ){ A = FillPeriodicArmadillo_1D(prefs->n_stencil, nq, v, ekin_to_oue, stencil); }
             else{                  A =         FillArmadillo_1D(nq, v, ekin_to_oue, stencil, prefs->n_stencil); }
                 break;
 
             case 2:
-                if( prefs->periodic ){ A = FillPeriodicArmadillo_2D(prefs, nq, n_points, v, ekin_to_oue, stencil, q, dq, mu, zeta); }
+                if( prefs->periodic ){ A = FillPeriodicArmadillo_2D(prefs, nq, v, ekin_to_oue, stencil); }
                 else{                  A =         FillArmadillo_2D(prefs, nq, n_points, v, ekin_to_oue, stencil, q, dq, mu, zeta); }
                 break;
 
@@ -51,7 +48,7 @@ extern "C"{
                                     "\nis already set in main() => be prepared for some wrong results!\n\n"
                            );
                 }
-                if( prefs->periodic ){ A = FillPeriodicArmadillo_3D(prefs, nq, n_points, v, ekin_to_oue, stencil, q, dq, mu, zeta); }
+                if( prefs->periodic ){ A = FillPeriodicArmadillo_3D(prefs, nq, v, ekin_to_oue, stencil); }
                 else{                  A =         FillArmadillo_3D(prefs, nq, n_points, v, ekin_to_oue, stencil, q, dq, mu, zeta); }
                 break;
 
@@ -62,7 +59,7 @@ extern "C"{
                                     "\nis already set in main() => be prepared for some wrong results!\n\n"
                            );
                 }
-                if( prefs->periodic ){ A = FillPeriodicArmadillo_4D(prefs, nq, n_points, v, ekin_to_oue, stencil, q, dq, mu, zeta); }
+                if( prefs->periodic ){ A = FillPeriodicArmadillo_4D(prefs, nq, v, ekin_to_oue, stencil); }
                 else{                  A =         FillArmadillo_4D(prefs, nq, n_points, v, ekin_to_oue, stencil, q, dq, mu, zeta); }
                 break;
 

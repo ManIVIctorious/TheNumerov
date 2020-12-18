@@ -4,15 +4,13 @@
 #include <errno.h>
 #include <mkl_solvers_ee.h>
 
-// provided prototypes
-int MKL_FillPeriodicAMatrix1D(double* v, int* nq, double ekin_to_oue, double* stencil, int n_stencil, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A);
+#include "MKLFillers.h"
 
 // dependencies
 void HeapSort(MKL_INT* array, double* values, int arraysize);
 
 
-// 1D fill
-int MKL_FillPeriodicAMatrix1D(double* v, int* nq, double ekin_to_oue, double* stencil, int n_stencil, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A){
+int MKL_FillPeriodicAMatrix1D(int n_stencil,   int* nq, double* v, double ekin_to_oue, double* stencil, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A){
 
 // Calculate the maximum number of non-zero entries in the A matrix
 //  Should be <n_points - (n_stencil/2)*2> lines with <n_stencil> entries, the
@@ -77,5 +75,3 @@ int MKL_FillPeriodicAMatrix1D(double* v, int* nq, double ekin_to_oue, double* st
     printf("Matrix created, Potential added, %d entries\n", entry_index);
     return 0;
 }
-
-

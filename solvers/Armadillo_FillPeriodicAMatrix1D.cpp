@@ -1,18 +1,16 @@
 
 #include <stdio.h>
 #include <armadillo>
+
 #include "settings.h"
-
-// Provided Prototypes
-arma::sp_mat FillPeriodicArmadillo_1D(int* nq, double* v, double ekin_to_oue, double* stencil, int n_stencil);
+#include "ArmadilloFillers.h"
 
 
-// 1D fill
-arma::sp_mat FillPeriodicArmadillo_1D(int* nq, double* v, double ekin_to_oue, double* stencil, int n_stencil){
+arma::sp_mat FillPeriodicArmadillo_1D(int n_stencil,   int* nq, double* v, double ekin_to_oue, double* stencil){
 
-// Calculate the matximum number of non-zero entries in the A matrix
+// Calculate the maximum number of non-zero entries in the A matrix
 //  Should be <n_points - (n_stencil/2)*2> lines with <n_stencil> entries
-    int n_points = nq[0];
+    int n_points    = nq[0];
     int max_entries = n_stencil*n_points;
 
 // determine positions and values
@@ -36,12 +34,10 @@ arma::sp_mat FillPeriodicArmadillo_1D(int* nq, double* v, double ekin_to_oue, do
     }
 
 // actual sparse matrix fill
-    arma::sp_mat A(locations, values, nq[0], nq[0], true, true);
+    arma::sp_mat A(locations, values, n_points, n_points, true, true);
 
-// add potential values to main diagonal
-    for(int i = 0; i < nq[0]; ++i){
-        A(i,i) += v[i];
-    }
+// add potential value
+    for(int i = 0; i < n_points; ++i){ A(i,i) += v[i]; }
 
     printf("Matrix created, Potential added, %u entries\n", entry_index);
     return A;

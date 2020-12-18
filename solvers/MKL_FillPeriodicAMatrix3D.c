@@ -5,19 +5,13 @@
 #include <mkl_solvers_ee.h>
 
 #include "settings.h"
-
-// provided prototypes
-int MKL_FillPeriodicAMatrix3D(settings* prefs, int* nq, double* v, double ekin_to_oue, double* stencil, double** q, double dq, double*** mu, double** zeta, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A);
+#include "MKLFillers.h"
 
 // dependencies
-void   init_watson_3d(settings* prefs);
-double exec_watson_3d(double*** mu, double** zeta, int* nq, double dq, double** q, int i, int j, int xsidx, int ysidx);
-void   free_watson_3d(void);
 void HeapSort(MKL_INT* array, double* values, int arraysize);
 
 
-// 3D fill
-int MKL_FillPeriodicAMatrix3D(settings* prefs, int* nq, double* v, double ekin_to_oue, double* stencil, double** q, double dq, double*** mu, double** zeta, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A){
+int MKL_FillPeriodicAMatrix3D(settings* prefs, int* nq, double* v, double ekin_to_oue, double* stencil, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A){
 
 // Calculate the maximum number of non-zero entries in the A matrix
 //  Should be <n_points - (n_stencil/2)*2> lines with <n_stencil> entries, the
@@ -42,9 +36,6 @@ int MKL_FillPeriodicAMatrix3D(settings* prefs, int* nq, double* v, double ekin_t
     if( (*vals_A) == NULL ){ perror("3D MKL Fill vals_A"); exit(errno); }
 
 
-//// initialise for the calculation of the Watson Hamiltonian
-//    if( prefs->coriolis_file ){ init_watson_3d(prefs); }
-
 // fill Numerov's A matrix
 //  determine the non zero elements and store their positions in rows_A and cols_A
 //  and their values in vals_A
@@ -63,17 +54,13 @@ int MKL_FillPeriodicAMatrix3D(settings* prefs, int* nq, double* v, double ekin_t
             int yidx = ( (j + ysh) + (nq[1] - prefs->n_stencil/2) ) % nq[1];
             int zidx = ( (k + zsh) + (nq[2] - prefs->n_stencil/2) ) % nq[2];
 
-        // set column index
-            (*cols_A)[entry_index] = ( xidx*nq[1] + yidx )*nq[2] + zidx + 1;
+            int stencilidx = (xsh*prefs->n_stencil + ysh)*prefs->n_stencil + zsh;
 
-        // set matrix value
-            (*vals_A)[entry_index] = ekin_to_oue * stencil[ (xsh*prefs->n_stencil + ysh)*prefs->n_stencil + zsh ];
-//      //  apply second term of Watson Hamiltonian
-//          if( prefs->coriolis_file ){
-//              (*vals_A)[entry_index] -= exec_watson_3d(mu, zeta, nq, dq, q, i, j, xsh, ysh);
-//          }
-        //  The stencil values have to be divided by 2^(D-1)
-            (*vals_A)[entry_index] *= 0.25;
+        // set column index
+            (*cols_A)[entry_index] = (xidx*nq[1] + yidx)*nq[2] + zidx + 1;
+
+        // set matrix value, the stencil values have to be divided by 2^(D-1)
+            (*vals_A)[entry_index] = ekin_to_oue * 0.25*stencil[ stencilidx ];
 
         // add potential to diagonal element
             if( (xsh == midpoint) && (ysh == midpoint) && (zsh == midpoint) ){
@@ -84,13 +71,10 @@ int MKL_FillPeriodicAMatrix3D(settings* prefs, int* nq, double* v, double ekin_t
         }
         }
     // after inserting all entries in a row the total number of entries is inserted in the CSR format.
-        (*rows_A)[ ( (i*nq[1] + j)*nq[2] + k ) + 1] = entry_index + 1;
+        (*rows_A)[((i*nq[1] + j)*nq[2] + k) + 1] = entry_index + 1;
     }
     }
     }
-
-//// free memory
-//    if( prefs->coriolis_file ){ free_watson_3d(); }
 
 // The MKL CSR format requires the matrix entries to be in order, i.e. from left to right.
 // Due to the modulo arithmetics this cannot be ascertained by the filling routine,
