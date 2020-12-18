@@ -5,23 +5,19 @@
 #include <mkl_solvers_ee.h>
 
 #include "settings.h"
+#include "MKLFillers.h"
 
 // Dependencies
 void   init_watson_2d(settings* prefs);
 double exec_watson_2d(double*** mu, double** zeta, int* nq, double dq, double** q, int i, int j, int xsidx, int ysidx);
 void   free_watson_2d(void);
 
-// provided prototypes
-int MKL_FillAMatrix2D(settings* prefs, int* nq, double* v, double ekin_to_oue, double* stencil, double** q, double dq, double*** mu, double** zeta, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A);
-
-
-// 2D fill
 int MKL_FillAMatrix2D(settings* prefs, int* nq, double* v, double ekin_to_oue, double* stencil, double** q, double dq, double*** mu, double** zeta, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A){
 
 // Calculate the maximum number of non-zero entries in the A matrix
 //  Should be <n_points - (n_stencil/2)*2> lines with <n_stencil> entries, the
 //  first and last <n_stencil/2> lines are shortened via a triangular number sequence
-    int n_points = nq[0] * nq[1];
+    int n_points    = nq[0] * nq[1];
     int max_entries = (prefs->n_stencil*nq[0] - (prefs->n_stencil/2)*(prefs->n_stencil/2 + 1))
                      *(prefs->n_stencil*nq[1] - (prefs->n_stencil/2)*(prefs->n_stencil/2 + 1));
 
@@ -51,36 +47,41 @@ int MKL_FillAMatrix2D(settings* prefs, int* nq, double* v, double ekin_to_oue, d
     for(int i = 0; i < nq[0]; ++i){
     for(int j = 0; j < nq[1]; ++j){
 
-        for(int xsh = -(prefs->n_stencil/2); xsh < ((prefs->n_stencil/2) + 1); ++xsh){
+        for(int xsh = -(prefs->n_stencil/2); xsh <= (prefs->n_stencil/2); ++xsh){
         if( (i + xsh > -1) && (i + xsh < nq[0]) ){
 
-            for(int ysh = -(prefs->n_stencil/2); ysh < ((prefs->n_stencil/2) + 1); ++ysh){
-            if( (j + ysh > -1) && (j + ysh < nq[1]) ){
+        for(int ysh = -(prefs->n_stencil/2); ysh <= (prefs->n_stencil/2); ++ysh){
+        if( (j + ysh > -1) && (j + ysh < nq[1]) ){
 
-                int xsidx = xsh + prefs->n_stencil/2;    // stencil x index
-                int ysidx = ysh + prefs->n_stencil/2;    // stencil y index
+        // auxiliary indices
+            int s[2];
+            s[0] = xsh + prefs->n_stencil/2;
+            s[1] = ysh + prefs->n_stencil/2;
 
-            // set column index
-                (*cols_A)[entry_index] = (i + xsh)*nq[1] + (j + ysh) + 1;
+            int xidx = i + xsh;
+            int yidx = j + ysh;
 
-            // set matrix value
-                (*vals_A)[entry_index] = ekin_to_oue * stencil[ xsidx*prefs->n_stencil + ysidx ];
-            //  apply second term of Watson Hamiltonian
-                if( prefs->coriolis_file ){
-                    (*vals_A)[entry_index] -= exec_watson_2d(mu, zeta, nq, dq, q, i, j, xsidx, ysidx);
-                }
-            //  The stencil values have to be divided by 2^(D-1)
-                (*vals_A)[entry_index] *= 0.5;
+            int stencilidx = s[0]*prefs->n_stencil + s[1];
 
-            // add potential to diagonal element
-                if( (xsh == 0) && (ysh == 0) ){
-                    (*vals_A)[entry_index] += v[i*nq[1] + j];
-                }
-                ++entry_index;
-            }}
+        // set column index
+            (*cols_A)[entry_index] = xidx*nq[1] + yidx + 1;
+
+        // set matrix value, the stencil values have to be divided by 2^(D-1)
+            (*vals_A)[entry_index] = ekin_to_oue * 0.5*stencil[ stencilidx ];
+        //  apply second term of Watson Hamiltonian
+            if( prefs->coriolis_file ){
+                (*vals_A)[entry_index] -= 0.5*exec_watson_2d(mu, zeta, nq, dq, q, i, j, s[0], s[1]);
+            }
+
+        // add potential to diagonal element
+            if( (xsh == 0) && (ysh == 0) ){
+                (*vals_A)[entry_index] += v[i*nq[1] + j];
+            }
+            ++entry_index;
+        }}
         }}
     // after inserting all entries in a row the total number of entries is inserted in the CSR format.
-        (*rows_A)[i*nq[1] + (j + 1)] = entry_index + 1;
+        (*rows_A)[(i*nq[1] + j) + 1] = entry_index + 1;
     }
     }
 

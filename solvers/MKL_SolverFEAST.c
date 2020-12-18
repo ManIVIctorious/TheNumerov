@@ -10,11 +10,6 @@
 // provided prototypes
 int SolverFEAST_MKL(settings* prefs, int* nq, double* v, double ekin_to_oue, double* stencil, double** E, double** X, double** q, double dq, double*** mu, double** zeta);
 
-// Dependencies
-int MKL_FillAMatrix1D(double* v, int* nq, double ekin_to_oue, double* stencil, int n_stencil, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A);
-int MKL_FillAMatrix2D(settings* prefs, int* nq, double* v, double ekin_to_oue, double* stencil, double** q, double dq, double*** mu, double** zeta, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A);
-int MKL_FillAMatrix3D(settings* prefs, int* nq, double* v, double ekin_to_oue, double* stencil, double** q, double dq, double*** mu, double** zeta, MKL_INT* *rows_A, MKL_INT* *cols_A, double* *vals_A);
-
 
 int SolverFEAST_MKL(settings* prefs, int* nq, double* v, double ekin_to_oue, double* stencil, double** E, double** X, double** q, double dq, double*** mu, double** zeta){
 
@@ -35,7 +30,7 @@ int SolverFEAST_MKL(settings* prefs, int* nq, double* v, double ekin_to_oue, dou
       case 1:
       // one dimensional filling routine, the rotation terms are already set in main (Watson term)
         if( prefs->periodic ){ MKL_FillPeriodicAMatrix1D(prefs->n_stencil, nq, v, ekin_to_oue, stencil, &rows_A, &cols_A, &vals_A); }
-        else{                          MKL_FillAMatrix1D(v, nq, ekin_to_oue, stencil, prefs->n_stencil, &rows_A, &cols_A, &vals_A); }
+        else{                          MKL_FillAMatrix1D(prefs->n_stencil, nq, v, ekin_to_oue, stencil, &rows_A, &cols_A, &vals_A); }
         break;
 
       case 2:
