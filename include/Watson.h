@@ -1,8 +1,9 @@
 #ifndef _WATSON_H
 #define _WATSON_H
 
-void   init_watson(settings* prefs);
-double exec_watson(double*** mu, double** zeta, int* nq, double dq, double** q, int index, int* shift);
+void   init_watson(settings* prefs, double dq);
+double exec_watson(double*** mu, double** zeta, double** q, int index, int* shift);
+double exec_watson_3d(double*** mu, double** zeta, double** q, int index, int* shift);
 void   free_watson(void);
 
 #endif

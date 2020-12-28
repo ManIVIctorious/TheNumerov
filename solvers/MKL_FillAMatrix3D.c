@@ -34,7 +34,7 @@ int MKL_FillAMatrix3D(settings* prefs, int* nq, double* v, double ekin_to_oue, d
 
 
 // initialise for the calculation of the Watson Hamiltonian
-    if( prefs->coriolis_file ){ init_watson(prefs); }
+    if( prefs->coriolis_file ){ init_watson(prefs, dq); }
 
 // fill Numerov's A matrix
 //  determine the non zero elements and store their positions in rows_A and cols_A
@@ -75,7 +75,7 @@ int MKL_FillAMatrix3D(settings* prefs, int* nq, double* v, double ekin_to_oue, d
             (*vals_A)[entry_index] = ekin_to_oue * 0.25*stencil[ stencilidx ];
 //        //  apply second term of Watson Hamiltonian
 //            if( prefs->coriolis_file ){
-//                (*vals_A)[entry_index] -= exec_watson(mu, zeta, nq, dq, q, row, s);
+//                (*vals_A)[entry_index] += exec_watson(mu, zeta, q, row, s);
 //            }
 
         // add potential to diagonal element

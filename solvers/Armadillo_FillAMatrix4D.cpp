@@ -22,7 +22,7 @@ arma::sp_mat FillArmadillo_4D(settings* prefs, int* nq, double* v, double ekin_t
 
 
 // initialise for the calculation of the Watson Hamiltonian
-    if( prefs->coriolis_file ){ init_watson(prefs); }
+    if( prefs->coriolis_file ){ init_watson(prefs, dq); }
 
 // determine positions and values
     arma::umat locations(2, max_entries);
@@ -65,7 +65,7 @@ arma::sp_mat FillArmadillo_4D(settings* prefs, int* nq, double* v, double ekin_t
             values(entry_index) = ekin_to_oue * 0.125*stencil[ stencilidx ];
 //        //  apply second term of Watson Hamiltonian
 //            if( prefs->coriolis_file ){
-//                values(entry_index) -= exec_watson(mu, zeta, nq, dq, q, row, s);
+//                values(entry_index) += exec_watson(mu, zeta, q, row, s);
 //            }
         // increment number of entries
             ++entry_index;
