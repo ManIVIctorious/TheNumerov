@@ -103,22 +103,36 @@ void init_watson(settings* prefs, double dq){
 double exec_watson(double*** mu, double** z, double** q, int index, int* shift){
 //{{{
 
-// calculate pre-factor
-    double prefactor = 0.0;
+// helpers for the calculation of derivative stencils
+    double   ddq[2];
+    double d2dq2[2][2];
+    // first
+        ddq[0]    = fst_deriv[shift[0]] * donothing[shift[1]];
+        ddq[1]    = donothing[shift[0]] * fst_deriv[shift[1]];
+    // second
+      d2dq2[0][0] = sec_deriv[shift[0]] * donothing[shift[1]];
+      d2dq2[1][1] = donothing[shift[0]] * sec_deriv[shift[1]];
+    // cross
+      d2dq2[0][1] = fst_deriv[shift[0]] * fst_deriv[shift[1]];
+
+
+// calculate watson
+    double watson = 0.0;
+
+  // prefactor
     for(int a = 0; a < 3; ++a){
-        for(int b = 0; b < 3; ++b){
-            prefactor += mu[a][b][index] * z[a][0]*z[b][0];
-        }
+    for(int b = 0; b < 3; ++b){
+        watson += mu[a][b][index] * z[a][0]*z[b][0];
+    }
     }
 
-    prefactor *= conv_factor;
-
-    double watson = prefactor * (
-                  q[0][index] *               fst_deriv[shift[0]] * donothing[shift[1]]
-                - q[0][index] * q[0][index] * donothing[shift[0]] * sec_deriv[shift[1]]
-          + 2.0 * q[0][index] * q[1][index] * fst_deriv[shift[0]] * fst_deriv[shift[1]]
-                - q[1][index] * q[1][index] * sec_deriv[shift[0]] * donothing[shift[1]]
-                + q[1][index] *               donothing[shift[0]] * fst_deriv[shift[1]]
+  // conversion to kJ/mol and actual calculation
+    watson *= conv_factor * (
+                q[0][index] *                 ddq[0]
+              - q[0][index] * q[0][index] * d2dq2[1][1]
+        + 2.0 * q[0][index] * q[1][index] * d2dq2[0][1]
+              - q[1][index] * q[1][index] * d2dq2[0][0]
+              + q[1][index] *                 ddq[1]
     );
 
     return watson;
@@ -128,77 +142,74 @@ double exec_watson(double*** mu, double** z, double** q, int index, int* shift){
 double exec_watson_3d(double*** mu, double** z, double** q, int index, int* shift){
 //{{{
 
-    double watson3d = 0.0;
+// helpers for the calculation of derivative stencils
+    double   ddq[3];
+    double d2dq2[3][3];
+    // first
+        ddq[0]    = fst_deriv[shift[0]] * donothing[shift[1]] * donothing[shift[2]];
+        ddq[1]    = donothing[shift[0]] * fst_deriv[shift[1]] * donothing[shift[2]];
+        ddq[2]    = donothing[shift[0]] * donothing[shift[1]] * fst_deriv[shift[2]];
+    // second
+      d2dq2[0][0] = sec_deriv[shift[0]] * donothing[shift[1]] * donothing[shift[2]];
+      d2dq2[1][1] = donothing[shift[0]] * sec_deriv[shift[1]] * donothing[shift[2]];
+      d2dq2[2][2] = donothing[shift[0]] * donothing[shift[1]] * sec_deriv[shift[2]];
+    // cross
+      d2dq2[0][1] = fst_deriv[shift[0]] * fst_deriv[shift[1]] * donothing[shift[2]];
+      d2dq2[0][2] = fst_deriv[shift[0]] * donothing[shift[1]] * fst_deriv[shift[2]];
+      d2dq2[1][2] = donothing[shift[0]] * fst_deriv[shift[1]] * fst_deriv[shift[2]];
+
+
+// actual calculation
+    double watson = 0.0;
 
     for(int a = 0; a < 3; ++a){
-        for(int b = 0; b < 3; ++b){
+    for(int b = 0; b < 3; ++b){
 
-            watson3d += mu[a][b][index] * (
-            // fst total
-                  z[a][0] * z[b][0] * q[0][index] * fst_deriv[shift[0]] * donothing[shift[1]] * donothing[shift[2]]
-                + z[a][0] * z[b][0] * q[1][index] * donothing[shift[0]] * fst_deriv[shift[1]] * donothing[shift[2]]
-                + z[a][0] * z[b][1] * q[1][index] * donothing[shift[0]] * donothing[shift[1]] * fst_deriv[shift[2]]
-                - z[a][0] * z[b][2] * q[0][index] * donothing[shift[0]] * donothing[shift[1]] * fst_deriv[shift[2]]
+        watson -= mu[a][b][index] * (
+            - z[a][0] * z[b][0] * (q[0][index] * ddq[0] + q[0][index] * q[1][index] * d2dq2[0][1])
+            + z[a][0] * z[b][2] * (q[0][index] * ddq[2] + q[0][index] * q[1][index] * d2dq2[1][2])
+            - z[a][0] * z[b][0] * (q[1][index] * ddq[1] + q[1][index] * q[0][index] * d2dq2[0][1])
+            - z[a][0] * z[b][1] * (q[1][index] * ddq[2] + q[1][index] * q[0][index] * d2dq2[0][2])
+            - z[a][1] * z[b][1] * (q[0][index] * ddq[0] + q[0][index] * q[2][index] * d2dq2[0][2])
+            - z[a][1] * z[b][2] * (q[0][index] * ddq[1] + q[0][index] * q[2][index] * d2dq2[1][2])
+            - z[a][1] * z[b][0] * (q[2][index] * ddq[1] + q[2][index] * q[0][index] * d2dq2[0][1])
+            - z[a][1] * z[b][1] * (q[2][index] * ddq[2] + q[2][index] * q[0][index] * d2dq2[0][2])
+            - z[a][2] * z[b][1] * (q[1][index] * ddq[0] + q[1][index] * q[2][index] * d2dq2[0][2])
+            - z[a][2] * z[b][2] * (q[1][index] * ddq[1] + q[1][index] * q[2][index] * d2dq2[1][2])
+            + z[a][2] * z[b][0] * (q[2][index] * ddq[0] + q[2][index] * q[1][index] * d2dq2[0][1])
+            - z[a][2] * z[b][2] * (q[2][index] * ddq[2] + q[2][index] * q[1][index] * d2dq2[1][2])
 
-                + z[a][1] * z[b][0] * q[2][index] * donothing[shift[0]] * fst_deriv[shift[1]] * donothing[shift[2]]
-                + z[a][1] * z[b][1] * q[0][index] * fst_deriv[shift[0]] * donothing[shift[1]] * donothing[shift[2]]
-                + z[a][1] * z[b][1] * q[2][index] * donothing[shift[0]] * donothing[shift[1]] * fst_deriv[shift[2]]
-                + z[a][1] * z[b][2] * q[0][index] * donothing[shift[0]] * fst_deriv[shift[1]] * donothing[shift[2]]
+            + z[a][0] * z[b][0] * q[0][index] * q[0][index] * d2dq2[1][1]
+            + z[a][0] * z[b][1] * q[0][index] * q[0][index] * d2dq2[1][2]
+            - z[a][0] * z[b][1] * q[0][index] * q[2][index] * d2dq2[0][1]
+            - z[a][0] * z[b][2] * q[0][index] * q[2][index] * d2dq2[1][1]
+            + z[a][0] * z[b][0] * q[1][index] * q[1][index] * d2dq2[0][0]
+            + z[a][0] * z[b][1] * q[1][index] * q[2][index] * d2dq2[0][0]
+            - z[a][0] * z[b][2] * q[1][index] * q[1][index] * d2dq2[0][2]
+            + z[a][0] * z[b][2] * q[1][index] * q[2][index] * d2dq2[0][1]
+            + z[a][1] * z[b][0] * q[0][index] * q[0][index] * d2dq2[1][2]
+            - z[a][1] * z[b][0] * q[0][index] * q[1][index] * d2dq2[0][2]
+            + z[a][1] * z[b][1] * q[0][index] * q[0][index] * d2dq2[2][2]
+            + z[a][1] * z[b][2] * q[0][index] * q[1][index] * d2dq2[2][2]
+            + z[a][1] * z[b][0] * q[2][index] * q[1][index] * d2dq2[0][0]
+            + z[a][1] * z[b][1] * q[2][index] * q[2][index] * d2dq2[0][0]
+            - z[a][1] * z[b][2] * q[2][index] * q[1][index] * d2dq2[0][2]
+            + z[a][1] * z[b][2] * q[2][index] * q[2][index] * d2dq2[0][1]
+            + z[a][2] * z[b][0] * q[1][index] * q[0][index] * d2dq2[1][2]
+            - z[a][2] * z[b][0] * q[1][index] * q[1][index] * d2dq2[0][2]
+            + z[a][2] * z[b][1] * q[1][index] * q[0][index] * d2dq2[2][2]
+            + z[a][2] * z[b][2] * q[1][index] * q[1][index] * d2dq2[2][2]
+            - z[a][2] * z[b][0] * q[2][index] * q[0][index] * d2dq2[1][1]
+            - z[a][2] * z[b][1] * q[2][index] * q[0][index] * d2dq2[1][2]
+            + z[a][2] * z[b][1] * q[2][index] * q[2][index] * d2dq2[0][1]
+            + z[a][2] * z[b][2] * q[2][index] * q[2][index] * d2dq2[1][1]
+        );
 
-                - z[a][3] * z[b][0] * q[2][index] * fst_deriv[shift[0]] * donothing[shift[1]] * donothing[shift[2]]
-                + z[a][3] * z[b][1] * q[1][index] * fst_deriv[shift[0]] * donothing[shift[1]] * donothing[shift[2]]
-                + z[a][3] * z[b][2] * q[1][index] * donothing[shift[0]] * fst_deriv[shift[1]] * donothing[shift[2]]
-                + z[a][3] * z[b][2] * q[2][index] * donothing[shift[2]] * donothing[shift[1]] * fst_deriv[shift[2]]
-
-            // second total
-                - z[a][0] * z[b][0] * q[1][index] * q[1][index] * sec_deriv[shift[0]] * donothing[shift[1]] * donothing[shift[2]]
-                - z[a][0] * z[b][0] * q[0][index] * q[0][index] * donothing[shift[0]] * sec_deriv[shift[1]] * donothing[shift[2]]
-                - z[a][0] * z[b][1] * q[1][index] * q[2][index] * sec_deriv[shift[0]] * donothing[shift[1]] * donothing[shift[2]]
-                + z[a][0] * z[b][2] * q[0][index] * q[2][index] * donothing[shift[0]] * sec_deriv[shift[1]] * donothing[shift[2]]
-
-                - z[a][1] * z[b][0] * q[1][index] * q[2][index] * sec_deriv[shift[0]] * donothing[shift[1]] * donothing[shift[2]]
-                - z[a][1] * z[b][1] * q[2][index] * q[2][index] * sec_deriv[shift[0]] * donothing[shift[1]] * donothing[shift[2]]
-                - z[a][1] * z[b][1] * q[0][index] * q[0][index] * donothing[shift[0]] * donothing[shift[1]] * sec_deriv[shift[2]]
-                - z[a][1] * z[b][2] * q[0][index] * q[1][index] * donothing[shift[0]] * donothing[shift[1]] * sec_deriv[shift[2]]
-
-                + z[a][2] * z[b][0] * q[0][index] * q[2][index] * donothing[shift[0]] * sec_deriv[shift[1]] * donothing[shift[2]]
-                - z[a][2] * z[b][1] * q[0][index] * q[1][index] * donothing[shift[0]] * donothing[shift[1]] * sec_deriv[shift[2]]
-                - z[a][2] * z[b][2] * q[2][index] * q[2][index] * donothing[shift[0]] * sec_deriv[shift[1]] * donothing[shift[2]]
-                - z[a][2] * z[b][2] * q[1][index] * q[1][index] * donothing[shift[0]] * donothing[shift[1]] * sec_deriv[shift[2]]
-
-            // cross singled
-                + z[a][0] * z[b][1] * q[0][index] * q[2][index] * fst_deriv[shift[0]] * fst_deriv[shift[1]] * donothing[shift[2]]
-                + z[a][0] * z[b][1] * q[0][index] * q[1][index] * fst_deriv[shift[0]] * donothing[shift[1]] * fst_deriv[shift[2]]
-                - z[a][0] * z[b][1] * q[0][index] * q[0][index] * donothing[shift[0]] * fst_deriv[shift[1]] * fst_deriv[shift[2]]
-                - z[a][0] * z[b][2] * q[1][index] * q[2][index] * fst_deriv[shift[0]] * fst_deriv[shift[1]] * donothing[shift[2]]
-                + z[a][0] * z[b][2] * q[1][index] * q[1][index] * fst_deriv[shift[0]] * donothing[shift[1]] * fst_deriv[shift[2]]
-                - z[a][0] * z[b][2] * q[0][index] * q[1][index] * donothing[shift[0]] * fst_deriv[shift[1]] * fst_deriv[shift[2]]
-
-                + z[a][1] * z[b][0] * q[0][index] * q[2][index] * fst_deriv[shift[0]] * fst_deriv[shift[1]] * donothing[shift[2]]
-                + z[a][1] * z[b][0] * q[0][index] * q[1][index] * fst_deriv[shift[0]] * donothing[shift[1]] * fst_deriv[shift[2]]
-                - z[a][1] * z[b][0] * q[0][index] * q[0][index] * donothing[shift[0]] * fst_deriv[shift[1]] * fst_deriv[shift[2]]
-                - z[a][1] * z[b][2] * q[2][index] * q[2][index] * fst_deriv[shift[0]] * fst_deriv[shift[1]] * donothing[shift[2]]
-                + z[a][1] * z[b][2] * q[1][index] * q[2][index] * fst_deriv[shift[0]] * donothing[shift[1]] * fst_deriv[shift[2]]
-                + z[a][1] * z[b][2] * q[0][index] * q[2][index] * donothing[shift[0]] * fst_deriv[shift[1]] * fst_deriv[shift[2]]
-
-                - z[a][2] * z[b][0] * q[1][index] * q[2][index] * fst_deriv[shift[0]] * fst_deriv[shift[1]] * donothing[shift[2]]
-                + z[a][2] * z[b][0] * q[1][index] * q[1][index] * fst_deriv[shift[0]] * donothing[shift[1]] * fst_deriv[shift[2]]
-                - z[a][2] * z[b][0] * q[0][index] * q[1][index] * donothing[shift[0]] * fst_deriv[shift[1]] * fst_deriv[shift[2]]
-                - z[a][2] * z[b][1] * q[2][index] * q[2][index] * fst_deriv[shift[0]] * fst_deriv[shift[1]] * donothing[shift[2]]
-                + z[a][2] * z[b][1] * q[1][index] * q[2][index] * fst_deriv[shift[0]] * donothing[shift[1]] * fst_deriv[shift[2]]
-                + z[a][2] * z[b][1] * q[0][index] * q[2][index] * donothing[shift[0]] * fst_deriv[shift[1]] * fst_deriv[shift[2]]
-
-            // cross doubled
-                + 2 * z[a][0] * z[b][0] * q[0][index] * q[1][index] * fst_deriv[shift[0]] * fst_deriv[shift[1]] * donothing[shift[2]]
-                + 2 * z[a][1] * z[b][1] * q[0][index] * q[2][index] * fst_deriv[shift[0]] * donothing[shift[1]] * fst_deriv[shift[2]]
-                + 2 * z[a][2] * z[b][2] * q[1][index] * q[2][index] * donothing[shift[0]] * fst_deriv[shift[1]] * fst_deriv[shift[2]]
-            );
-
-        }
     }
-    watson3d *= conv_factor;
+    }
 
-    return watson3d;
+// convert to kJ/mol and return
+    return conv_factor * watson;
 }//}}}
 
 
