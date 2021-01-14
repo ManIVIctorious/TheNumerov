@@ -242,7 +242,34 @@ int main(int argc, char* argv[]){
     // free memory of q_coriolis
         for(int i = 0; i < prefs.dimension; ++i){ free(q_coriolis[i]); q_coriolis[i] = NULL; }
         free(q_coriolis); q_coriolis = NULL;
+
+
+    // apply the watson threshold to the entries of the reciprocal moment of inertia tensor
+        if( prefs.InvInertiaThreshold ){
+            fprintf(stderr, "Applying reciprocal moment of inertia threshold\n");
+
+            int count = 0;
+            for(int a = 0; a < 3; ++a){
+            for(int b = 0; b < 3; ++b){
+                for(int i = 0; i < n_points; ++i){
+                    if( mu[a][b][i] < -prefs.InvInertiaThreshold ){
+                        mu[a][b][i] = -prefs.InvInertiaThreshold;
+                        count++;
+                    }
+                    else if( mu[a][b][i] >  prefs.InvInertiaThreshold ){
+                        mu[a][b][i] =  prefs.InvInertiaThreshold;
+                        count++;
+                    }
+                }
+            }
+            }
+
+            if( count ){
+                fprintf(stderr, "%d values overwritten with threshold\n", count);
+            }
+        }
     }
+
 
 
 //------------------------------------------------------------------------------------------------------------

@@ -28,7 +28,7 @@ void GetSettingsGetopt(int argc, char** argv, settings* preferences){
 
 // optstring contains a list of all short option indices,
 //  indices followed by a colon are options requiring an argument.
-    const char * optstring = "a::c:d::e:f:i:k:l:m:n:o:p::s:t:u:v:C:D:F::M:N:PT::V";
+    const char * optstring = "a::c:d::e:f:i:k:l:m:n:o:p::s:t:u:v:w:C:D:F::M:N:PT::V";
 
 // create an array of option structs
 /* struct description
@@ -58,6 +58,7 @@ void GetSettingsGetopt(int argc, char** argv, settings* preferences){
         {"fdipole",          required_argument, NULL, 'f'},
         {"fmu",              required_argument, NULL, 'M'},
         {"dq-threshold",     required_argument, NULL, 't'},
+        {"watson-threshold", required_argument, NULL, 'w'},
         {"lower-bound",      required_argument, NULL, 'l'},
         {"upper-bound",      required_argument, NULL, 'u'},
     // string values:
@@ -170,6 +171,10 @@ void GetSettingsGetopt(int argc, char** argv, settings* preferences){
 
             case 't':
                 preferences->threshold   = convertstring_to_double(optarg, "Threshold", NULL);
+                break;
+
+            case 'w':
+                preferences->InvInertiaThreshold = convertstring_to_double(optarg, "Watson Threshold", NULL);
                 break;
 
             case 'l':
