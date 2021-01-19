@@ -245,7 +245,7 @@ int main(int argc, char* argv[]){
 
 
     // apply the watson threshold to the entries of the reciprocal moment of inertia tensor
-        if( prefs.InvInertiaThreshold ){
+        if( prefs.InvInertiaThreshold > 0.0 ){
             fprintf(stderr, "Applying reciprocal moment of inertia threshold\n");
 
             int count = 0;

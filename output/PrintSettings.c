@@ -64,6 +64,11 @@ fprintf(fd,
     fprintf(fd, "\n#\tEPotToOUE            = % 12.8lf;\t# input (v)  -> output unit of energy (oue)", prefs->epot_to_oue);
     fprintf(fd, "\n#\tkJpermolToOUE        = % 12.8lf;\t# in x per kJ/mol", prefs->kJpermol_to_oue);
     fprintf(fd, "\n#\tIMOITomolpergAasq    = % 12.8le;\t# input (mu) -> mol/(g.Å^2)", prefs->InvInertia_to_molpergAasq);
+if( prefs->InvInertiaThreshold > 0.0 ){
+    fprintf(fd, "\n#\tIMOI_Threshold       = % 12.8le;\t# in [input mu]", prefs->InvInertiaThreshold);
+}else{
+    fprintf(fd, "\n#\tIMOI_Threshold       = none;\t# in [input mu]");
+}
     fprintf(fd, "\n#\tDipToAsm             = % 12.8le;\t# input (dipole moment) -> A.s.m", prefs->dip_to_Asm);
     fprintf(fd, "\n#\tSpacing_Threshold    = % 12.8le;", prefs->threshold);
     fprintf(fd, "\n#");

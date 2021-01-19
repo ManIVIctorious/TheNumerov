@@ -42,6 +42,7 @@ void GetSettingsControlFile(char* inputfile, settings* set){
         {"kJpermolToOUE",           0,  'k', NULL },
         {"DipToAsm",                0,  'f', NULL },
         {"IMOITomolpergAasq",       0,  'M', NULL },
+        {"IMOI_Threshold",          0,  'w', NULL },
         {"Spacing_Threshold",       0,  't', NULL },
         {"Lower_Bound",             0,  'l', NULL },
         {"Upper_Bound",             0,  'u', NULL },
@@ -139,6 +140,13 @@ void GetSettingsControlFile(char* inputfile, settings* set){
 
             case 'M':
                 set->InvInertia_to_molpergAasq = convertstring_to_double(optarglast, keywordlist[i].keyword, NULL);
+                break;
+
+            case 'w':
+                if( strcasecmp(optarglast, "none") == 0 ){ set->InvInertiaThreshold = -1.0; }
+                else{
+                    set->InvInertiaThreshold = convertstring_to_double(optarglast, keywordlist[i].keyword, NULL);
+                }
                 break;
 
             case 't':

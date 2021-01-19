@@ -96,6 +96,16 @@ void usage(void){
     );
 
     printf("\n"
+           "\n\t-w, --watson-threshold"
+           "\n\t    Threshold for the entries of the \"effective reciprocal moment of"
+           "\n\t    inertia tensor\". When set to a positive number all entries outside"
+           "\n\t    the region [-threshold,threshold] are set to the appropriate"
+           "\n\t    boundary. Setting it to a negative number disables the threshold."
+           "\n\t    Keyword:\tIMOI_Threshold"
+           "\n\t    Default:\t% le", defaults.InvInertiaThreshold
+    );
+
+    printf("\n"
            "\n\t-n, --n-stencil"
            "\n\t    Set the one dimensional stencil size, e.g. \"-n 11\" gives a"
            "\n\t    11x11 stencil in the two dimensional Numerov."
