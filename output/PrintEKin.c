@@ -18,7 +18,7 @@ void PrintEKin(FILE* fd, settings *prefs, int n_out, int n_points, int* nq, doub
     if(integrand == NULL){ perror("Integrand"); exit(errno); }
 
 // print header and index line
-    fprintf(fd, "\n# Kinetic Energy:\n#\n#");
+    fprintf(fd, "#\n#\n# Kinetic Energy:\n#\n#");
     for(int i = 0; i < n_out; ++i){
         fprintf(fd, "       %7d", i);
     }
@@ -56,7 +56,7 @@ void PrintEKin(FILE* fd, settings *prefs, int n_out, int n_points, int* nq, doub
             fprintf(fd, "  % 12.5e", Integrate(2, nq, dq, integrand));
         }
     }
-    fprintf(fd, "\n#\n#");
+    fprintf(fd, "\n");
 
     free(integrand); integrand = NULL;
 }

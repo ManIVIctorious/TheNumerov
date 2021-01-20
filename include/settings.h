@@ -26,10 +26,14 @@ typedef struct settings {
   char periodic;        // use matrix fillers for periodic boundary conditions
 
 // Eigensolver specific values
-  int Eigensolver;      // Which eigensolver to use (1 FEAST, 2 ARPACK)
-  int    n_out;         // Number of output eigenstates (ARPACK)
-  double e_min;         // Minimal energy of eigenstates (FEAST)
-  double e_max;         // Maximal energy of eigenstates (FEAST)
+// Eigensolvers are encoded in a bit-mask, i.e.
+//  1   Intel MKL FEAST
+//  2   Armadillo ARPACK
+//  4   Not yet implemented
+  unsigned int Eigensolver; // Which eigensolver to use
+  int    n_out;             // Number of output eigenstates (ARPACK)
+  double e_min;             // Minimal energy of eigenstates (FEAST)
+  double e_max;             // Maximal energy of eigenstates (FEAST)
 
 // Files
   char * input_file;    // data input file

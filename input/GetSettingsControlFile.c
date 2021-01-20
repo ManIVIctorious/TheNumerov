@@ -188,9 +188,13 @@ void GetSettingsControlFile(char* inputfile, settings* set){
 
         // other
             case 'E':
+            // bit-mask
+            // 1    Intel MKL FEAST
+            // 2    Armadillo ARPACK
+            // 4    Not implemented yet
                 if     ( strcasecmp(optarglast, "Intel_MKL_FEAST")  == 0 ){ set->Eigensolver = 1; }
                 else if( strcasecmp(optarglast, "ARMADILLO_ARPACK") == 0 ){ set->Eigensolver = 2; }
-                else{ set->Eigensolver = (int)convertstring_to_long(optarglast, keywordlist[i].keyword, NULL); }
+                else{ set->Eigensolver = (unsigned int)convertstring_to_long(optarglast, keywordlist[i].keyword, NULL); }
                 break;
         }
     }

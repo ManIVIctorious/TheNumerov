@@ -4,12 +4,8 @@
 #include "settings.h"
 
 // Dependencies
-#ifdef HAVE_MKL_INSTALLED
 int        SolverFEAST_MKL(settings* prefs, int* nq, double* v, double ekin_to_oue, double* stencil, double** E, double** X, double** q, double dq, double*** mu, double** zeta);
-#endif
-#ifdef HAVE_ARMA_INSTALLED
 int SolverARPACK_Armadillo(settings* prefs, int* nq, double* v, double ekin_to_oue, double* stencil, double** E, double** X, double** q, double dq, double*** mu, double** zeta);
-#endif
 
 // provided prototypes
 int MetaEigensolver(settings* prefs, int* nq, double* v, double ekin_to_oue, double* stencil, double* *E, double* *X, double** q, double dq, double*** mu, double** zeta);
@@ -20,18 +16,18 @@ int MetaEigensolver(settings* prefs, int* nq, double* v, double ekin_to_oue, dou
     int n_out;
 
     switch( prefs->Eigensolver ){
+    // Eigensolver bit-mask
+    // 1    Intel MKL FEAST
+    // 2    Armadillo ARPACK
+    // 4    Not implemented yet
 
-#ifdef HAVE_MKL_INSTALLED
         case 1:
             n_out =        SolverFEAST_MKL(prefs, nq, v, ekin_to_oue, stencil, E, X, q, dq, mu, zeta);
             break;
-#endif
 
-#ifdef HAVE_ARMA_INSTALLED
         case 2:
             n_out = SolverARPACK_Armadillo(prefs, nq, v, ekin_to_oue, stencil, E, X, q, dq, mu, zeta);
             break;
-#endif
 
         default:
             fprintf(stderr,

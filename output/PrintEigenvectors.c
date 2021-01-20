@@ -12,7 +12,7 @@ void PrintEigenvectors(FILE* fd, settings* prefs, int n_out, int n_points, int* 
 void PrintEigenvectors(FILE* fd, settings* prefs, int n_out, int n_points, int* nq, double** q, double* v, double*** mu, double* X, double** dip){
 
 // print header
-    fprintf(fd, "\n# Potential and Eigenfunctions: %d data-points", n_points);
+    fprintf(fd, "#\n#\n# Potential and Eigenfunctions: %d data-points", n_points);
 
 // output size per dimension
     fprintf(fd, "\n  N");

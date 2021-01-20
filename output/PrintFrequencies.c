@@ -14,13 +14,13 @@ void PrintFrequencies(FILE* fd, double kJpermol_to_oue, int n_out, double* E){
     double oue_to_wavenumber = kJpermol_to_wavenumber / kJpermol_to_oue;       // cm^-1 / oue
 
 // output eigenvalues in output unit of energy (oue)
-    fprintf(fd, "# Eigenvalues:");
+    fprintf(fd, "#\n#\n# Eigenvalues:");
     for(int i = 0; i < n_out; ++i){
         fprintf(fd, " %24.16lf", E[i]);
     }
 
 // and output frequencies in wavenumbers
-    fprintf(fd, "\n#\n# Frequencies in 1/cm:\n#\n#");
+    fprintf(fd, "\n#\n#\n# Frequencies in 1/cm:\n#\n#");
     for(int i = 0; i < (n_out - 1); ++i){
         fprintf(fd, "       %7d", i);
     }
@@ -31,5 +31,5 @@ void PrintFrequencies(FILE* fd, double kJpermol_to_oue, int n_out, double* E){
             fprintf(fd, "  % 12.5e", (E[i] - E[j]) * oue_to_wavenumber);
         }
     }
-    fprintf(fd, "\n#\n#");
+    fprintf(fd, "\n");
 }

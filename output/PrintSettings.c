@@ -94,19 +94,23 @@ fprintf(fd,
 
 
 // Eigensolver
-    const char * Eigensolver[3];
-    Eigensolver[0] = "unknown";
-    Eigensolver[1] = "Intel_MKL_FEAST";
-    Eigensolver[2] = "Armadillo_ARPACK";
+// 1    Intel MKL FEAST
+// 2    Armadillo ARPACK
+// 4    Not implemented yet
+    char * solvername = "unknown";
+    if     ( prefs->Eigensolver == 1 ){ solvername = "Intel_MKL_FEAST";  }
+    else if( prefs->Eigensolver == 2 ){ solvername = "Armadillo_ARPACK"; }
 
 fprintf(fd,
 "\n#\n#\n"
 "## Eigensolver specific settings:");
-    fprintf(fd, "\n#\tEigensolver    = %s;", Eigensolver[prefs->Eigensolver]);
+    fprintf(fd, "\n#\tEigensolver    = %s;", solvername);
+// Intel MKL FEAST specific settings
   if(prefs->Eigensolver == 1){
     fprintf(fd, "\n#\tLower_Bound    = % 12.8lf;", prefs->e_min);
     fprintf(fd, "\n#\tUpper_Bound    = % 12.8lf;", prefs->e_max);
   }
+// Armadillo ARPACK specific settings
   else if(prefs->Eigensolver == 2){
     fprintf(fd, "\n#\tN_Eigenstates  = %d;", prefs->n_out);
   }
@@ -131,7 +135,6 @@ fprintf(fd,
     "##-----------------------------------------------------------------------------------------\n"
     "## End Settings   End Settings   End Settings   End Settings   End Settings   End Settings\n"
     "##-----------------------------------------------------------------------------------------\n"
-    "#\n#\n"
 );
 
 // close file

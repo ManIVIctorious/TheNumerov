@@ -18,7 +18,7 @@ void PrintEPot(FILE* fd, int dimensionality, int n_out, int n_points, int* nq, d
     if(integrand == NULL){ perror("Integrand"); exit(errno); }
 
 // print header and index line
-    fprintf(fd, "\n# Potential Energy in oue:\n#\n#");
+    fprintf(fd, "#\n#\n# Potential Energy in oue:\n#\n#");
     for(int i = 0; i < n_out; ++i){
         fprintf(fd, "       %7d", i);
     }
@@ -42,7 +42,7 @@ void PrintEPot(FILE* fd, int dimensionality, int n_out, int n_points, int* nq, d
             fprintf(fd, "  % 12.5e", Integrate(dimensionality, nq, dq, integrand));
         }
     }
-    fprintf(fd, "\n#\n#");
+    fprintf(fd, "\n");
 
     free(integrand); integrand = NULL;
 }

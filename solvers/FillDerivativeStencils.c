@@ -14,8 +14,6 @@ int SecondDerivative(int n_stencil, double* second_derivative);
 
 int FirstDerivative(int n_stencil, double* first_derivative){
 
-    int i;
-
 // fill first derivative stencil
     switch(n_stencil){
 
@@ -99,7 +97,7 @@ int FirstDerivative(int n_stencil, double* first_derivative){
 
 #ifdef HAVE_GSL_INSTALLED
         default:
-            for(i = -(n_stencil-1)/2; i < (n_stencil-1)/2; ++i){
+            for(int i = -(n_stencil-1)/2; i < (n_stencil-1)/2; ++i){
                 first_derivative[i + (n_stencil-1)/2] = (double)i;
             }
             FiniteDifferenceStencil(first_derivative, n_stencil, 1);
@@ -120,8 +118,6 @@ int FirstDerivative(int n_stencil, double* first_derivative){
 
 
 int SecondDerivative(int n_stencil, double* second_derivative){
-
-    int i;
 
 // fill second derivative stencil
     switch(n_stencil){
@@ -206,7 +202,7 @@ int SecondDerivative(int n_stencil, double* second_derivative){
 
 #ifdef HAVE_GSL_INSTALLED
         default:
-            for(i = -(n_stencil-1)/2; i < (n_stencil-1)/2; ++i){
+            for(int i = -(n_stencil-1)/2; i < (n_stencil-1)/2; ++i){
                 second_derivative[i + (n_stencil-1)/2] = (double)i;
             }
             FiniteDifferenceStencil(second_derivative, n_stencil, 2);

@@ -65,21 +65,6 @@ int main(int argc, char* argv[]){
     }
     GetSettingsGetopt(argc, argv, &prefs);
 
-// check if at least one eigensolver is available
-#ifndef HAVE_MKL_INSTALLED
-#ifndef HAVE_ARMA_INSTALLED
-    fprintf(stderr,
-        "\n (-) The availability of a matrix eigensolver is a key requirement"
-        "\n     of the Numerov procedure. Please make sure to compile the"
-        "\n     program with at least one of the following defines:"
-        "\n         -D HAVE_MKL_INSTALLED"
-        "\n         -D HAVE_ARMA_INSTALLED"
-        "\n\n"
-    );
-    exit(EXIT_FAILURE);
-#endif
-#endif
-
 // validate and post process settings
     ValidateSettings(&prefs);
 

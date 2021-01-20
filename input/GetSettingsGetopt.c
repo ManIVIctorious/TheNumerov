@@ -34,7 +34,7 @@ void GetSettingsGetopt(int argc, char** argv, settings* preferences){
 /* struct description
  *{{{
  *  const char * option string
- *  int          has_arg (no_argument == 0, required_argument == 1, optional_argument == 2)
+ *  int          has_arg (no_argument (0), required_argument (1), optional_argument (2))
  *  int        * flag    if !NULL : points to a variable set to the value given by val
  *  int          val     return value if flat == NULL
  *}}}*/
@@ -68,8 +68,12 @@ void GetSettingsGetopt(int argc, char** argv, settings* preferences){
         {"output-file",      required_argument, NULL, 'o'},
         {"coriolis-input",   required_argument, NULL, 'c'},
     // flags:
-        {"mkl",                    no_argument, &preferences->Eigensolver, 1},
-        {"armadillo",              no_argument, &preferences->Eigensolver, 2},
+      // Eigensolver bit-mask
+      // 1  Intel MKL FEAST
+      // 2  Armadillo ARPACK
+      // 4  Not implemented yet
+        {"mkl",                    no_argument, (int*)&preferences->Eigensolver, 1},
+        {"armadillo",              no_argument, (int*)&preferences->Eigensolver, 2},
     // requires zero termination
         { NULL , 0 , NULL , 0 }
     };

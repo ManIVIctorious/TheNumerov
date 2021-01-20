@@ -31,7 +31,11 @@ settings SetDefaultSettings(void){
         .periodic      = 0,
 
     // Eigensolver specific values
-        .Eigensolver = 2,     // Which eigensolver to use (1 FEAST, 2 ARPACK)
+    // Eigensolvers are encoded in a bit-mask, i.e.
+    //  1   Intel MKL FEAST
+    //  2   Armadillo ARPACK
+    //  4   Not yet implemented
+        .Eigensolver = 2,     // Which eigensolver to use
         .n_out = 8,           // Number of output eigenstates (ARPACK)
         .e_min =   0.0,       // Minimal energy of eigenstates (FEAST)
         .e_max = 400.0,       // Maximal energy of eigenstates (FEAST)

@@ -18,7 +18,7 @@ void PrintOrthonormality(FILE* fd, int dimensionality, int n_out, int n_points, 
     if(integrand == NULL){ perror("Integrand"); exit(errno); }
 
 // print header and index line
-    fprintf(fd, "\n# Orthonormality:\n#\n#");
+    fprintf(fd, "#\n#\n# Orthonormality:\n#\n#");
     for(int i = 0; i < n_out; ++i){
         fprintf(fd, "       %7d", i);
     }
@@ -42,7 +42,7 @@ void PrintOrthonormality(FILE* fd, int dimensionality, int n_out, int n_points, 
             fprintf(fd, "  % 12.5e", Integrate(dimensionality, nq, dq, integrand));
         }
     }
-    fprintf(fd, "\n#\n#");
+    fprintf(fd, "\n");
 
     free(integrand); integrand = NULL;
 }
