@@ -438,11 +438,11 @@ int main(int argc, char* argv[]){
 /*
  *      E_kin = - hbar^2/2m d^2/dQ^2 Psi = - hbar^2/2 / (sqrt(m).dQ)^2 f.Psi
  *
- *  The mass and coordinates are expected to be in g/mol and Ångstrom, respectively
+ *  The mass and coordinates are expected to be in g/mol and Ångstrom, respectively
  *  which are then combined to mass weighted coordinates q = sqrt(m).Q resulting in
- *  [q] = sqrt(g/mol).Å
+ *  [q] = sqrt(g/mol).Å
  *
- *        J.kg.m^2 * Å^2/m^2 * g/kg *  1/mol^2   * kJ/J / Å^2.g/mol
+ *        J.kg.m^2 * Å^2/m^2 * g/kg *  1/mol^2   * kJ/J / Å^2.g/mol
  *      - hbar^2/2 * 10^20   * 1000 * avogadro^2 / 1000 / dq / dq   =
  *
  *            = (-10^20 * avogadro^2 * hbar^2/2 / dq^2) kJ/mol
@@ -456,7 +456,7 @@ int main(int argc, char* argv[]){
 /*
  *                 V = V - 1/8 hbar^2 sum_{i=0}^2 mu_ii
  *
- *                 J.s.J.s <=> kJ.g.m^2    mol/(g*Å^2)
+ *                 J.s.J.s <=> kJ.g.m^2    mol/(g*Å^2)
  *            - 0.125 * hbar*hbar  * (mu_xx + mu_yy + mu_zz)
  */
     if( prefs.coriolis_file ){

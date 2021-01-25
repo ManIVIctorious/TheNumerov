@@ -36,12 +36,6 @@ extern "C"{
                 break;
 
             case 3:
-                if( prefs->coriolis_file ){
-                    fprintf(stderr, "At the moment only the basic Hamiltonian is implemented for this"
-                                    "\n3D problem. Nevertheless, the third term of the Watson Hamiltonian"
-                                    "\nis already set in main() => be prepared for some wrong results!\n\n"
-                           );
-                }
                 if( prefs->periodic ){ A = FillPeriodicArmadillo_3D(prefs, nq, v, ekin_to_oue, stencil); }
                 else{                  A =         FillArmadillo_3D(prefs, nq, v, ekin_to_oue, stencil, q, dq, mu, zeta); }
                 break;
@@ -49,7 +43,7 @@ extern "C"{
             case 4:
                 if( prefs->coriolis_file ){
                     fprintf(stderr, "At the moment only the basic Hamiltonian is implemented for this"
-                                    "\n3D problem. Nevertheless, the third term of the Watson Hamiltonian"
+                                    "\n4D problem. Nevertheless, the third term of the Watson Hamiltonian"
                                     "\nis already set in main() => be prepared for some wrong results!\n\n"
                            );
                 }
@@ -68,11 +62,13 @@ extern "C"{
         }
 
     // start eigenstate calculation
+    // the application of the Watson Hamiltonian breaks the matrix symmetry for
+    // dimensions greater than two hence, a general solver implementation is required
         bool success = false;
-        arma::mat eigvec;
-        arma::vec eigval;
+        arma::cx_mat eigvec;
+        arma::cx_vec eigval;
 
-        success = eigs_sym(eigval, eigvec, A, prefs->n_out, "sm");
+        success = eigs_gen(eigval, eigvec, A, prefs->n_out, "sm");
         if( !success ){
             fprintf(stderr,
                 "\n (-) Error: Failed eigendecomposition."
@@ -81,18 +77,19 @@ extern "C"{
             exit(EXIT_FAILURE);
         }
 
-
     // allocate memory for eigenvalues E and eigenvectors X
         (*E) = (double*) malloc(eigval.n_elem                 * sizeof(double));
         (*X) = (double*) malloc(eigvec.n_rows * eigvec.n_cols * sizeof(double));
         if((*E) == NULL){ perror("Eigenvalues" ); exit(errno); }
         if((*X) == NULL){ perror("Eigenvectors"); exit(errno); }
-    // fill eigenvalue E and eigenvector arrays X
+
+    // store the real part of eigenvalues and eigenvectors in the E and X arrays
+    // the imaginary part of these should be non-existent or at least negligible
         for(unsigned int i = 0; i < eigvec.n_cols; ++i){
-            (*E)[i] = eigval[i];
+            (*E)[i] = real(eigval[i]);
 
             for(unsigned int j = 0; j < eigvec.n_rows; ++j){
-                (*X)[i*n_points + j] = eigvec(j,i);
+                (*X)[i*n_points + j] = real(eigvec(j,i));
             }
         }
 

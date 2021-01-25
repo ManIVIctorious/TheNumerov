@@ -87,7 +87,7 @@ void usage(void){
     printf("\n"
            "\n\t-M, --fmu"
            "\n\t    Conversion factor for the \"effective reciprocal inertia tensor\"."
-           "\n\t    The conversion is performed from the input dimension to mol/(g.Å^2)."
+           "\n\t    The conversion is performed from the input dimension to mol/(g.Å^2)."
            "\n\t    Keyword:\tIMOITomolpergAasq"
            "\n\t    Default:\t% le", defaults.InvInertia_to_molpergAasq
     );
@@ -137,7 +137,7 @@ void usage(void){
     printf("\n"
            "\n\t-i, --input-file"
            "\n\t    Path to input file. The program expects the following structure of input:"
-           "\n\t    <dimension> columns containing the coordinates in Ångstrom and one column"
+           "\n\t    <dimension> columns containing the coordinates in Ångstrom and one column"
            "\n\t    containing the potential energy values. (e.g. 2D expects 3 columns)"
            "\n\t    Keyword:\tInput_File"
     );

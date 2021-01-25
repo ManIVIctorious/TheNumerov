@@ -68,7 +68,7 @@ int MKL_FillAMatrix2D(settings* prefs, int* nq, double* v, double ekin_to_oue, d
             (*vals_A)[entry_index] = ekin_to_oue * 0.5*stencil[ stencilidx ];
         //  apply second term of Watson Hamiltonian
             if( prefs->coriolis_file ){
-                (*vals_A)[entry_index] += exec_watson(mu, zeta, q, row, s);
+                (*vals_A)[entry_index] += exec_watson_2d(mu, zeta, q, row, s);
             }
 
         // add potential to diagonal element

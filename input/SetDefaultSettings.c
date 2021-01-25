@@ -18,7 +18,7 @@ settings SetDefaultSettings(void){
 
         .kJpermol_to_oue = 1.0/4.184,       // kJ/mol -> output unit of energy
         .epot_to_oue = 1.0,                 // E_pot  -> output unit of energy
-        .InvInertia_to_molpergAasq = 1.0,   // [reciprocal moment of inertia] -> mol/(g.Å^2)
+        .InvInertia_to_molpergAasq = 1.0,   // [reciprocal moment of inertia] -> mol/(g.Å^2)
         .InvInertiaThreshold = -1.0,        // if not zero set all mu above and below to +/-Threshold
         .dip_to_Asm  = 3.3356E-30,          // Conversion from input dipole moment to A.s.m
         .threshold   = 1.0E-10,             // Spacing threshold for double comparison

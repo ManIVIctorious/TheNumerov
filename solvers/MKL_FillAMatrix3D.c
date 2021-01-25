@@ -65,7 +65,7 @@ int MKL_FillAMatrix3D(settings* prefs, int* nq, double* v, double ekin_to_oue, d
             int yidx = j + ysh;
             int zidx = k + zsh;
 
-//            int row        = (i*nq[1] + j)*nq[2] + k;
+            int row        = (i*nq[1] + j)*nq[2] + k;
             int stencilidx = (s[0]*prefs->n_stencil + s[1])*prefs->n_stencil + s[2];
 
         // set column index
@@ -73,10 +73,10 @@ int MKL_FillAMatrix3D(settings* prefs, int* nq, double* v, double ekin_to_oue, d
 
         // set matrix value, the stencil values have to be divided by 2^(D-1)
             (*vals_A)[entry_index] = ekin_to_oue * 0.25*stencil[ stencilidx ];
-//        //  apply second term of Watson Hamiltonian
-//            if( prefs->coriolis_file ){
-//                (*vals_A)[entry_index] += exec_watson(mu, zeta, q, row, s);
-//            }
+        //  apply second term of Watson Hamiltonian
+            if( prefs->coriolis_file ){
+                (*vals_A)[entry_index] += exec_watson_3d(mu, zeta, q, row, s);
+            }
 
         // add potential to diagonal element
             if( (xsh == 0) && (ysh == 0) && (zsh == 0) ){

@@ -67,6 +67,24 @@ void ValidateSettings(settings *set){
         exit(EXIT_FAILURE);
     }
 
+// Bit-mask of general solvers
+    unsigned int general_solvers = 0;
+    general_solvers += 2;   // Armadillo ARPACK gen solver
+
+// for dimensions higher than two the matrix symmetry is broken via the terms of
+// the Watson Hamiltonian resulting in the requirenment of a general solver.
+    if( (set->dimension > 2) && set->coriolis_file && !(general_solvers & set->Eigensolver) ){
+        fprintf(stderr,
+            "\n (-) Error: The application of the molecular Hamiltonian including"
+            "\n     rotational terms in dimensions greater than two requires the"
+            "\n     utilisation of a general matrix solving algorithm."
+            "\n     Please choose an appropriate eigensolver."
+            "\n     Aborting...\n\n"
+        );
+        exit(EXIT_FAILURE);
+    }
+
+
 
 //Reduced masses:
 // The reduced masses are given as a colon separated string array with the number of

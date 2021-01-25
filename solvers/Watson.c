@@ -100,7 +100,7 @@ void init_watson(settings* prefs, double dq){
  *                  reciprocal moment of inertia tensor for each configuration
  * z[3][D*(D-1)/2]  contains the Coriolis factors of all D*(D-1)/2 mode combinations
  */
-double exec_watson(double*** mu, double** z, double** q, int index, int* shift){
+double exec_watson_2d(double*** mu, double** z, double** q, int index, int* shift){
 //{{{
 
 // helpers for the calculation of derivative stencils

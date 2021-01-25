@@ -43,12 +43,6 @@ int SolverFEAST_MKL(settings* prefs, int* nq, double* v, double ekin_to_oue, dou
       case 3:
       // three dimensional filling routine:
       //  At the moment only the basic Hamiltonian is supported.
-        if( prefs->coriolis_file ){
-            fprintf(stderr, "At the moment only the basic Hamiltonian is implemented for this"
-                            "\n3D problem. Nevertheless, the third term of the Watson Hamiltonian"
-                            "\nis already set in main() => be prepared for some wrong results!\n\n"
-                   );
-        }
         if( prefs->periodic ){ MKL_FillPeriodicAMatrix3D(prefs, nq, v, ekin_to_oue, stencil, &rows_A, &cols_A, &vals_A); }
         else{                          MKL_FillAMatrix3D(prefs, nq, v, ekin_to_oue, stencil, q, dq, mu, zeta, &rows_A, &cols_A, &vals_A); }
         break;
