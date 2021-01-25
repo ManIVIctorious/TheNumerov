@@ -35,7 +35,9 @@ long int convertstring_to_bool(char* optarg, char* varname, int *control){
 // be set as a number. In this case do a integer comparison and
 // return the appropriate value.
     if      ( strcasecmp( optarg, "true"  ) == 0 ){ return 1; }
+    else if ( strcasecmp( optarg, "yes"   ) == 0 ){ return 1; }
     else if ( strcasecmp( optarg, "false" ) == 0 ){ return 0; }
+    else if ( strcasecmp( optarg, "no"    ) == 0 ){ return 0; }
     else{ return convertstring_to_long(optarg, varname, control); }
 
 }
