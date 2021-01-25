@@ -166,18 +166,18 @@ double exec_watson_3d(double*** mu, double** z, double** q, int index, int* shif
     for(int b = 0; b < 3; ++b){
 
         watson -= mu[a][b][index] * (
-            - z[a][0] * z[b][0] * (q[0][index] * ddq[0] + q[0][index] * q[1][index] * d2dq2[0][1])
-            + z[a][0] * z[b][2] * (q[0][index] * ddq[2] + q[0][index] * q[1][index] * d2dq2[1][2])
-            - z[a][0] * z[b][0] * (q[1][index] * ddq[1] + q[1][index] * q[0][index] * d2dq2[0][1])
-            - z[a][0] * z[b][1] * (q[1][index] * ddq[2] + q[1][index] * q[0][index] * d2dq2[0][2])
-            - z[a][1] * z[b][1] * (q[0][index] * ddq[0] + q[0][index] * q[2][index] * d2dq2[0][2])
-            - z[a][1] * z[b][2] * (q[0][index] * ddq[1] + q[0][index] * q[2][index] * d2dq2[1][2])
-            - z[a][1] * z[b][0] * (q[2][index] * ddq[1] + q[2][index] * q[0][index] * d2dq2[0][1])
-            - z[a][1] * z[b][1] * (q[2][index] * ddq[2] + q[2][index] * q[0][index] * d2dq2[0][2])
-            - z[a][2] * z[b][1] * (q[1][index] * ddq[0] + q[1][index] * q[2][index] * d2dq2[0][2])
-            - z[a][2] * z[b][2] * (q[1][index] * ddq[1] + q[1][index] * q[2][index] * d2dq2[1][2])
-            + z[a][2] * z[b][0] * (q[2][index] * ddq[0] + q[2][index] * q[1][index] * d2dq2[0][1])
-            - z[a][2] * z[b][2] * (q[2][index] * ddq[2] + q[2][index] * q[1][index] * d2dq2[1][2])
+            - z[a][0] * z[b][0] * q[0][index] * (ddq[0] + q[1][index] * d2dq2[0][1])
+            + z[a][0] * z[b][2] * q[0][index] * (ddq[2] + q[1][index] * d2dq2[1][2])
+            - z[a][0] * z[b][0] * q[1][index] * (ddq[1] + q[0][index] * d2dq2[0][1])
+            - z[a][0] * z[b][1] * q[1][index] * (ddq[2] + q[0][index] * d2dq2[0][2])
+            - z[a][1] * z[b][1] * q[0][index] * (ddq[0] + q[2][index] * d2dq2[0][2])
+            - z[a][1] * z[b][2] * q[0][index] * (ddq[1] + q[2][index] * d2dq2[1][2])
+            - z[a][1] * z[b][0] * q[2][index] * (ddq[1] + q[0][index] * d2dq2[0][1])
+            - z[a][1] * z[b][1] * q[2][index] * (ddq[2] + q[0][index] * d2dq2[0][2])
+            - z[a][2] * z[b][1] * q[1][index] * (ddq[0] + q[2][index] * d2dq2[0][2])
+            - z[a][2] * z[b][2] * q[1][index] * (ddq[1] + q[2][index] * d2dq2[1][2])
+            + z[a][2] * z[b][0] * q[2][index] * (ddq[0] + q[1][index] * d2dq2[0][1])
+            - z[a][2] * z[b][2] * q[2][index] * (ddq[2] + q[1][index] * d2dq2[1][2])
 
             + z[a][0] * z[b][0] * q[0][index] * q[0][index] * d2dq2[1][1]
             + z[a][0] * z[b][1] * q[0][index] * q[0][index] * d2dq2[1][2]
@@ -212,6 +212,202 @@ double exec_watson_3d(double*** mu, double** z, double** q, int index, int* shif
     return conv_factor * watson;
 }//}}}
 
+double exec_watson_4d(double*** mu, double** z, double** q, int index, int* shift){
+//{{{
+
+// helpers for the calculation of derivative stencils
+    double   ddq[4];
+    double d2dq2[4][4];
+    // first
+        ddq[0]    = fst_deriv[shift[0]] * donothing[shift[1]] * donothing[shift[2]] * donothing[shift[3]];
+        ddq[1]    = donothing[shift[0]] * fst_deriv[shift[1]] * donothing[shift[2]] * donothing[shift[3]];
+        ddq[2]    = donothing[shift[0]] * donothing[shift[1]] * fst_deriv[shift[2]] * donothing[shift[3]];
+        ddq[3]    = donothing[shift[0]] * donothing[shift[1]] * donothing[shift[2]] * fst_deriv[shift[3]];
+    // second
+      d2dq2[0][0] = sec_deriv[shift[0]] * donothing[shift[1]] * donothing[shift[2]] * donothing[shift[3]];
+      d2dq2[1][1] = donothing[shift[0]] * sec_deriv[shift[1]] * donothing[shift[2]] * donothing[shift[3]];
+      d2dq2[2][2] = donothing[shift[0]] * donothing[shift[1]] * sec_deriv[shift[2]] * donothing[shift[3]];
+      d2dq2[3][3] = donothing[shift[0]] * donothing[shift[1]] * donothing[shift[2]] * sec_deriv[shift[3]];
+    // cross
+      d2dq2[0][1] = fst_deriv[shift[0]] * fst_deriv[shift[1]] * donothing[shift[2]] * donothing[shift[3]];
+      d2dq2[0][2] = fst_deriv[shift[0]] * donothing[shift[1]] * fst_deriv[shift[2]] * donothing[shift[3]];
+      d2dq2[0][3] = fst_deriv[shift[0]] * donothing[shift[1]] * donothing[shift[2]] * fst_deriv[shift[3]];
+      d2dq2[1][2] = donothing[shift[0]] * fst_deriv[shift[1]] * fst_deriv[shift[2]] * donothing[shift[3]];
+      d2dq2[1][3] = donothing[shift[0]] * fst_deriv[shift[1]] * donothing[shift[2]] * fst_deriv[shift[3]];
+      d2dq2[2][3] = donothing[shift[0]] * donothing[shift[1]] * fst_deriv[shift[2]] * fst_deriv[shift[3]];
+
+
+// actual calculation
+    double watson = 0.0;
+
+    for(int a = 0; a < 3; ++a){
+    for(int b = 0; b < 3; ++b){
+
+        watson -= mu[a][b][index] * (
+            - z[a][0] * z[b][0] * q[0][index] * (ddq[0] + q[1][index] * d2dq2[0][1])
+            + z[a][0] * z[b][3] * q[0][index] * (ddq[2] + q[1][index] * d2dq2[1][2])
+            + z[a][0] * z[b][4] * q[0][index] * (ddq[3] + q[1][index] * d2dq2[1][3])
+            - z[a][0] * z[b][0] * q[1][index] * (ddq[1] + q[0][index] * d2dq2[0][1])
+            - z[a][0] * z[b][1] * q[1][index] * (ddq[2] + q[0][index] * d2dq2[0][2])
+            - z[a][0] * z[b][2] * q[1][index] * (ddq[3] + q[0][index] * d2dq2[0][3])
+            - z[a][1] * z[b][1] * q[0][index] * (ddq[0] + q[2][index] * d2dq2[0][2])
+            - z[a][1] * z[b][3] * q[0][index] * (ddq[1] + q[2][index] * d2dq2[1][2])
+            + z[a][1] * z[b][5] * q[0][index] * (ddq[3] + q[2][index] * d2dq2[2][3])
+            - z[a][1] * z[b][0] * q[2][index] * (ddq[1] + q[0][index] * d2dq2[0][1])
+            - z[a][1] * z[b][1] * q[2][index] * (ddq[2] + q[0][index] * d2dq2[0][2])
+            - z[a][1] * z[b][2] * q[2][index] * (ddq[3] + q[0][index] * d2dq2[0][3])
+            - z[a][2] * z[b][2] * q[0][index] * (ddq[0] + q[3][index] * d2dq2[0][3])
+            - z[a][2] * z[b][4] * q[0][index] * (ddq[1] + q[3][index] * d2dq2[1][3])
+            - z[a][2] * z[b][5] * q[0][index] * (ddq[2] + q[3][index] * d2dq2[2][3])
+            - z[a][2] * z[b][0] * q[3][index] * (ddq[1] + q[0][index] * d2dq2[0][1])
+            - z[a][2] * z[b][1] * q[3][index] * (ddq[2] + q[0][index] * d2dq2[0][2])
+            - z[a][2] * z[b][2] * q[3][index] * (ddq[3] + q[0][index] * d2dq2[0][3])
+            - z[a][3] * z[b][1] * q[1][index] * (ddq[0] + q[2][index] * d2dq2[0][2])
+            - z[a][3] * z[b][3] * q[1][index] * (ddq[1] + q[2][index] * d2dq2[1][2])
+            + z[a][3] * z[b][5] * q[1][index] * (ddq[3] + q[2][index] * d2dq2[2][3])
+            + z[a][3] * z[b][0] * q[2][index] * (ddq[0] + q[1][index] * d2dq2[0][1])
+            - z[a][3] * z[b][3] * q[2][index] * (ddq[2] + q[1][index] * d2dq2[1][2])
+            - z[a][3] * z[b][4] * q[2][index] * (ddq[3] + q[1][index] * d2dq2[1][3])
+            - z[a][4] * z[b][2] * q[1][index] * (ddq[0] + q[3][index] * d2dq2[0][3])
+            - z[a][4] * z[b][4] * q[1][index] * (ddq[1] + q[3][index] * d2dq2[1][3])
+            - z[a][4] * z[b][5] * q[1][index] * (ddq[2] + q[3][index] * d2dq2[2][3])
+            + z[a][4] * z[b][0] * q[3][index] * (ddq[0] + q[1][index] * d2dq2[0][1])
+            - z[a][4] * z[b][3] * q[3][index] * (ddq[2] + q[1][index] * d2dq2[1][2])
+            - z[a][4] * z[b][4] * q[3][index] * (ddq[3] + q[1][index] * d2dq2[1][3])
+            - z[a][5] * z[b][2] * q[2][index] * (ddq[0] + q[3][index] * d2dq2[0][3])
+            - z[a][5] * z[b][4] * q[2][index] * (ddq[1] + q[3][index] * d2dq2[1][3])
+            - z[a][5] * z[b][5] * q[2][index] * (ddq[2] + q[3][index] * d2dq2[2][3])
+            + z[a][5] * z[b][1] * q[3][index] * (ddq[0] + q[2][index] * d2dq2[0][2])
+            + z[a][5] * z[b][3] * q[3][index] * (ddq[1] + q[2][index] * d2dq2[1][2])
+            - z[a][5] * z[b][5] * q[3][index] * (ddq[3] + q[2][index] * d2dq2[2][3])
+
+            + z[a][0] * z[b][0] * q[0][index] * q[0][index] * d2dq2[1][1]
+            + z[a][0] * z[b][1] * q[0][index] * q[0][index] * d2dq2[1][2]
+            - z[a][0] * z[b][1] * q[0][index] * q[2][index] * d2dq2[0][1]
+            + z[a][0] * z[b][2] * q[0][index] * q[0][index] * d2dq2[1][3]
+            - z[a][0] * z[b][2] * q[0][index] * q[3][index] * d2dq2[0][1]
+            - z[a][0] * z[b][3] * q[0][index] * q[2][index] * d2dq2[1][1]
+            - z[a][0] * z[b][4] * q[0][index] * q[3][index] * d2dq2[1][1]
+            + z[a][0] * z[b][5] * q[0][index] * q[2][index] * d2dq2[1][3]
+            - z[a][0] * z[b][5] * q[0][index] * q[3][index] * d2dq2[1][2]
+
+            + z[a][0] * z[b][0] * q[1][index] * q[1][index] * d2dq2[0][0]
+            + z[a][0] * z[b][1] * q[1][index] * q[2][index] * d2dq2[0][0]
+            + z[a][0] * z[b][2] * q[1][index] * q[3][index] * d2dq2[0][0]
+            - z[a][0] * z[b][3] * q[1][index] * q[1][index] * d2dq2[0][2]
+            + z[a][0] * z[b][3] * q[1][index] * q[2][index] * d2dq2[0][1]
+            - z[a][0] * z[b][4] * q[1][index] * q[1][index] * d2dq2[0][3]
+            + z[a][0] * z[b][4] * q[1][index] * q[3][index] * d2dq2[0][1]
+            - z[a][0] * z[b][5] * q[1][index] * q[2][index] * d2dq2[0][3]
+            + z[a][0] * z[b][5] * q[1][index] * q[3][index] * d2dq2[0][2]
+
+            + z[a][1] * z[b][0] * q[0][index] * q[0][index] * d2dq2[1][2]
+            - z[a][1] * z[b][0] * q[0][index] * q[1][index] * d2dq2[0][2]
+            + z[a][1] * z[b][1] * q[0][index] * q[0][index] * d2dq2[2][2]
+            + z[a][1] * z[b][2] * q[0][index] * q[0][index] * d2dq2[2][3]
+            - z[a][1] * z[b][2] * q[0][index] * q[3][index] * d2dq2[0][2]
+            + z[a][1] * z[b][3] * q[0][index] * q[1][index] * d2dq2[2][2]
+            + z[a][1] * z[b][4] * q[0][index] * q[1][index] * d2dq2[2][3]
+            - z[a][1] * z[b][4] * q[0][index] * q[3][index] * d2dq2[1][2]
+            - z[a][1] * z[b][5] * q[0][index] * q[3][index] * d2dq2[2][2]
+
+            + z[a][1] * z[b][0] * q[2][index] * q[1][index] * d2dq2[0][0]
+            + z[a][1] * z[b][1] * q[2][index] * q[2][index] * d2dq2[0][0]
+            + z[a][1] * z[b][2] * q[2][index] * q[3][index] * d2dq2[0][0]
+            - z[a][1] * z[b][3] * q[2][index] * q[1][index] * d2dq2[0][2]
+            + z[a][1] * z[b][3] * q[2][index] * q[2][index] * d2dq2[0][1]
+            - z[a][1] * z[b][4] * q[2][index] * q[1][index] * d2dq2[0][3]
+            + z[a][1] * z[b][4] * q[2][index] * q[3][index] * d2dq2[0][1]
+            - z[a][1] * z[b][5] * q[2][index] * q[2][index] * d2dq2[0][3]
+            + z[a][1] * z[b][5] * q[2][index] * q[3][index] * d2dq2[0][2]
+
+            + z[a][2] * z[b][0] * q[0][index] * q[0][index] * d2dq2[1][3]
+            - z[a][2] * z[b][0] * q[0][index] * q[1][index] * d2dq2[0][3]
+            + z[a][2] * z[b][1] * q[0][index] * q[0][index] * d2dq2[2][3]
+            - z[a][2] * z[b][1] * q[0][index] * q[2][index] * d2dq2[0][3]
+            + z[a][2] * z[b][2] * q[0][index] * q[0][index] * d2dq2[3][3]
+            + z[a][2] * z[b][3] * q[0][index] * q[1][index] * d2dq2[2][3]
+            - z[a][2] * z[b][3] * q[0][index] * q[2][index] * d2dq2[1][3]
+            + z[a][2] * z[b][4] * q[0][index] * q[1][index] * d2dq2[3][3]
+            + z[a][2] * z[b][5] * q[0][index] * q[2][index] * d2dq2[3][3]
+
+            + z[a][2] * z[b][0] * q[3][index] * q[1][index] * d2dq2[0][0]
+            + z[a][2] * z[b][1] * q[3][index] * q[2][index] * d2dq2[0][0]
+            + z[a][2] * z[b][2] * q[3][index] * q[3][index] * d2dq2[0][0]
+            - z[a][2] * z[b][3] * q[3][index] * q[1][index] * d2dq2[0][2]
+            + z[a][2] * z[b][3] * q[3][index] * q[2][index] * d2dq2[0][1]
+            - z[a][2] * z[b][4] * q[3][index] * q[1][index] * d2dq2[0][3]
+            + z[a][2] * z[b][4] * q[3][index] * q[3][index] * d2dq2[0][1]
+            - z[a][2] * z[b][5] * q[3][index] * q[2][index] * d2dq2[0][3]
+            + z[a][2] * z[b][5] * q[3][index] * q[3][index] * d2dq2[0][2]
+
+            + z[a][3] * z[b][0] * q[1][index] * q[0][index] * d2dq2[1][2]
+            - z[a][3] * z[b][0] * q[1][index] * q[1][index] * d2dq2[0][2]
+            + z[a][3] * z[b][1] * q[1][index] * q[0][index] * d2dq2[2][2]
+            + z[a][3] * z[b][2] * q[1][index] * q[0][index] * d2dq2[2][3]
+            - z[a][3] * z[b][2] * q[1][index] * q[3][index] * d2dq2[0][2]
+            + z[a][3] * z[b][3] * q[1][index] * q[1][index] * d2dq2[2][2]
+            + z[a][3] * z[b][4] * q[1][index] * q[1][index] * d2dq2[2][3]
+            - z[a][3] * z[b][4] * q[1][index] * q[3][index] * d2dq2[1][2]
+            - z[a][3] * z[b][5] * q[1][index] * q[3][index] * d2dq2[2][2]
+
+            - z[a][3] * z[b][0] * q[2][index] * q[0][index] * d2dq2[1][1]
+            - z[a][3] * z[b][1] * q[2][index] * q[0][index] * d2dq2[1][2]
+            + z[a][3] * z[b][1] * q[2][index] * q[2][index] * d2dq2[0][1]
+            - z[a][3] * z[b][2] * q[2][index] * q[0][index] * d2dq2[1][3]
+            + z[a][3] * z[b][2] * q[2][index] * q[3][index] * d2dq2[0][1]
+            + z[a][3] * z[b][3] * q[2][index] * q[2][index] * d2dq2[1][1]
+            + z[a][3] * z[b][4] * q[2][index] * q[3][index] * d2dq2[1][1]
+            - z[a][3] * z[b][5] * q[2][index] * q[2][index] * d2dq2[1][3]
+            + z[a][3] * z[b][5] * q[2][index] * q[3][index] * d2dq2[1][2]
+
+            + z[a][4] * z[b][0] * q[1][index] * q[0][index] * d2dq2[1][3]
+            - z[a][4] * z[b][0] * q[1][index] * q[1][index] * d2dq2[0][3]
+            + z[a][4] * z[b][1] * q[1][index] * q[0][index] * d2dq2[2][3]
+            - z[a][4] * z[b][1] * q[1][index] * q[2][index] * d2dq2[0][3]
+            + z[a][4] * z[b][2] * q[1][index] * q[0][index] * d2dq2[3][3]
+            + z[a][4] * z[b][3] * q[1][index] * q[1][index] * d2dq2[2][3]
+            - z[a][4] * z[b][3] * q[1][index] * q[2][index] * d2dq2[1][3]
+            + z[a][4] * z[b][4] * q[1][index] * q[1][index] * d2dq2[3][3]
+            + z[a][4] * z[b][5] * q[1][index] * q[2][index] * d2dq2[3][3]
+
+            - z[a][4] * z[b][0] * q[3][index] * q[0][index] * d2dq2[1][1]
+            - z[a][4] * z[b][1] * q[3][index] * q[0][index] * d2dq2[1][2]
+            + z[a][4] * z[b][1] * q[3][index] * q[2][index] * d2dq2[0][1]
+            - z[a][4] * z[b][2] * q[3][index] * q[0][index] * d2dq2[1][3]
+            + z[a][4] * z[b][2] * q[3][index] * q[3][index] * d2dq2[0][1]
+            + z[a][4] * z[b][3] * q[3][index] * q[2][index] * d2dq2[1][1]
+            + z[a][4] * z[b][4] * q[3][index] * q[3][index] * d2dq2[1][1]
+            - z[a][4] * z[b][5] * q[3][index] * q[2][index] * d2dq2[1][3]
+            + z[a][4] * z[b][5] * q[3][index] * q[3][index] * d2dq2[1][2]
+
+            + z[a][5] * z[b][0] * q[2][index] * q[0][index] * d2dq2[1][3]
+            - z[a][5] * z[b][0] * q[2][index] * q[1][index] * d2dq2[0][3]
+            + z[a][5] * z[b][1] * q[2][index] * q[0][index] * d2dq2[2][3]
+            - z[a][5] * z[b][1] * q[2][index] * q[2][index] * d2dq2[0][3]
+            + z[a][5] * z[b][2] * q[2][index] * q[0][index] * d2dq2[3][3]
+            + z[a][5] * z[b][3] * q[2][index] * q[1][index] * d2dq2[2][3]
+            - z[a][5] * z[b][3] * q[2][index] * q[2][index] * d2dq2[1][3]
+            + z[a][5] * z[b][4] * q[2][index] * q[1][index] * d2dq2[3][3]
+            + z[a][5] * z[b][5] * q[2][index] * q[2][index] * d2dq2[3][3]
+
+            - z[a][5] * z[b][0] * q[3][index] * q[0][index] * d2dq2[1][2]
+            + z[a][5] * z[b][0] * q[3][index] * q[1][index] * d2dq2[0][2]
+            - z[a][5] * z[b][1] * q[3][index] * q[0][index] * d2dq2[2][2]
+            - z[a][5] * z[b][2] * q[3][index] * q[0][index] * d2dq2[2][3]
+            + z[a][5] * z[b][2] * q[3][index] * q[3][index] * d2dq2[0][2]
+            - z[a][5] * z[b][3] * q[3][index] * q[1][index] * d2dq2[2][2]
+            - z[a][5] * z[b][4] * q[3][index] * q[1][index] * d2dq2[2][3]
+            + z[a][5] * z[b][4] * q[3][index] * q[3][index] * d2dq2[1][2]
+            + z[a][5] * z[b][5] * q[3][index] * q[3][index] * d2dq2[2][2]
+        );
+
+    }
+    }
+
+// convert to kJ/mol and return
+    return conv_factor * watson;
+}//}}}
 
 void free_watson(void){
 

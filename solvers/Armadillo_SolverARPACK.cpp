@@ -41,12 +41,6 @@ extern "C"{
                 break;
 
             case 4:
-                if( prefs->coriolis_file ){
-                    fprintf(stderr, "At the moment only the basic Hamiltonian is implemented for this"
-                                    "\n4D problem. Nevertheless, the third term of the Watson Hamiltonian"
-                                    "\nis already set in main() => be prepared for some wrong results!\n\n"
-                           );
-                }
                 if( prefs->periodic ){ A = FillPeriodicArmadillo_4D(prefs, nq, v, ekin_to_oue, stencil); }
                 else{                  A =         FillArmadillo_4D(prefs, nq, v, ekin_to_oue, stencil, q, dq, mu, zeta); }
                 break;
