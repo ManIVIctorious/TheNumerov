@@ -6,17 +6,17 @@ void InvertMatrix(gsl_matrix *Matrix, gsl_matrix *InvMatrix, int dimension);
 
 void InvertMatrix(gsl_matrix *Matrix, gsl_matrix *InvMatrix, int dimension){
 
-    int i, j, signum;
     gsl_matrix      *AUX = gsl_matrix_calloc(dimension, dimension);
     gsl_permutation   *p = gsl_permutation_alloc(dimension);
 
     // copy matrix to auxiliary matrix
-    for(i = 0; i < dimension; ++i){
-        for(j = 0; j < dimension; ++j){
+    for(int i = 0; i < dimension; ++i){
+        for(int j = 0; j < dimension; ++j){
             gsl_matrix_set(AUX, i, j, gsl_matrix_get(Matrix, i, j));
         }
     }
 
+    int signum;
     gsl_linalg_LU_decomp(AUX, p, &signum);
     gsl_linalg_LU_invert(AUX, p, InvMatrix);
 

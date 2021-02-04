@@ -22,6 +22,7 @@
 
   SRC += InputNormalMode.c
   SRC += ProcessFileList.c
-  SRC += EffectiveReciprocalMomentofInertia.c
   SRC += InputComFile.c
-  SRC += InvertMatrix.c
+
+  GSLSRC += GSL_EffectiveReciprocalMomentofInertia.c
+  GSLSRC += GSL_InvertMatrix.c

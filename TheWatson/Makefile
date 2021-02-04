@@ -12,10 +12,15 @@ include make.def
     WARN = -Wall -Wextra -Werror
   endif
 
-# Linked libraries and includes
+# Linked libraries
   ifdef PACKAGES
-    INC += `pkg-config --cflags $(PACKAGES)`
-    LIB += `pkg-config --libs   $(PACKAGES)`
+    LIB += `pkg-config --libs $(PACKAGES)`
+  endif
+
+# includes
+  # GNU scientific library
+  ifeq ($(findstring gsl, $(PACKAGES)), gsl)
+    GSLINC   = `pkg-config --cflags gsl`
   endif
 
 # Exexutable Directory
@@ -27,10 +32,14 @@ include make.def
   endif
 
 # Resulting objects
-  OBJ = $(notdir $(SRC:.c=.o))
+  OBJ     = $(notdir     $(SRC:.c=.o))
+  GSLOBJ  = $(notdir  $(GSLSRC:.c=.o))
+
+  TOTSRC  = $(SRC) $(GSLSRC)
+  TOTOBJ  = $(OBJ) $(GSLOBJ) gitversion.o
 
 # set path list searched for targets and prerequisites
-  VPATH = $(sort $(dir $(SRC)))
+  VPATH = $(sort $(dir $(TOTSRC)))
 
 # set program version
   ifndef PROGRAM_VERSION
@@ -51,11 +60,15 @@ gitversion.o: gitversion.c
 
 # Build object files out of C-source files
 $(OBJ): %.o: %.c
-	$(CC) $(OPT) $(WARN) $(INC) $(PPF) -c $?
+	$(CC) $(OPT) $(WARN) $(PPF) $(INC) -c $?
+
+# Build GNU GSL objects
+$(GSLOBJ): %.o: %.c
+	$(CC) $(OPT) $(WARN) $(PPF) $(INC) $(GSLINC) -c $?
 
 # Link all objects to create the executable
-$(EXE): $(OBJ) $(EXEDIR) gitversion.o
-	$(CC) $(OPT) $(WARN) $(LIB) $(OBJ) gitversion.o -o $@
+$(EXE): $(TOTOBJ) $(EXEDIR)
+	$(CC) $(OPT) $(WARN) $(LIB) $(TOTOBJ) -o $@
 
 # Create executable directory
 $(EXEDIR):
@@ -80,5 +93,5 @@ tags: FORCE
 # Remove all generated binary files
 .Phony: clean
 clean:
-	rm -f $(OBJ) gitversion.[oc] $(EXE)
+	rm -f $(TOTOBJ) gitversion.[oc] $(EXE)
 	rmdir -p --ignore-fail-on-non-empty $(EXEDIR)

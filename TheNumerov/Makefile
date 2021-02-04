@@ -50,7 +50,7 @@ include make.def
   ARMAOBJ = $(notdir $(ARMASRC:.cpp=.o))
 
   TOTSRC  = $(SRC) $(GSLSRC) $(MKLSRC) $(ARMASRC)
-  TOTOBJ  = $(OBJ) $(GSLOBJ) $(MKLOBJ) $(ARMAOBJ)
+  TOTOBJ  = $(OBJ) $(GSLOBJ) $(MKLOBJ) $(ARMAOBJ) gitversion.o
 
 # set path list searched for targets and prerequisites
   VPATH = $(sort $(dir $(TOTSRC)))
@@ -74,23 +74,23 @@ gitversion.o: gitversion.c
 
 # Build object files out of C-source files
 $(OBJ): %.o: %.c
-	$(CC) $(OPT) $(WARN) $(INC) $(PPF) -c $?
+	$(CC) $(OPT) $(WARN) $(PPF) $(INC) -c $?
 
 # Build GNU GSL objects
 $(GSLOBJ): %.o: %.c
-	$(CC) $(OPT) $(WARN) $(INC) $(PPF) $(GSLINC) -c $?
+	$(CC) $(OPT) $(WARN) $(PPF) $(INC) $(GSLINC) -c $?
 
 # Build Intel MKL objects
 $(MKLOBJ): %.o: %.c
-	$(CC) $(OPT) $(WARN) $(INC) $(PPF) $(MKLINC) -c $?
+	$(CC) $(OPT) $(WARN) $(PPF) $(INC) $(MKLINC) -c $?
 
 # Build Armadillo ARPACK objects (require C++)
 $(ARMAOBJ): %.o: %.cpp
-	$(CppC) $(OPT) $(WARN) $(INC) $(PPF) $(ARMAINC) -c $?
+	$(CppC) $(OPT) $(WARN) $(PPF) $(INC) $(ARMAINC) -c $?
 
 # Link all objects to create the executable
-$(EXE): $(TOTOBJ) $(EXEDIR) gitversion.o
-	$(CC) $(OPT) $(WARN) $(LIB) $(TOTOBJ) gitversion.o -o $@
+$(EXE): $(TOTOBJ) $(EXEDIR)
+	$(CC) $(OPT) $(WARN) $(LIB) $(TOTOBJ) -o $@
 
 # Create executable directory
 $(EXEDIR):
