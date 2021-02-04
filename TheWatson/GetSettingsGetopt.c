@@ -78,7 +78,6 @@ settings GetSettingsGetopt(settings prefs, int argc, char** argv){
         // set output file
             case 'o':
                 prefs.output_file = optarg;
-                prefs.output_file_set++;
                 break;
 
         }

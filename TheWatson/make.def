@@ -4,7 +4,7 @@
 # Additional libraries, includes and packages
   CC       = gcc
   LIB      = -lm
-  INC      =
+  INC      = -Iinclude/
   PACKAGES = gsl
 
 # Preprocessor flags

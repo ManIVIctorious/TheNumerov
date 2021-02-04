@@ -18,7 +18,6 @@ typedef struct settings {
 
     // standard output file
     char * output_file;
-    char   output_file_set;
     FILE * fdout;
 
 

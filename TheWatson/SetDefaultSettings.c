@@ -12,12 +12,11 @@ settings SetDefaultSettings(){
     settings defaults = (const struct settings) {
 
         .dimension = 0,
-        .threshold = 10E-10,
+        .threshold = 1.0E-10,
 
         .modelist = NULL,
 
         .output_file = NULL,
-        .output_file_set = 0,
         .fdout = stdout,
 
     };
