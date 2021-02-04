@@ -12,7 +12,7 @@ include make.def
     OPT  = -O2 -march=native -flto
   endif
   ifndef WARN
-    WARN  = -Wall -Wextra -Werror
+    WARN = -Wall -Wextra -Werror
   endif
 
 # Linked libraries
@@ -37,7 +37,7 @@ include make.def
 
 # Exexutable Directory
   ifndef EXEDIR
-    EXEDIR = $(if ${MyLocalPath}, ${MyLocalPath}, bin)
+    EXEDIR = $(if ${MyLocalPath}, ${MyLocalPath}, ../bin)
   endif
   ifndef EXE
     EXE = $(EXEDIR)/$(EXENAME)
@@ -55,20 +55,20 @@ include make.def
 # set path list searched for targets and prerequisites
   VPATH = $(sort $(dir $(TOTSRC)))
 
-# version files
-# GITHEAD changes with every branch switch
-# GITREF  changes with every new commit
+# set program version
   ifndef PROGRAM_VERSION
-    GITHEAD = .git/HEAD
-    GITREF  = $(shell sed "s+^\s*ref:\s*+.git/+" .git/HEAD)
     PROGRAM_VERSION = $(shell git describe --tags --always)
   endif
 
 .Phony: all
 all: Makefile make.def make.src $(EXE)
-# Create gitversion source and object file:
-gitversion.c: $(GITHEAD) $(GITREF)
-	echo "const char *gitversion = \"$(PROGRAM_VERSION)\";" > $@
+
+# Create gitversion source and object files
+# First define a version string, if this string matches the contents
+# of the gitversion.c file do nothing, else recreate this file
+VERSIONSTRING = const char *gitversion = "$(PROGRAM_VERSION)";
+gitversion.c: FORCE
+	@echo '$(VERSIONSTRING)' | cmp -s -- $@ || echo '$(VERSIONSTRING)' > $@
 gitversion.o: gitversion.c
 	$(CC) -w $(PPF) -c $?
 
@@ -110,10 +110,10 @@ print-%:
 # Call ctags with corresponding exclude pattern
 .Phony: tags
 tags: FORCE
-	ctags --recurse --exclude="literature/*" --exclude="tools/*" --exclude="test/*" --exclude="stash/*"
+	ctags --recurse --exclude="test/*" --exclude="stash/*"
 
 # Remove all generated binary files
 .Phony: clean
 clean:
-	rm -f $(TOTOBJ) gitversion.o gitversion.c $(EXE)
+	rm -f $(TOTOBJ) gitversion.[oc] $(EXE)
 	rmdir -p --ignore-fail-on-non-empty $(EXEDIR)

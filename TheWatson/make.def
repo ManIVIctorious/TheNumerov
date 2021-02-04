@@ -2,6 +2,7 @@
   EXENAME = TheWatson
 
 # Additional libraries, includes and packages
+  CC       = gcc
   LIB      = -lm
   INC      =
   PACKAGES = gsl
