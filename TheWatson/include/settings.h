@@ -14,7 +14,6 @@ typedef struct settings {
     //  the minimum geometry and the last column represents the path
     //  to a file containing the system geometry at the respective deviation.
     char * input_coordinates;
-    char   input_coordinates_set;
 
     // standard output file
     char * output_file;

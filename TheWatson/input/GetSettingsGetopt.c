@@ -4,10 +4,11 @@
 #include <getopt.h>
 
 #include "settings.h"
+#include "ConvertString.h"
 
 void Help();
 
-settings GetSettingsGetopt(settings prefs, int argc, char** argv){
+void GetSettingsGetopt(settings* prefs, int argc, char** argv){
 
 // optstring contains a list of all short option indices
 //  if followed by one colon an argument is required,
@@ -51,37 +52,33 @@ settings GetSettingsGetopt(settings prefs, int argc, char** argv){
 
         // set threshold
             case 't':
-                prefs.threshold = atof(optarg);
+                prefs->threshold = convertstring_to_double(optarg, "threshold", NULL);
                 break;
 
         // read input from pipe instead of input file
             case 'P':
-                prefs.input_coordinates = "/dev/stdin";
-                prefs.input_coordinates_set++;
+                prefs->input_coordinates = "/dev/stdin";
                 break;
 
         // set input file
             case 'i':
-                prefs.input_coordinates = optarg;
-                prefs.input_coordinates_set++;
+                prefs->input_coordinates = optarg;
                 break;
 
         // add optarg to mode file list
         //  and increment dimension
             case 'M':
             case 'm':
-                prefs.dimension++;
-                prefs.modelist = realloc( prefs.modelist, prefs.dimension * sizeof(char*) );
-                prefs.modelist[prefs.dimension - 1] = optarg;
+                prefs->dimension++;
+                prefs->modelist = realloc( prefs->modelist, prefs->dimension * sizeof(char*) );
+                prefs->modelist[prefs->dimension - 1] = optarg;
                 break;
 
         // set output file
             case 'o':
-                prefs.output_file = optarg;
+                prefs->output_file = optarg;
                 break;
 
         }
     }
-
-    return prefs;
 }

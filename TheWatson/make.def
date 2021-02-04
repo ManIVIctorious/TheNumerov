@@ -16,8 +16,9 @@
 # Source Files
   SRC += main.c
   SRC += Help.c
-  SRC += SetDefaultSettings.c
-  SRC += GetSettingsGetopt.c
+  SRC += input/SetDefaultSettings.c
+  SRC += input/GetSettingsGetopt.c
+  SRC += input/ConvertString.c
 
   SRC += InputNormalMode.c
   SRC += ProcessFileList.c

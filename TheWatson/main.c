@@ -8,7 +8,7 @@
 
 // dependencies
 settings SetDefaultSettings();
-settings GetSettingsGetopt(settings prefs, int argc, char** argv);
+settings GetSettingsGetopt(settings* prefs, int argc, char** argv);
 
 int InputNormalMode(char* inputfile, double* *mode, double* *mass);
 int ProcessFileList(settings prefs);
@@ -17,7 +17,7 @@ int ProcessFileList(settings prefs);
 int main(int argc, char **argv){
 
     settings prefs = SetDefaultSettings();
-             prefs = GetSettingsGetopt(prefs, argc, argv);
+    GetSettingsGetopt(&prefs, argc, argv);
 
 
 //--------------------------------------------------------------------------------------
@@ -224,7 +224,7 @@ int main(int argc, char **argv){
 
 
 // if no coordinate files are provided return early
-    if(!prefs.input_coordinates_set){
+    if( !prefs.input_coordinates ){
         fclose(prefs.fdout); prefs.fdout = NULL;
         for(int i = 0; i < 3; ++i){ free(prefs.zeta[i]); prefs.zeta[i] = NULL; } free(prefs.zeta);
         prefs.zeta = NULL;

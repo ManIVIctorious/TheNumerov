@@ -16,6 +16,7 @@ settings SetDefaultSettings(){
 
         .modelist = NULL,
 
+        .input_coordinates = NULL,
         .output_file = NULL,
         .fdout = stdout,
 
