@@ -32,7 +32,7 @@ int InputComFile(char* inputfile, double* x, double* y, double* z, int max_lines
 // start parsing file
     int entry_rows = 0;
     int linenumber = 0;
-    while( fgets(buffer, _MaxLineLength_, fd) != NULL ){
+    while( fgets(buffer, _MaxLineLength_, fd) ){
 
     // pre-process buffer
     // strip buffer off comments, leading white spaces and do some error handling
@@ -52,7 +52,8 @@ int InputComFile(char* inputfile, double* x, double* y, double* z, int max_lines
         }
 
     // get {x,y,z}-data from line
-        int control = sscanf(buffer, "%*s  %lf  %lf  %lf", &(x[entry_rows]), &(y[entry_rows]), &(z[entry_rows]));
+    // only read lines with exactly four entries
+        int control = sscanf(pos, "%*s  %lf  %lf  %lf", &(x[entry_rows]), &(y[entry_rows]), &(z[entry_rows]));
         if( control != 3 ){ continue; }
 
         ++entry_rows;

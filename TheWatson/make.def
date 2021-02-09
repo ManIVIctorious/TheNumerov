@@ -16,15 +16,15 @@
 # Source Files
   SRC += main.c
   SRC += Help.c
+
   SRC += input/SetDefaultSettings.c
   SRC += input/GetSettingsGetopt.c
   SRC += input/ConvertString.c
-
   SRC += input/PreprocessBuffer.c
   SRC += input/ThrowInputError.c
   SRC += input/InputComFile.c
+  SRC += input/InputNormalMode.c
 
-  SRC += InputNormalMode.c
   SRC += ProcessFileList.c
 
   GSLSRC += GSL_EffectiveReciprocalMomentofInertia.c
