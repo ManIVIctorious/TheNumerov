@@ -2,9 +2,9 @@
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_linalg.h>
 
-void InvertMatrix(gsl_matrix *Matrix, gsl_matrix *InvMatrix, int dimension);
+void InvertMatrix(gsl_matrix* Matrix, gsl_matrix* InvMatrix, int dimension);
 
-void InvertMatrix(gsl_matrix *Matrix, gsl_matrix *InvMatrix, int dimension){
+void InvertMatrix(gsl_matrix* Matrix, gsl_matrix* InvMatrix, int dimension){
 
     gsl_matrix      *AUX = gsl_matrix_calloc(dimension, dimension);
     gsl_permutation   *p = gsl_permutation_alloc(dimension);

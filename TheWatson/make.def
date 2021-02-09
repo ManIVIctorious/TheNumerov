@@ -20,9 +20,12 @@
   SRC += input/GetSettingsGetopt.c
   SRC += input/ConvertString.c
 
+  SRC += input/PreprocessBuffer.c
+  SRC += input/ThrowInputError.c
+  SRC += input/InputComFile.c
+
   SRC += InputNormalMode.c
   SRC += ProcessFileList.c
-  SRC += InputComFile.c
 
   GSLSRC += GSL_EffectiveReciprocalMomentofInertia.c
   GSLSRC += GSL_InvertMatrix.c

@@ -6,8 +6,8 @@
 
 // dependencies
 int  InputComFile(char* inputfile, double* x, double* y, double* z, int max_lines);
-void InvertMatrix(gsl_matrix *Matrix, gsl_matrix *InvMatrix, int dimension);
- 
+void InvertMatrix(gsl_matrix* Matrix, gsl_matrix* InvMatrix, int dimension);
+
 // provided prototypes
 void EffectiveReciprocalMomentofInertia(settings prefs, double* q, char* coordsfile);
 
