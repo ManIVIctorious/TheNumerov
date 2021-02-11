@@ -11,7 +11,7 @@ char * PreprocessBuffer(char* inputfile, int linenumber, char* buffer, const cha
 
 // check if line is complete (search for newline char)
     int control = 0;
-    for(long unsigned i = 0; i < strlen(buffer); ++i){
+    for(size_t i = 0; i < strlen(buffer); ++i){
         if(buffer[i] == '\n') { control = 1; }
     }
     if(control == 0){

@@ -5,13 +5,13 @@
 #include "settings.h"
 
 // dependencies
-settings SetDefaultSettings();
+settings SetDefaultSettings(void);
 
 // provided prototypes
-void Help();
+void Help(void);
 
 
-void Help(){
+void Help(void){
 
     settings defaults = SetDefaultSettings();
 

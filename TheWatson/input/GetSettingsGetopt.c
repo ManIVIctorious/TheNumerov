@@ -6,7 +6,7 @@
 #include "settings.h"
 #include "ConvertString.h"
 
-void Help();
+void Help(void);
 
 void GetSettingsGetopt(settings* prefs, int argc, char** argv){
 
@@ -14,20 +14,26 @@ void GetSettingsGetopt(settings* prefs, int argc, char** argv){
 //  if followed by one colon an argument is required,
 //  if followed by two colons an optional argument can be set
     const char * optstring = "hi:m:M:o:Pt:";
+
+// create an array of option structs
+/* struct description
+ *{{{
+ *  const char * option string
+ *  int          has_arg (no_argument (0), required_argument (1), optional_argument (2))
+ *  int        * flag    if !NULL : points to a variable set to the value given by val
+ *  int          val     return value if flat == NULL
+ *}}}*/
     const struct option longopts[] = {
-    //  *name:      option name,
-    //  has_arg:    if option requires argument,
-    //  *flag:      if set to NULL getopt_long() returns val,
-    //              else it returns 0 and flag points to a variable set to val
-    //  val:        value to return
         {"help",              no_argument, 0, 'h'},
-        {"threshold",   required_argument, 0, 't'},
         {"pipe-input",        no_argument, 0, 'P'},
+    // double values:
+        {"threshold",   required_argument, 0, 't'},
+    // string vlaues:
         {"input-file",  required_argument, 0, 'i'},
         {"mode-file",   required_argument, 0, 'M'},
         {"output-file", required_argument, 0, 'o'},
     // requires zero termination
-        { 0 , 0 , 0 , 0 }
+        { NULL , 0 , NULL , 0 }
     };
 
 // optind (provided by <getopt.h>)

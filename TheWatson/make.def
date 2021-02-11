@@ -27,5 +27,7 @@
 
   SRC += ProcessFileList.c
 
+  SRC += output/PrintCoriolisCoefficients.c
+
   GSLSRC += GSL_EffectiveReciprocalMomentofInertia.c
   GSLSRC += GSL_InvertMatrix.c

@@ -7,18 +7,20 @@
 #include "settings.h"
 
 // dependencies
-settings SetDefaultSettings();
-settings GetSettingsGetopt(settings* prefs, int argc, char** argv);
+settings SetDefaultSettings(void);
+void GetSettingsGetopt(settings* prefs, int argc, char** argv);
 
 int InputNormalMode(char* inputfile, double* *mode, double* *mass);
 int ProcessFileList(settings prefs);
+
+// output
+void PrintCoriolisCoefficients(settings* set);
 
 
 int main(int argc, char **argv){
 
     settings prefs = SetDefaultSettings();
     GetSettingsGetopt(&prefs, argc, argv);
-
 
 //--------------------------------------------------------------------------------------
 //  Coriolis Coefficients Zeta  Coriolis Coefficients Zeta  Coriolis Coefficients Zeta
@@ -33,9 +35,9 @@ int main(int argc, char **argv){
         exit(EXIT_FAILURE);
     }
 // save data of each mode in modes array and mass in mass array
-//  mode[D][entry_row * 3     ] = x_displacement
-//  mode[D][entry_row * 3 + 1 ] = y_displacement
-//  mode[D][entry_row * 3 + 2 ] = z_displacement
+//  mode[D][entry_row * 3 + 0] = x_displacement
+//  mode[D][entry_row * 3 + 1] = y_displacement
+//  mode[D][entry_row * 3 + 2] = z_displacement
     double ** mode = malloc(prefs.dimension * sizeof(double*));
     if(mode == NULL){ perror("mode"); exit(errno); }
     for(int i = 0; i < prefs.dimension; ++i){ mode[i] = NULL; }
@@ -92,12 +94,12 @@ int main(int argc, char **argv){
     }
 
 
-// Norm mode files:
+// Normalise mode files:
 //------------------------------
     for(int i = 0; i < prefs.dimension; ++i){
         double norm = 0.0;
         for(int j = 0; j < prefs.n_atoms; ++j){
-            norm += mode[i][j*3    ]*mode[i][j*3    ]; // x*x
+            norm += mode[i][j*3 + 0]*mode[i][j*3 + 0]; // x*x
             norm += mode[i][j*3 + 1]*mode[i][j*3 + 1]; // y*y
             norm += mode[i][j*3 + 2]*mode[i][j*3 + 2]; // z*z
         }
@@ -109,7 +111,7 @@ int main(int argc, char **argv){
     #endif
 
         for(int j = 0; j < prefs.n_atoms; ++j){
-            mode[i][j*3    ] /= norm;
+            mode[i][j*3 + 0] /= norm;
             mode[i][j*3 + 1] /= norm;
             mode[i][j*3 + 2] /= norm;
         }
@@ -142,6 +144,8 @@ int main(int argc, char **argv){
 //------------------------------------------------------------------------------
 // Calculate Coriolis Coefficients Zeta    Calculate Coriolis Coefficients Zeta
 //------------------------------------------------------------------------------
+// for each direction of space {x,y,z} zeta contains n_modes x n_modes entries
+// resulting in zeta[{x,y,z}][ n_modes*n_modes ]
     prefs.zeta = malloc( 3 * sizeof(double*) );
     if(prefs.zeta == NULL){ perror("prefs.zeta"); exit(errno); }
     for(int i = 0; i < 3; ++i){
@@ -149,7 +153,7 @@ int main(int argc, char **argv){
         if(prefs.zeta[i] == NULL){ perror("prefs.zeta[i]"); exit(errno); }
     }
 
-/* Calculate Coriolis Coefficients
+/* Calculate Coriolis Coefficients zeta
 //--------------------------------------------------
 //{{{
     The coefficients are calculated for every possible combination of two modes
@@ -165,17 +169,14 @@ int main(int argc, char **argv){
             as the ones of mode 2 with mode 1 but with inverted parity:
                 f(1,2) = -f(2,1)
 
-    Leading to the conclusion, that only the upper triangle has to be calculated
-    and the lower one can be based on the upper triangle results
-
+    Hence, only the upper triangle has to be calculated
 //}}}*/
     for(int i = 0; i < prefs.dimension; ++i){
         for(int j = i+1; j < prefs.dimension; ++j){
-
             for(int k = 0; k < prefs.n_atoms; ++k){
                 prefs.zeta[0][i*prefs.dimension + j] += mode[i][k*3 + 1]*mode[j][k*3 + 2] - mode[i][k*3 + 2]*mode[j][k*3 + 1];    // dy1*dz2 - dz1*dy2
-                prefs.zeta[1][i*prefs.dimension + j] += mode[i][k*3 + 2]*mode[j][k*3    ] - mode[i][k*3    ]*mode[j][k*3 + 2];    // dz1*dx2 - dx1*dz2
-                prefs.zeta[2][i*prefs.dimension + j] += mode[i][k*3    ]*mode[j][k*3 + 1] - mode[i][k*3 + 1]*mode[j][k*3    ];    // dx1*dy2 - dy1*dx2
+                prefs.zeta[1][i*prefs.dimension + j] += mode[i][k*3 + 2]*mode[j][k*3 + 0] - mode[i][k*3 + 0]*mode[j][k*3 + 2];    // dz1*dx2 - dx1*dz2
+                prefs.zeta[2][i*prefs.dimension + j] += mode[i][k*3 + 0]*mode[j][k*3 + 1] - mode[i][k*3 + 1]*mode[j][k*3 + 0];    // dx1*dy2 - dy1*dx2
             }
 
         }
@@ -199,29 +200,11 @@ int main(int argc, char **argv){
 
 // output Coriolis coefficients
 //--------------------------------------------------
-    if( prefs.output_file ){
-        prefs.fdout = fopen(prefs.output_file, "w");
-    }
+// if output file is set open it, else print to default (stdout)
+    if( prefs.output_file ){ prefs.fdout = fopen(prefs.output_file, "w"); }
     if( prefs.fdout == NULL ){ perror(prefs.output_file); exit(errno); }
 
-    fprintf(prefs.fdout, "#Modes:");
-    for(int i = 0; i < prefs.dimension; ++i){
-        for(int j = i+1; j < prefs.dimension; ++j){
-            fprintf(prefs.fdout, "\t %s|%s", prefs.modelist[i], prefs.modelist[j]);
-        }
-    }
-    fprintf(prefs.fdout, "\n");
-
-    for(int k = 0; k < 3; ++k){
-        fprintf(prefs.fdout, "Zeta_%c:", "xyz"[k]);
-        for(int i = 0; i < prefs.dimension; ++i){
-            for(int j = i+1; j < prefs.dimension; ++j){
-                fprintf(prefs.fdout, "\t% .12le", prefs.zeta[k][prefs.dimension * i + j]);
-            }
-        }
-        fprintf(prefs.fdout, "\n");
-    }
-
+    PrintCoriolisCoefficients(&prefs);
 
 // if no coordinate files are provided return early
     if( !prefs.input_coordinates ){
@@ -229,7 +212,7 @@ int main(int argc, char **argv){
         for(int i = 0; i < 3; ++i){ free(prefs.zeta[i]); prefs.zeta[i] = NULL; } free(prefs.zeta);
         prefs.zeta = NULL;
 
-        return 0;
+        return EXIT_SUCCESS;
     }
 
 
@@ -270,11 +253,11 @@ int main(int argc, char **argv){
     ProcessFileList(prefs);
 
 // close files and free unused memory
-    fclose(prefs.fdout); prefs.fdout = NULL;
-    for(int i = 0; i < 3; ++i){ free(prefs.zeta[i]); prefs.zeta[i] = NULL; } free(prefs.zeta);
-    prefs.zeta = NULL;
-    free(mass[0]); mass[0] = NULL;
-    free(mass);    mass    = NULL;
+    fclose(prefs.fdout);     prefs.fdout = NULL;
+    for(int i = 0; i < 3; ++i){ free(prefs.zeta[i]); prefs.zeta[i] = NULL; }
+    free(prefs.zeta);        prefs.zeta        = NULL;
+    free(prefs.atom_masses); prefs.atom_masses = NULL;
+    free(mass);              mass              = NULL;
 
-    return 0;
+    return EXIT_SUCCESS;
 }
