@@ -43,7 +43,7 @@ int InputDataFile(char* inputfile, double** *q, int* nq, double* *v, double** *m
 // start parsing of file
     int entryrows  = 0;
     int linenumber = 0;
-    while( fgets(buffer, _MaxLineLength_, fd) != NULL ){
+    while( fgets(buffer, _MaxLineLength_, fd) ){
 
     // pre-process buffer
     // strip buffer off comments, leading white spaces and do some error handling
@@ -114,7 +114,7 @@ int InputDataFile(char* inputfile, double** *q, int* nq, double* *v, double** *m
         // throw an error if no data found
             if( pos == NULL ){
                 ThrowInputError(inputfile, linenumber,
-                    "\n     Too few entries in input line number %d"
+                    "\n     Too few entries in input line "
                     "(only found %d of the expected %d columns)"
                     , i, expected_column_count
                 );

@@ -223,18 +223,12 @@ int main(int argc, char **argv){
 //--------------------------------------------------
     fprintf(prefs.fdout, "#");
     for(int i = 0; i < prefs.dimension; ++i){
-        fprintf(prefs.fdout,
-                    "\t q[%2d]              "
-                    , i
-        );
+        fprintf(prefs.fdout, "\t q[%2d]              ", i);
     }
     for(int i = 0; i < 3; ++i){
-        for(int j = i; j < 3; ++j){
-            fprintf(prefs.fdout,
-                    "\t mu_%c%c             "
-                    , "xyz"[i], "xyz"[j]
-            );
-        }
+    for(int j = i; j < 3; ++j){
+        fprintf(prefs.fdout, "\t mu_%c%c             ", "xyz"[i], "xyz"[j]);
+    }
     }
     fprintf(prefs.fdout, "\n");
 
