@@ -6,7 +6,7 @@
 #include "settings.h"
 #include "ConvertString.h"
 
-void Help(void);
+void usage(void);
 
 void GetSettingsGetopt(settings* prefs, int argc, char** argv){
 
@@ -53,7 +53,7 @@ void GetSettingsGetopt(settings* prefs, int argc, char** argv){
 
         // print help message
             case 'h':
-                Help();
+                usage();
                 exit(EXIT_SUCCESS);
 
         // set threshold

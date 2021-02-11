@@ -4,7 +4,9 @@
 #include <math.h>
 #include <gsl/gsl_matrix.h>
 #include <errno.h>
+
 #include "settings.h"
+#include "gitversion.h"
 
 // dependencies
 settings SetDefaultSettings(void);
@@ -204,6 +206,8 @@ int main(int argc, char **argv){
     if( prefs.output_file ){ prefs.fdout = fopen(prefs.output_file, "w"); }
     if( prefs.fdout == NULL ){ perror(prefs.output_file); exit(errno); }
 
+// Print version information to header
+    fprintf(prefs.fdout, "#Version: \"%s\"\n", gitversion);
     PrintCoriolisCoefficients(&prefs);
 
 // if no coordinate files are provided return early
