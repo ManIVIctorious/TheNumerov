@@ -13,7 +13,7 @@ settings SetDefaultSettings(void);
 void GetSettingsGetopt(settings* prefs, int argc, char** argv);
 
 int InputNormalMode(char* inputfile, double* *mode, double* *mass);
-int ProcessFileList(settings prefs);
+int ProcessFileList(settings *prefs);
 
 // output
 void PrintCoriolisCoefficients(settings* set);
@@ -240,15 +240,14 @@ int main(int argc, char **argv){
 //--------------------------------------------------
 //{{{
     This file is of the following structure:
-        <dimension> columns representing the displacement
-            1       column  representing the name of a file
-                    containing the system's coordinates
+        <dimension> columns representing the displacement from the minimum geometry
+            1       column  containing the path to a file containing the system's geometry
 
-    For each coordinate file in the list the Effective Reciprocal Moment of Inertia Tensor
+    For each file in the list the Effective Reciprocal Moment of Inertia Tensor
     is evaluated and printed to the output file.
 
 //}}}*/
-    ProcessFileList(prefs);
+    ProcessFileList(&prefs);
 
 // close files and free unused memory
     fclose(prefs.fdout);     prefs.fdout = NULL;

@@ -14,25 +14,20 @@
 char * PreprocessBuffer(char* inputfile, int linenumber, char* buffer, const char* comment);
 void ThrowInputError(char* inputfile, int linenumber, char* format,...);
 double convertstring_to_double(char* optarg, char* varname, int *control);
-void EffectiveReciprocalMomentofInertia(settings prefs, double* q, char* coordsfile);
+void EffectiveReciprocalMomentofInertia(settings *set, double* q, char* coordsfile);
 
 // provided prototypes
-int ProcessFileList(settings prefs);
+int ProcessFileList(settings *set);
 
-int ProcessFileList(settings prefs){
+int ProcessFileList(settings *set){
 
 // open input file read only
-    FILE * fd = fopen(prefs.input_coordinates, "r");
-    if( fd == NULL ){ perror(prefs.input_coordinates); exit(errno); }
+    FILE * fd = fopen(set->input_coordinates, "r");
+    if( fd == NULL ){ perror(set->input_coordinates); exit(errno); }
 
 // define comment characters
     const char * comment = "#%\n";
     const char * delimit = " \t";
-
-// data in FileList-file (to be further processed)
-    char coordsfile[_PATH_MAX_];
-    double * q = malloc(prefs.dimension * sizeof(double));
-    if(q == NULL){ perror("q in ProcessFileList"); exit(errno); }
 
 // allocate memory of size _MaxLineLength_ for buffer
     char * pos     = NULL;
@@ -41,7 +36,7 @@ int ProcessFileList(settings prefs){
     if( buffer == NULL ){ perror("ProcessFileList buffer"); exit(errno); }
 
 
-// start file parsing
+// start parsing file
     int entry_rows = 0;
     int linenumber = 0;
     while( fgets(buffer, _MaxLineLength_, fd) ){
@@ -49,7 +44,7 @@ int ProcessFileList(settings prefs){
     // pre-process buffer
     // strip buffer off comments, leading white spaces and do some error handling
         linenumber++;
-        pos = PreprocessBuffer(prefs.input_coordinates, linenumber, buffer, comment);
+        pos = PreprocessBuffer(set->input_coordinates, linenumber, buffer, comment);
         if(pos == NULL){ continue; }
 
 // pos now points to the first non-white-space character of buffer
@@ -57,8 +52,18 @@ int ProcessFileList(settings prefs){
 
         stringp = pos;
 
+    // allocate memory for data in FileList-line. This data will be further
+    // processed in the EffectiveReciprocalMomentofInertia() function and
+    // will be freed there.
+        double * q = malloc(set->dimension * sizeof(double));
+        char * coordsfile = malloc( (_PATH_MAX_) * sizeof(char) );
+
+        if(q == NULL){ perror("q in ProcessFileList"); exit(errno); }
+        if(coordsfile == NULL){ perror("coordsfile");  exit(errno); }
+
+
     // read deviation from minimum geometry Q from input file
-        for(int i = 0; i < prefs.dimension; ){
+        for(int i = 0; i < set->dimension; ){
 
         // get next token
             do{
@@ -67,10 +72,10 @@ int ProcessFileList(settings prefs){
 
         // throw an error if no data found
             if( pos == NULL ){
-                ThrowInputError(prefs.input_coordinates, linenumber,
+                ThrowInputError(set->input_coordinates, linenumber,
                     "\n     Too few entries in input line "
                     "(only found %d of the expected %d columns)"
-                    , i, prefs.dimension + 1
+                    , i, set->dimension + 1
                 );
             }
 
@@ -86,10 +91,10 @@ int ProcessFileList(settings prefs){
 
     // throw an error if column is not available
         if( pos == NULL ){
-            ThrowInputError(prefs.input_coordinates, linenumber,
+            ThrowInputError(set->input_coordinates, linenumber,
                 "\n     Too few entries in input line "
                 "(only found %d of the expected %d columns)"
-                , prefs.dimension, prefs.dimension + 1
+                , set->dimension, set->dimension + 1
             );
         }
 
@@ -112,12 +117,12 @@ int ProcessFileList(settings prefs){
                 "\t         z         "
                 "\t    atomic mass    "
                 "\n"
-                , prefs.n_atoms
+                , set->n_atoms
             );
     //}}}
     #endif
 
-        EffectiveReciprocalMomentofInertia(prefs, q, coordsfile);
+        EffectiveReciprocalMomentofInertia(set, q, coordsfile);
 
         ++entry_rows;
     }
