@@ -103,5 +103,14 @@ void usage(void){
            "\n\t    main diagonal) of the reciprocal effective moment of inertia tensor."
     );
 
+    printf("\n"
+           "\n\t-a, --append-file"
+           "\n\t    Same as -o, but if the set file already exists append to it instead of"
+           "\n\t    re-writing it."
+           "\n\t    The output routine still checks if the given file exists and if not"
+           "\n\t    writes headers/keys and Coriolis coefficients, so these are only once"
+           "\n\t    present in the generated output file."
+    );
+
     printf("\n\n");
 }

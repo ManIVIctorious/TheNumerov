@@ -1,6 +1,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include <math.h>
 #include <gsl/gsl_matrix.h>
 #include <errno.h>
@@ -200,17 +202,34 @@ int main(int argc, char **argv){
     }
 
 
-// output Coriolis coefficients
-//--------------------------------------------------
+//--------------------------------------------------------------------------------------
+//       Output preparations        Output preparations        Output preparations
+//--------------------------------------------------------------------------------------
+// write Coriolis coefficients and header/key only if:
+//  1. output file-mode is write, or
+//  2. the file does not exist yet
+// This way, even in append mode, the header should only be written once
+    int print_header = 0;
+    if(    (strcmp(prefs.output_fmode, "w") == 0)
+        || (access(prefs.output_file, F_OK) != 0)
+    ){
+        print_header = 1;
+    }
+
 // if output file is set open it, else print to default (stdout)
-    if( prefs.output_file ){ prefs.fdout = fopen(prefs.output_file, "w"); }
+    if( prefs.output_file ){ prefs.fdout = fopen(prefs.output_file, prefs.output_fmode); }
     if( prefs.fdout == NULL ){ perror(prefs.output_file); exit(errno); }
 
-// Print version information to header
-    fprintf(prefs.fdout, "#Version: \"%s\"\n", gitversion);
-    PrintCoriolisCoefficients(&prefs);
 
-// if no coordinate files are provided return early
+// output Coriolis coefficients and return earyl
+// if no geometry/coordinate files were provided
+//--------------------------------------------------
+    if( print_header ){
+    // Print version information to header
+        fprintf(prefs.fdout, "#Version: \"%s\"\n", gitversion);
+        PrintCoriolisCoefficients(&prefs);
+    }
+
     if( !prefs.input_coordinates ){
         fclose(prefs.fdout); prefs.fdout = NULL;
         for(int i = 0; i < 3; ++i){ free(prefs.zeta[i]); prefs.zeta[i] = NULL; } free(prefs.zeta);
@@ -223,18 +242,20 @@ int main(int argc, char **argv){
 //--------------------------------------------------------------------------------------
 //   Moment of inertia    Moment of inertia    Moment of inertia    Moment of inertia
 //--------------------------------------------------------------------------------------
-// print header
+// print header/key
 //--------------------------------------------------
-    fprintf(prefs.fdout, "#");
-    for(int i = 0; i < prefs.dimension; ++i){
-        fprintf(prefs.fdout, "\t q[%2d]              ", i);
+    if( print_header ){
+        fprintf(prefs.fdout, "#");
+        for(int i = 0; i < prefs.dimension; ++i){
+            fprintf(prefs.fdout, "\t q[%2d]              ", i);
+        }
+        for(int i = 0; i < 3; ++i){
+        for(int j = i; j < 3; ++j){
+            fprintf(prefs.fdout, "\t mu_%c%c             ", "xyz"[i], "xyz"[j]);
+        }
+        }
+        fprintf(prefs.fdout, "\n");
     }
-    for(int i = 0; i < 3; ++i){
-    for(int j = i; j < 3; ++j){
-        fprintf(prefs.fdout, "\t mu_%c%c             ", "xyz"[i], "xyz"[j]);
-    }
-    }
-    fprintf(prefs.fdout, "\n");
 
 /* read and process input coordinates list:
 //--------------------------------------------------

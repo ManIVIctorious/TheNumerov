@@ -13,7 +13,7 @@ void GetSettingsGetopt(settings* prefs, int argc, char** argv){
 // optstring contains a list of all short option indices
 //  if followed by one colon an argument is required,
 //  if followed by two colons an optional argument can be set
-    const char * optstring = "hi:m:M:o:Pt:";
+    const char * optstring = "hi:m:M:o:a:Pt:";
 
 // create an array of option structs
 /* struct description
@@ -28,10 +28,11 @@ void GetSettingsGetopt(settings* prefs, int argc, char** argv){
         {"pipe-input",        no_argument, 0, 'P'},
     // double values:
         {"threshold",   required_argument, 0, 't'},
-    // string vlaues:
+    // string values:
         {"input-file",  required_argument, 0, 'i'},
         {"mode-file",   required_argument, 0, 'M'},
         {"output-file", required_argument, 0, 'o'},
+        {"append-file", required_argument, 0, 'a'},
     // requires zero termination
         { NULL , 0 , NULL , 0 }
     };
@@ -83,6 +84,13 @@ void GetSettingsGetopt(settings* prefs, int argc, char** argv){
         // set output file
             case 'o':
                 prefs->output_file = optarg;
+                prefs->output_fmode = "w";
+                break;
+
+        // set output file in append mode
+            case 'a':
+                prefs->output_file = optarg;
+                prefs->output_fmode = "a";
                 break;
 
         }
