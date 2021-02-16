@@ -1,10 +1,13 @@
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
+#include <errno.h>
 
-#include "settings.h"
 #include "ConvertString.h"
+#include "settings.h"
+#include "gitversion.h"
 
 void usage(void);
 
@@ -13,7 +16,7 @@ void GetSettingsGetopt(settings* prefs, int argc, char** argv){
 // optstring contains a list of all short option indices
 //  if followed by one colon an argument is required,
 //  if followed by two colons an optional argument can be set
-    const char * optstring = "hi:m:M:o:a:Pt:";
+    const char * optstring = "hi:m:M:o:a:Pt:V";
 
 // create an array of option structs
 /* struct description
@@ -24,15 +27,16 @@ void GetSettingsGetopt(settings* prefs, int argc, char** argv){
  *  int          val     return value if flat == NULL
  *}}}*/
     const struct option longopts[] = {
-        {"help",              no_argument, 0, 'h'},
-        {"pipe-input",        no_argument, 0, 'P'},
+        {"help",              no_argument, NULL, 'h'},
+        {"version",           no_argument, NULL, 'V'},
+        {"pipe-input",        no_argument, NULL, 'P'},
     // double values:
-        {"threshold",   required_argument, 0, 't'},
+        {"threshold",   required_argument, NULL, 't'},
     // string values:
-        {"input-file",  required_argument, 0, 'i'},
-        {"mode-file",   required_argument, 0, 'M'},
-        {"output-file", required_argument, 0, 'o'},
-        {"append-file", required_argument, 0, 'a'},
+        {"input-file",  required_argument, NULL, 'i'},
+        {"mode-file",   required_argument, NULL, 'M'},
+        {"output-file", required_argument, NULL, 'o'},
+        {"append-file", required_argument, NULL, 'a'},
     // requires zero termination
         { NULL , 0 , NULL , 0 }
     };
@@ -51,6 +55,11 @@ void GetSettingsGetopt(settings* prefs, int argc, char** argv){
         if(control == -1){ break; }
 
         switch(control){
+
+        // print version information
+            case 'V':
+                printf("\t%s, version: %s\n", program_invocation_short_name, gitversion);
+                exit(EXIT_SUCCESS);
 
         // print help message
             case 'h':
