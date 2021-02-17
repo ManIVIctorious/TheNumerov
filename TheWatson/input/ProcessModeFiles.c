@@ -8,7 +8,7 @@
 #include "settings.h"
 
 // dependencies
-int InputNormalMode(char* inputfile, double* *mode, double* *mass);
+int InputNormalMode(char* inputfile, double* *mode, char read_masses, double* *mass);
 
 
 void ProcessModeFiles(settings* set, data* data){
@@ -25,9 +25,9 @@ void ProcessModeFiles(settings* set, data* data){
     if(mass == NULL){ perror("mass"); exit(errno); }
     for(int i = 0; i < data->dimension; ++i){ mass[i] = NULL; }
 
-    data->n_atoms = InputNormalMode( set->modelist[0], &(mode[0]), &(mass[0]) );
+    data->n_atoms = InputNormalMode( set->modelist[0], &(mode[0]), set->masses_from_modes, &(mass[0]) );
     for(int i = 1; i < data->dimension; ++i){
-        int control = InputNormalMode( set->modelist[i], &(mode[i]), &(mass[i]) );
+        int control = InputNormalMode( set->modelist[i], &(mode[i]), set->masses_from_modes, &(mass[i]) );
 
     // check if all files contain the same number of atoms
         if( control != data->n_atoms ){

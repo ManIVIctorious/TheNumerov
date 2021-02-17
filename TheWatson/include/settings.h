@@ -10,6 +10,7 @@ typedef struct settings {
 //  the system geometry (e.g. a .com file) at the respective deviation.
     char ** modelist;           // array of mode-files
     char *  masses_file;        // optional file to read atomic masses
+    char    masses_from_modes;  // wheter masses should be read from mode files
     char *  input_coordinates;  // main input file
 
 // output

@@ -35,7 +35,8 @@ void GetSettingsGetopt(settings* set, data* data, int argc, char** argv){
         {"threshold",   required_argument, NULL, 't'},
     // string values:
         {"input-file",  required_argument, NULL, 'i'},
-        {"mode-file",   required_argument, NULL, 'M'},
+        {"mode-file",   required_argument, NULL, 'm'},
+        {"masses-file", required_argument, NULL, 'M'},
         {"output-file", required_argument, NULL, 'o'},
         {"append-file", required_argument, NULL, 'a'},
     // string array values:
@@ -101,11 +102,15 @@ void GetSettingsGetopt(settings* set, data* data, int argc, char** argv){
 
         // add optarg to mode file list
         //  and increment dimension
-            case 'M':
             case 'm':
                 data->dimension++;
                 set->modelist = realloc( set->modelist, data->dimension * sizeof(char*) );
                 set->modelist[data->dimension - 1] = optarg;
+                break;
+
+            case 'M':
+                set->masses_file = optarg;
+                set->masses_from_modes = 0;
                 break;
 
         // set output file
