@@ -1,6 +1,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <strings.h>
 #include <errno.h>
 #include <limits.h>
@@ -128,4 +129,47 @@ double convertstring_to_double(char* optarg, char* varname, int *control){
     }
 
     return value;
+}
+
+
+int splitstring_to_array(char* array, char** *stringlist, const char* delimit, size_t preserve_array){
+
+    char * pos = array;
+    char * stringp = pos;
+
+// if preserve_array is set copy the content of array into an auxiliary array
+    if( preserve_array ){
+        pos = malloc( preserve_array * sizeof(char) );
+        if( !pos ){ perror("auxiliary array in split_string_array"); exit(errno); }
+        strncpy(pos, array, (preserve_array-1) );
+    }
+
+    int entries = 0;
+
+    while( 1 ){
+    // get token
+        do{
+            pos = strsep(&stringp, delimit);
+        }while ( (pos != NULL) && (*pos == '\0') );
+
+        if( pos == NULL ){ break; }
+
+    // get size of element and increase counter
+        size_t elementlength = strlen(pos) + 1;
+        entries++;
+
+    // add additional field to stringlist
+        (*stringlist) = realloc( (*stringlist), entries*sizeof(char*) );
+        if( !(*stringlist) ){ perror("stringlist"); exit(errno); }
+
+        (*stringlist)[entries-1] = malloc( elementlength*sizeof(char) );
+        if( (*stringlist)[entries-1] == NULL ){ perror("stringlist[i]"); exit(errno); }
+
+    // copy entry into stringlist element
+        strncpy( (*stringlist)[entries-1], pos, (elementlength-1) );
+    }
+
+    if( preserve_array ){ free(pos); }
+
+    return entries;
 }
