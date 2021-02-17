@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <gsl/gsl_matrix.h>
+
+#include "data.h"
 #include "settings.h"
 
 // dependencies
@@ -9,14 +11,14 @@ int  InputComFile(char* inputfile, double* x, double* y, double* z, int max_line
 void InvertMatrix(gsl_matrix* Matrix, gsl_matrix* InvMatrix, int dimension);
 
 // provided prototypes
-void EffectiveReciprocalMomentofInertia(settings *set, double* q, char* coordsfile);
+void EffectiveReciprocalMomentofInertia(settings *set, data* data, double* q, char* coordsfile);
 
-void EffectiveReciprocalMomentofInertia(settings *set, double* q, char* coordsfile){
+void EffectiveReciprocalMomentofInertia(settings *set, data* data, double* q, char* coordsfile){
 
 // allocate memory for x, y and z coordinate vectors
-    double * x = malloc(set->n_atoms * sizeof(double));
-    double * y = malloc(set->n_atoms * sizeof(double));
-    double * z = malloc(set->n_atoms * sizeof(double));
+    double * x = malloc(data->n_atoms * sizeof(double));
+    double * y = malloc(data->n_atoms * sizeof(double));
+    double * z = malloc(data->n_atoms * sizeof(double));
     if( x == NULL ){ perror("x"); exit(errno); }
     if( y == NULL ){ perror("y"); exit(errno); }
     if( z == NULL ){ perror("z"); exit(errno); }
@@ -24,13 +26,13 @@ void EffectiveReciprocalMomentofInertia(settings *set, double* q, char* coordsfi
 
 // read coordinate file
 //--------------------------------------------------------------------------------
-    int control = InputComFile(coordsfile, x, y, z, set->n_atoms);
-    if(control != set->n_atoms){
+    int control = InputComFile(coordsfile, x, y, z, data->n_atoms);
+    if(control != data->n_atoms){
         fprintf(stderr,
                 "\n (-) Error in reading geometry file \"%s\""
                 "\n     Number of atoms (%d) different from mode files (%d)"
                 "\n     Aborting...\n\n"
-                , coordsfile, control, set->n_atoms
+                , coordsfile, control, data->n_atoms
             );
         exit(EXIT_FAILURE);
     }
@@ -39,10 +41,10 @@ void EffectiveReciprocalMomentofInertia(settings *set, double* q, char* coordsfi
 
 #ifdef debug_coords
 //{{{
-    for(int i = 0; i < set->n_atoms; ++i){
+    for(int i = 0; i < data->n_atoms; ++i){
         fprintf(stderr,
             "%2d\t% .12le\t% .12le\t% .12le\t% .12le\n"
-            , i+1, x[i], y[i], z[i], set->atom_masses[i]
+            , i+1, x[i], y[i], z[i], data->atom_masses[i]
         );
     }
     fprintf(stderr, "\n");
@@ -57,17 +59,17 @@ void EffectiveReciprocalMomentofInertia(settings *set, double* q, char* coordsfi
     double COM[3] = {0.0, 0.0, 0.0};
 
 // calculate centre of mass
-    for(int i = 0; i < set->n_atoms; ++i){
-        COM[0] += x[i] * set->atom_masses[i];
-        COM[1] += y[i] * set->atom_masses[i];
-        COM[2] += z[i] * set->atom_masses[i];
+    for(int i = 0; i < data->n_atoms; ++i){
+        COM[0] += x[i] * data->atom_masses[i];
+        COM[1] += y[i] * data->atom_masses[i];
+        COM[2] += z[i] * data->atom_masses[i];
     }
-    COM[0] /= set->tot_mass;
-    COM[1] /= set->tot_mass;
-    COM[2] /= set->tot_mass;
+    COM[0] /= data->tot_mass;
+    COM[1] /= data->tot_mass;
+    COM[2] /= data->tot_mass;
 
 // translate system to centre of mass
-    for(int i = 0; i < set->n_atoms; ++i){
+    for(int i = 0; i < data->n_atoms; ++i){
         x[i] -= COM[0];
         y[i] -= COM[1];
         z[i] -= COM[2];
@@ -79,16 +81,16 @@ void EffectiveReciprocalMomentofInertia(settings *set, double* q, char* coordsfi
     double I[9] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 
 // calculate tensor values
-    for(int i = 0; i < set->n_atoms; ++i){
+    for(int i = 0; i < data->n_atoms; ++i){
     // main diagonal:
-        I[0] += set->atom_masses[i] * (y[i]*y[i] + z[i]*z[i]);  // 11 xx
-        I[4] += set->atom_masses[i] * (x[i]*x[i] + z[i]*z[i]);  // 22 yy
-        I[8] += set->atom_masses[i] * (x[i]*x[i] + y[i]*y[i]);  // 33 zz
+        I[0] += data->atom_masses[i] * (y[i]*y[i] + z[i]*z[i]);  // 11 xx
+        I[4] += data->atom_masses[i] * (x[i]*x[i] + z[i]*z[i]);  // 22 yy
+        I[8] += data->atom_masses[i] * (x[i]*x[i] + y[i]*y[i]);  // 33 zz
 
     // upper triangle:
-        I[1] -= set->atom_masses[i] * x[i] * y[i];              // 12 xy
-        I[2] -= set->atom_masses[i] * x[i] * z[i];              // 13 xz
-        I[5] -= set->atom_masses[i] * y[i] * z[i];              // 23 yz
+        I[1] -= data->atom_masses[i] * x[i] * y[i];              // 12 xy
+        I[2] -= data->atom_masses[i] * x[i] * z[i];              // 13 xz
+        I[5] -= data->atom_masses[i] * y[i] * z[i];              // 23 yz
     }
     // lower triangle
     I[3] = I[1];    // 21 yx
@@ -132,11 +134,11 @@ void EffectiveReciprocalMomentofInertia(settings *set, double* q, char* coordsfi
     for(int a = 0; a < 3; ++a){
     for(int b = 0; b < 3; ++b){
     // k,l,m in mode_{1,...,n}
-        for(int k = 0; k < set->dimension; ++k){
-        for(int l = 0; l < set->dimension; ++l){
-        for(int m = 0; m < set->dimension; ++m){
+        for(int k = 0; k < data->dimension; ++k){
+        for(int l = 0; l < data->dimension; ++l){
+        for(int m = 0; m < data->dimension; ++m){
 
-            I[a*3 + b] -= set->zeta[a][k*set->dimension + m]*set->zeta[b][l*set->dimension + m] * q[k]*q[l];
+            I[a*3 + b] -= data->zeta[a][k*data->dimension + m]*data->zeta[b][l*data->dimension + m] * q[k]*q[l];
 
         }
         }
@@ -216,7 +218,7 @@ void EffectiveReciprocalMomentofInertia(settings *set, double* q, char* coordsfi
 //}}}*/
 
 // output q and free its memory afterwards
-    for(int i = 0; i < set->dimension; ++i){
+    for(int i = 0; i < data->dimension; ++i){
         fprintf(set->fdout, "\t% .12le", q[i]);
     }
     free(q); q = NULL;

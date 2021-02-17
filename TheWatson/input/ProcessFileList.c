@@ -8,18 +8,20 @@
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
+
+#include "data.h"
 #include "settings.h"
 
 // dependencies
 char * PreprocessBuffer(char* inputfile, int linenumber, char* buffer, const char* comment);
 void ThrowInputError(char* inputfile, int linenumber, char* format,...);
 double convertstring_to_double(char* optarg, char* varname, int *control);
-void EffectiveReciprocalMomentofInertia(settings *set, double* q, char* coordsfile);
+void EffectiveReciprocalMomentofInertia(settings *set, data* data, double* q, char* coordsfile);
 
 // provided prototypes
-int ProcessFileList(settings *set);
+int ProcessFileList(settings *set, data* data);
 
-int ProcessFileList(settings *set){
+int ProcessFileList(settings *set, data* data){
 
 // open input file read only
     FILE * fd = fopen(set->input_coordinates, "r");
@@ -55,7 +57,7 @@ int ProcessFileList(settings *set){
     // allocate memory for data in FileList-line. This data will be further
     // processed in the EffectiveReciprocalMomentofInertia() function and
     // will be freed there.
-        double * q = malloc(set->dimension * sizeof(double));
+        double * q = malloc(data->dimension * sizeof(double));
         char * coordsfile = malloc( (_PATH_MAX_) * sizeof(char) );
 
         if(q == NULL){ perror("q in ProcessFileList"); exit(errno); }
@@ -63,7 +65,7 @@ int ProcessFileList(settings *set){
 
 
     // read deviation from minimum geometry Q from input file
-        for(int i = 0; i < set->dimension; ){
+        for(int i = 0; i < data->dimension; ){
 
         // get next token
             do{
@@ -75,7 +77,7 @@ int ProcessFileList(settings *set){
                 ThrowInputError(set->input_coordinates, linenumber,
                     "\n     Too few entries in input line "
                     "(only found %d of the expected %d columns)"
-                    , i, set->dimension + 1
+                    , i, data->dimension + 1
                 );
             }
 
@@ -94,7 +96,7 @@ int ProcessFileList(settings *set){
             ThrowInputError(set->input_coordinates, linenumber,
                 "\n     Too few entries in input line "
                 "(only found %d of the expected %d columns)"
-                , set->dimension, set->dimension + 1
+                , data->dimension, data->dimension + 1
             );
         }
 
@@ -122,7 +124,7 @@ int ProcessFileList(settings *set){
     //}}}
     #endif
 
-        EffectiveReciprocalMomentofInertia(set, q, coordsfile);
+        EffectiveReciprocalMomentofInertia(set, data, q, coordsfile);
 
         ++entry_rows;
     }

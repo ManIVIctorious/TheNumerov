@@ -13,7 +13,6 @@ settings SetDefaultSettings(){
 
         .threshold    = 1.0E-10,
         .modelist     = NULL,
-        .dimension    = 0,
         .input_coordinates = NULL,
         .output_file  = NULL,
         .output_fmode = "w",

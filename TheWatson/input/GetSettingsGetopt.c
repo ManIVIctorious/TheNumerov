@@ -5,13 +5,14 @@
 #include <getopt.h>
 #include <errno.h>
 
-#include "ConvertString.h"
+#include "data.h"
 #include "settings.h"
 #include "gitversion.h"
+#include "ConvertString.h"
 
 void usage(void);
 
-void GetSettingsGetopt(settings* prefs, int argc, char** argv){
+void GetSettingsGetopt(settings* set, data* data, int argc, char** argv){
 
 // optstring contains a list of all short option indices
 //  if followed by one colon an argument is required,
@@ -68,38 +69,38 @@ void GetSettingsGetopt(settings* prefs, int argc, char** argv){
 
         // set threshold
             case 't':
-                prefs->threshold = convertstring_to_double(optarg, "threshold", NULL);
+                set->threshold = convertstring_to_double(optarg, "threshold", NULL);
                 break;
 
         // read input from pipe instead of input file
             case 'P':
-                prefs->input_coordinates = "/dev/stdin";
+                set->input_coordinates = "/dev/stdin";
                 break;
 
         // set input file
             case 'i':
-                prefs->input_coordinates = optarg;
+                set->input_coordinates = optarg;
                 break;
 
         // add optarg to mode file list
         //  and increment dimension
             case 'M':
             case 'm':
-                prefs->dimension++;
-                prefs->modelist = realloc( prefs->modelist, prefs->dimension * sizeof(char*) );
-                prefs->modelist[prefs->dimension - 1] = optarg;
+                data->dimension++;
+                set->modelist = realloc( set->modelist, data->dimension * sizeof(char*) );
+                set->modelist[data->dimension - 1] = optarg;
                 break;
 
         // set output file
             case 'o':
-                prefs->output_file = optarg;
-                prefs->output_fmode = "w";
+                set->output_file = optarg;
+                set->output_fmode = "w";
                 break;
 
         // set output file in append mode
             case 'a':
-                prefs->output_file = optarg;
-                prefs->output_fmode = "a";
+                set->output_file = optarg;
+                set->output_fmode = "a";
                 break;
 
         }
