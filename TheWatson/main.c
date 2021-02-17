@@ -23,8 +23,10 @@ void PrintCoriolisCoefficients(settings* set, data* data);
 int main(int argc, char **argv){
 
     struct data data;
+    data.dimension = 0;
     settings prefs = SetDefaultSettings();
     GetSettingsGetopt(&prefs, &data, argc, argv);
+
 
     if(data.dimension < 2){
         fprintf(stderr,

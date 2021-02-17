@@ -17,7 +17,7 @@ void GetSettingsGetopt(settings* set, data* data, int argc, char** argv){
 // optstring contains a list of all short option indices
 //  if followed by one colon an argument is required,
 //  if followed by two colons an optional argument can be set
-    const char * optstring = "hi:m:M:o:a:Pt:V";
+    const char * optstring = "hi:m:M:o:a:Pt:X:Y:Z:V";
 
 // create an array of option structs
 /* struct description
@@ -38,6 +38,10 @@ void GetSettingsGetopt(settings* set, data* data, int argc, char** argv){
         {"mode-file",   required_argument, NULL, 'M'},
         {"output-file", required_argument, NULL, 'o'},
         {"append-file", required_argument, NULL, 'a'},
+    // string array values:
+        {"zeta-x",      required_argument, NULL, 'X'},
+        {"zeta-y",      required_argument, NULL, 'Y'},
+        {"zeta-z",      required_argument, NULL, 'Z'},
     // requires zero termination
         { NULL , 0 , NULL , 0 }
     };
@@ -80,6 +84,19 @@ void GetSettingsGetopt(settings* set, data* data, int argc, char** argv){
         // set input file
             case 'i':
                 set->input_coordinates = optarg;
+                break;
+
+        // set zeta_{x,y,z} colon separated string arrays
+            case 'X':
+                set->zeta_x = optarg;
+                break;
+
+            case 'Y':
+                set->zeta_y = optarg;
+                break;
+
+            case 'Z':
+                set->zeta_z = optarg;
                 break;
 
         // add optarg to mode file list
