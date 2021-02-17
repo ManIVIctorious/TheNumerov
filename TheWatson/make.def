@@ -24,8 +24,9 @@
   SRC += input/InputComFile.c
   SRC += input/InputNormalMode.c
   SRC += input/InputMassesFile.c
-  SRC += input/ProcessFileList.c
-  SRC += input/ProcessModeFiles.c
+  SRC += ProcessFileList.c
+  SRC += ProcessModeFiles.c
+  SRC += SetZetaAndDimension.c
 
   SRC += output/usage.c
   SRC += output/PrintCoriolisCoefficients.c

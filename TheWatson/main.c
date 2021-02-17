@@ -13,6 +13,7 @@
 settings SetDefaultSettings(void);
 void GetSettingsGetopt(settings* prefs, data* data, int argc, char** argv);
 
+void SetZetaAndDimension(settings* set, data* data);
 int InputMassesFile(char* inputfile, double* *m);
 int ProcessModeFiles(settings *prefs, data *data);
 int ProcessFileList(settings *prefs, data *data);
@@ -27,6 +28,19 @@ int main(int argc, char **argv){
     data.dimension = 0;
     settings prefs = SetDefaultSettings();
     GetSettingsGetopt(&prefs, &data, argc, argv);
+
+    if( prefs.zeta_x ){
+        SetZetaAndDimension(&prefs, &data);
+        if( !prefs.masses_file ){
+            fprintf(stderr,
+                "\n (-) Error: When the Coriolis coefficients are directly"
+                "\n     provided via the command line instead the atomic masses"
+                "\n     have to be made available as well."
+                "\n     Aborting...\n\n"
+            );
+            exit(EXIT_FAILURE);
+        }
+    }
 
 // return early if dimension is too small
     if(data.dimension < 2){
@@ -50,7 +64,9 @@ int main(int argc, char **argv){
 //--------------------------------------------------
 //  Read mode files, get n_atoms, atom_masses and total_mass then
 //  normalise the mode files and calculate the Coriolis coefficients zeta
-    ProcessModeFiles(&prefs, &data);
+    if( !prefs.zeta_x ){
+        ProcessModeFiles(&prefs, &data);
+    }
 
 // calculate the system's total mass
     data.tot_mass = 0.0;
