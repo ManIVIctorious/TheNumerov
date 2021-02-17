@@ -23,6 +23,7 @@
   SRC += input/ThrowInputError.c
   SRC += input/InputComFile.c
   SRC += input/InputNormalMode.c
+  SRC += input/InputMassesFile.c
   SRC += input/ProcessFileList.c
   SRC += input/ProcessModeFiles.c
 

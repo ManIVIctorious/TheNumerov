@@ -21,11 +21,35 @@ void ProcessModeFiles(settings* set, data* data){
     if(mode == NULL){ perror("mode"); exit(errno); }
     for(int i = 0; i < data->dimension; ++i){ mode[i] = NULL; }
 
-    double ** mass = malloc(data->dimension * sizeof(double*));
-    if(mass == NULL){ perror("mass"); exit(errno); }
-    for(int i = 0; i < data->dimension; ++i){ mass[i] = NULL; }
+// if masses should be read from mode file:
+//  allocate memory for <dimension> modes
+    double ** mass = NULL;
+    if( set->masses_from_modes ){
+        mass = malloc(data->dimension * sizeof(double*));
+        if(mass == NULL){ perror("mass"); exit(errno); }
+        for(int i = 0; i < data->dimension; ++i){ mass[i] = NULL; }
+    }
 
-    data->n_atoms = InputNormalMode( set->modelist[0], &(mode[0]), set->masses_from_modes, &(mass[0]) );
+// read the first normal mode to get an initial number of atoms and atom masses if a masses_file
+// is set, this data is already available and the atomic masses are not read from the mode file.
+    int control = InputNormalMode( set->modelist[0], &(mode[0]), set->masses_from_modes, &(mass[0]) );
+
+// if a masses_file is set compare number of atoms with the one obtained from the first mode file
+// else set data->n_atoms to control
+    if( set->masses_file ){
+        if( control != data->n_atoms ){
+            fprintf(stderr,
+                "\n (-) Error in reading mode files. Number of atoms in \"%s\" (\"%d\") does not"
+                "\n     match number of atoms in \"%s\" (\"%d\"). Aborting...\n\n"
+                , set->modelist[0], control, set->masses_file, data->n_atoms
+            );
+            exit(EXIT_FAILURE);
+        }
+    }else{
+        data->n_atoms = control;
+    }
+
+// read the remaining mode files and check their number of atoms
     for(int i = 1; i < data->dimension; ++i){
         int control = InputNormalMode( set->modelist[i], &(mode[i]), set->masses_from_modes, &(mass[i]) );
 
@@ -40,38 +64,34 @@ void ProcessModeFiles(settings* set, data* data){
         }
     }
 
-// check for same masses in mode files (atom order/type)
-    for(int i = 1; i < data->dimension; ++i){
-        for(int j = 0; j < data->n_atoms; ++j){
+    if( set->masses_from_modes ){
+    // check for same masses in mode files (atom order/type)
+        for(int i = 1; i < data->dimension; ++i){
+            for(int j = 0; j < data->n_atoms; ++j){
 
-            if( (mass[0][j] - mass[i][j])*(mass[0][j] - mass[i][j]) > set->threshold*set->threshold ){
-                fprintf(stderr,
-                        "\n (-) Error in reading mode files. Atom masses differ considerably"
-                        "\n     between modes in entry number %d."
-                        "\n             %s\t%s"
-                        "\n     Value:  %le\t%le"
-                        "\n     Aborting...\n\n"
-                        , j, set->modelist[i-1], set->modelist[i], mass[i-1][j], mass[i][j]
-                    );
-                exit(EXIT_FAILURE);
+                if( (mass[0][j] - mass[i][j])*(mass[0][j] - mass[i][j]) > set->threshold*set->threshold ){
+                    fprintf(stderr,
+                            "\n (-) Error in reading mode files. Atom masses differ considerably"
+                            "\n     between modes in entry number %d."
+                            "\n             %s\t%s"
+                            "\n     Value:  %le\t%le"
+                            "\n     Aborting...\n\n"
+                            , j, set->modelist[i-1], set->modelist[i], mass[i-1][j], mass[i][j]
+                        );
+                    exit(EXIT_FAILURE);
+                }
             }
         }
-    }
 
-// if masses check succeeds free up memory:
-//  so that only mass[0][entries] remains
-    for(int i = 1; i < data->dimension; ++i){
-        free( mass[i] ); mass[i] = NULL;
-    }
-// point data->atom_masses to the position of mass[0]
-// now also mass, holding the pointers to mass[0] can be freed
-    data->atom_masses = mass[0];
-    free(mass);
-
-// calculate the system's total mass
-    data->tot_mass = 0.0;
-    for(int i = 0; i < data->n_atoms; ++i){
-        data->tot_mass += data->atom_masses[i];
+    // if masses check succeeds free up memory:
+    //  so that only mass[0][entries] remains
+        for(int i = 1; i < data->dimension; ++i){
+            free( mass[i] ); mass[i] = NULL;
+        }
+    // point data->atom_masses to the position of mass[0]
+    // now also mass, holding the pointers to mass[0] can be freed
+        data->atom_masses = mass[0];
+        free(mass);
     }
 
 

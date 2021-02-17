@@ -13,6 +13,7 @@
 settings SetDefaultSettings(void);
 void GetSettingsGetopt(settings* prefs, data* data, int argc, char** argv);
 
+int InputMassesFile(char* inputfile, double* *m);
 int ProcessModeFiles(settings *prefs, data *data);
 int ProcessFileList(settings *prefs, data *data);
 
@@ -27,13 +28,19 @@ int main(int argc, char **argv){
     settings prefs = SetDefaultSettings();
     GetSettingsGetopt(&prefs, &data, argc, argv);
 
-
+// return early if dimension is too small
     if(data.dimension < 2){
         fprintf(stderr,
                 "\n (-) Error: At least two modes have to be considered"
                 "\n     Please check your input, aborting...\n\n"
             );
         exit(EXIT_FAILURE);
+    }
+
+// if a masses file is set get the atom_masses from there
+    if( prefs.masses_file ){
+        data.atom_masses = NULL;
+        data.n_atoms = InputMassesFile( prefs.masses_file, &data.atom_masses );
     }
 
 //--------------------------------------------------------------------------------------
@@ -44,6 +51,12 @@ int main(int argc, char **argv){
 //  Read mode files, get n_atoms, atom_masses and total_mass then
 //  normalise the mode files and calculate the Coriolis coefficients zeta
     ProcessModeFiles(&prefs, &data);
+
+// calculate the system's total mass
+    data.tot_mass = 0.0;
+    for(int i = 0; i < data.n_atoms; ++i){
+        data.tot_mass += data.atom_masses[i];
+    }
 
 //--------------------------------------------------------------------------------------
 //       Output preparations        Output preparations        Output preparations
