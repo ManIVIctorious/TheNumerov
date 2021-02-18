@@ -60,7 +60,7 @@ void usage(void){
 
 // Mode file
     printf("\n"
-           "\n\t-m|M, --mode-file"
+           "\n\t-m, --mode-file"
            "\n\t    Set a file containing the vector of a normal mode."
            "\n\t    This file should have the following 4 column structure:"
            "\n\t    The first three columns represent the deviation of each atom relative"
@@ -83,10 +83,47 @@ void usage(void){
            "\n\t    files (e.g. *.com files) containing the geometry."
     );
 
+// Masses file
+    printf("\n"
+           "\n\t-M, --masses-file"
+           "\n\t    Instead of expecting a fourth column in the mode files representing the"
+           "\n\t    particle mass just read the first three columns and get the masses from"
+           "\n\t    the provided masses file."
+    );
+
+// Coriolis coefficients from command line
+    printf("\n"
+           "\n\t-X, --zeta-x"
+           "\n\t-Y, --zeta-y"
+           "\n\t-Z, --zeta-z"
+           "\n\t    Instead of calculating the Coriolis coefficients on each run from the"
+           "\n\t    mode files, they can also be provided as a colon separated list, where"
+           "\n\t    the fields are the upper triangle of the coefficient matrices without"
+           "\n\t    the main diagonal, i.e."
+           "\n\t            a b c        j k l        s t u  --zeta_x b:c:f"
+           "\n\t      z_x = d e f  z_y = m n o  z_z = v w x  --zeta_y k:l:o"
+           "\n\t            g h i        p q r        y z 1  --zeta_z t:u:x"
+    );
+
 // Pipe
     printf("\n"
            "\n\t-P, --pipe-input"
-           "\n\t    Expect the input file being provided from stdin."
+           "\n\t    Expect the structure of the main input file to be provided from stdin."
+           "\n\t    In combination with masses file, coriolis coefficients and append mode" "\n\t    this can be used to process each geometry file individually, e.g."
+           "\n"
+           "\n\t      for i in $(seq $start_1 $dq_1 $stop_1); do"
+           "\n\t      for j in $(seq $start_2 $dq_2 $stop_2); do"
+           "\n\t      for k in $(seq $start_3 $dq_3 $stop_3); do"
+           "\n"
+           "\n\t        file=\"scan_3d_${i}_${j}_${k}.com\""
+           "\n\t        echo \"$i $j $k $file\" | TheWatson -M masses\\"
+           "\n\t                                          -X b:c:f -Y k:l:o -Z t:u:x\\"
+           "\n\t                                          -a Watson.out -P --"
+           "\n"
+           "\n\t      done"
+           "\n\t      done"
+           "\n\t      done"
+
     );
 
 // Output file
