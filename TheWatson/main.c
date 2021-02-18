@@ -34,8 +34,8 @@ int main(int argc, char **argv){
         if( !prefs.masses_file ){
             fprintf(stderr,
                 "\n (-) Error: When the Coriolis coefficients are directly"
-                "\n     provided via the command line instead the atomic masses"
-                "\n     have to be made available as well."
+                "\n     provided via the command line the atomic masses"
+                "\n     have to be made available this way as well."
                 "\n     Aborting...\n\n"
             );
             exit(EXIT_FAILURE);

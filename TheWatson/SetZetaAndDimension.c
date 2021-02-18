@@ -70,4 +70,12 @@ void SetZetaAndDimension(settings* set, data* data){
             data->zeta[2][j*data->dimension + i] = -data->zeta[2][i*data->dimension + j];
         }
     }
+
+// free memory of z{x,y,z}array strings
+    for(int i = 0; i < nzx; ++i){ free(zxarray[i]); }
+    for(int i = 0; i < nzy; ++i){ free(zyarray[i]); }
+    for(int i = 0; i < nzz; ++i){ free(zzarray[i]); }
+    free(zxarray);
+    free(zyarray);
+    free(zzarray);
 }
