@@ -81,7 +81,8 @@ int InputNormalMode(char* inputfile, double* *mode, char read_masses, double* *m
 
         ++entry_rows;
     }
-    fclose(fd); fd = NULL;
+    fclose(fd);   fd     = NULL;
+    free(buffer); buffer = NULL;
 
     return entry_rows;
 }

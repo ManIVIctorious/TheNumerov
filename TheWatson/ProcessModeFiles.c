@@ -34,8 +34,9 @@ void ProcessModeFiles(settings* set, data* data){
 // is set, this data is already available and the atomic masses are not read from the mode file.
     int control = InputNormalMode( set->modelist[0], &(mode[0]), set->masses_from_modes, &(mass[0]) );
 
-// if a masses_file is set compare number of atoms with the one obtained from the first mode file
-// else set data->n_atoms to control
+// if a masses_file is set the number of atoms is read there first
+// hence, compare control obtained from the first mode file with the
+// number of atoms of the masses file, else set data->n_atoms to control
     if( set->masses_file ){
         if( control != data->n_atoms ){
             fprintf(stderr,

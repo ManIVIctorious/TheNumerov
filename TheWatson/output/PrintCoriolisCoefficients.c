@@ -19,6 +19,9 @@ void PrintCoriolisCoefficients(settings* set, data* data){
             }
         }
         fprintf(set->fdout, "\n");
+
+    // last usage of modelist, so free it
+        free(set->modelist); set->modelist = NULL;
     }
 
 // print zeta values

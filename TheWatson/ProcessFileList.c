@@ -103,7 +103,6 @@ int ProcessFileList(settings *set, data* data){
     // copy file path to coordsfile array
         strncpy( coordsfile, pos, _PATH_MAX_ );
 
-
     // After each read data line start directly with processing
     //  Determine Effective Reciprocal Moment of Inertia Tensor mu
     //------------------------------------------------------------
@@ -128,7 +127,8 @@ int ProcessFileList(settings *set, data* data){
 
         ++entry_rows;
     }
-    fclose(fd); fd = NULL;
+    fclose(fd);   fd     = NULL;
+    free(buffer); buffer = NULL;
 
     return entry_rows;
 }

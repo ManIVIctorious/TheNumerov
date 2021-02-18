@@ -46,13 +46,14 @@ int InputMassesFile(char* inputfile, double* *m){
     // get individual atom masses from line
     // the program expects exactly one entry per line,
     // containing the atomic mass of the entry_row's particle
-        (*m) = realloc((*m), entry_rows+1);
+        (*m) = realloc((*m), (entry_rows+1)*sizeof(double));
         int control = sscanf(pos, "%lf", &(*m)[entry_rows]);
         if( control != 1 ){ continue; }
 
         ++entry_rows;
     }
-    fclose(fd); fd = NULL;
+    fclose(fd);   fd     = NULL;
+    free(buffer); buffer = NULL;
 
     return entry_rows;
 }

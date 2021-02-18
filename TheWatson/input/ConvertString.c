@@ -162,7 +162,7 @@ int splitstring_to_array(char* array, char** *stringlist, const char* delimit, s
         (*stringlist) = realloc( (*stringlist), entries*sizeof(char*) );
         if( !(*stringlist) ){ perror("stringlist"); exit(errno); }
 
-        (*stringlist)[entries-1] = malloc( elementlength*sizeof(char) );
+        (*stringlist)[entries-1] = calloc( elementlength,sizeof(char) );
         if( (*stringlist)[entries-1] == NULL ){ perror("stringlist[i]"); exit(errno); }
 
     // copy entry into stringlist element

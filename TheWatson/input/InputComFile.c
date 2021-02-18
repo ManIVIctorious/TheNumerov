@@ -58,7 +58,8 @@ int InputComFile(char* inputfile, double* x, double* y, double* z, int max_lines
 
         ++entry_rows;
     }
-    fclose(fd); fd = NULL;
+    fclose(fd);   fd     = NULL;
+    free(buffer); buffer = NULL;
 
     return entry_rows;
 }

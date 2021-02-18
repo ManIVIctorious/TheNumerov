@@ -24,8 +24,12 @@ void PrintCoriolisCoefficients(settings* set, data* data);
 
 int main(int argc, char **argv){
 
+// allocate data struct and initialise its values where necessary
     struct data data;
-    data.dimension = 0;
+    data.dimension   = 0;
+    data.zeta        = NULL;
+    data.atom_masses = NULL;
+
     settings prefs = SetDefaultSettings();
     GetSettingsGetopt(&prefs, &data, argc, argv);
 
@@ -143,8 +147,10 @@ int main(int argc, char **argv){
     ProcessFileList(&prefs, &data);
 
 // close files and free unused memory
-    fclose(prefs.fdout);     prefs.fdout = NULL;
-    for(int i = 0; i < 3; ++i){ free(data.zeta[i]); data.zeta[i] = NULL; }
+    fclose(prefs.fdout);    prefs.fdout      = NULL;
+    free(data.zeta[0]);     data.zeta[0]     = NULL;
+    free(data.zeta[1]);     data.zeta[1]     = NULL;
+    free(data.zeta[2]);     data.zeta[2]     = NULL;
     free(data.zeta);        data.zeta        = NULL;
     free(data.atom_masses); data.atom_masses = NULL;
 
