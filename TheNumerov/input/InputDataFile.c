@@ -51,26 +51,21 @@ int InputDataFile(char* inputfile, double** *q, int* nq, double* *v, double** *m
         pos = PreprocessBuffer(inputfile, linenumber, buffer, comment);
         if(pos == NULL){ continue; }
 
+    // set stringp to first non-whitespace entry of buffer and get first token
         stringp = pos;
+        do{
+            pos = strsep(&stringp, delimit);
+        }while( (pos != NULL) && (*pos == '\0') );
 
-    // Parse the N line (but only if nq != NULL)
+
+    // Parse the N line
     //--------------------------------------------------------------------------
-        if( nq && strncasecmp(pos, "n", 1) == 0 ){
-
-        // tokenise buffer, get first entry which ain't a white space (the N)
-            do{
-                pos = strsep(&stringp, delimit);
-            }while( (pos != NULL) && (*pos == '\0') );
-
-        // case insensitive check of the first item
-            if( strcasecmp(pos, "N") != 0 ){
-                ThrowInputError(inputfile, linenumber,
-                    "Invalid string detected (\"%s\"), should be \"N\".", pos
-                );
-            }
+        if( strcasecmp(pos, "n") == 0 ){
+        // in case nq == NULL ignore this line
+            if(nq == NULL){ continue; }
 
         // there must be <dimension> entries after the N flag
-            for(int i = 0; i < dimension; ){
+            for(int i = 0; i < dimension; ++i){
 
                 do{
                     pos = strsep(&stringp, delimit);
@@ -85,7 +80,7 @@ int InputDataFile(char* inputfile, double** *q, int* nq, double* *v, double** *m
                 }
 
             // store data in integer array
-                nq[i++] = (int)convertstring_to_long(pos, "nq", NULL);
+                nq[i] = (int)convertstring_to_long(pos, "nq", NULL);
 
             }
 
@@ -103,8 +98,11 @@ int InputDataFile(char* inputfile, double** *q, int* nq, double* *v, double** *m
             if( (*q)[i] == NULL){ perror("Input data function q[i]"); exit(errno); }
         }
 
+    // write first cooridnate entry
+        (*q)[0][entryrows] = convertstring_to_double(pos, "Coordinates q", NULL);
+
     // read data from input file and store it in coordinates
-        for(int i = 0; i < dimension; ){
+        for(int i = 1; i < dimension; ++i){
 
         // get next token
             do{
@@ -121,7 +119,7 @@ int InputDataFile(char* inputfile, double** *q, int* nq, double* *v, double** *m
             }
 
         // save value to coordinate array
-            (*q)[i++][entryrows] = convertstring_to_double(pos, "Coordinates q", NULL);
+            (*q)[i][entryrows] = convertstring_to_double(pos, "Coordinates q", NULL);
         }
 
 
@@ -161,7 +159,7 @@ int InputDataFile(char* inputfile, double** *q, int* nq, double* *v, double** *m
             }
 
         // read data from input file and store it in dipole moment array
-            for(int i = 0; i < 3; ){
+            for(int i = 0; i < 3; ++i){
 
             // get next token
                 do{
@@ -178,7 +176,7 @@ int InputDataFile(char* inputfile, double** *q, int* nq, double* *v, double** *m
                 }
 
             // save value to coordinate array
-                (*mu)[i++][entryrows] = convertstring_to_double(pos, "Dipole moment mu", NULL);
+                (*mu)[i][entryrows] = convertstring_to_double(pos, "Dipole moment mu", NULL);
             }
         }
 

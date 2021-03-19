@@ -47,7 +47,11 @@ int InputCoriolisCoefficients(char* inputfile, double** *q, double** zeta, doubl
         pos = PreprocessBuffer(inputfile, linenumber, buffer, comment);
         if(pos == NULL){ continue; }
 
+    // set stringp to first non-whitespace entry of buffer and get first token
         stringp = pos;
+        do{
+            pos = strsep(&stringp, delimit);
+        }while( (pos != NULL) && (*pos == '\0') );
 
 
     // Parse Zeta_{x,y,z} values:
@@ -56,12 +60,7 @@ int InputCoriolisCoefficients(char* inputfile, double** *q, double** zeta, doubl
     //  (dim*(dim-1))/2 columns containing the respective Coriolis coefficients
 
     // check if line starts with "Zeta_"
-        if( strncasecmp(stringp, "Zeta_", 5) == 0 ){
-
-        // get first token of buffer
-            do{
-                pos = strsep(&stringp, delimit);
-            }while( (pos != NULL) && (*pos == '\0') );
+        if( strncasecmp(pos, "Zeta_", 5) == 0 ){
 
         // define list of allowed first tokens
             const char * zeta_line_inits[3] = { "Zeta_x:" , "Zeta_y:" , "Zeta_z:" };
@@ -101,6 +100,11 @@ int InputCoriolisCoefficients(char* inputfile, double** *q, double** zeta, doubl
             continue;
         }
 
+    // special handling for the N line
+    // if the first token of the line is in [nN] ignore this line
+    //--------------------------------------------------------------------------
+        if( strcasecmp(pos, "N") == 0 ){ continue; }
+
 
     // Effective Reciprocal Moment of Inertia Tensor lines:
     //--------------------------------------------------------------------------
@@ -116,8 +120,11 @@ int InputCoriolisCoefficients(char* inputfile, double** *q, double** zeta, doubl
             if( (*q)[i] == NULL ){ perror("Coriolis input function q[i]"); exit(errno); }
         }
 
+    // save value to coordinate array
+        (*q)[0][entryrows] = convertstring_to_double(pos, "Coordinates q", NULL);
+
     //  read data from input file and store it in coordinates
-        for(int i = 0; i < dimension; ){
+        for(int i = 1; i < dimension; ++i){
 
         // get next token
             do{
@@ -134,7 +141,7 @@ int InputCoriolisCoefficients(char* inputfile, double** *q, double** zeta, doubl
             }
 
         // save value to coordinate array
-            (*q)[i++][entryrows] = convertstring_to_double(pos, "Coordinates q", NULL);
+            (*q)[i][entryrows] = convertstring_to_double(pos, "Coordinates q", NULL);
         }
 
 
