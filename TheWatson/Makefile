@@ -1,5 +1,5 @@
 
-include make.def
+include ../watson.make
 
 # Compiler and compiler flags
   ifndef CC
@@ -43,19 +43,23 @@ include make.def
 
 # set program version
   ifndef PROGRAM_VERSION
-    PROGRAM_VERSION = $(shell git describe --tags --always)
+    PROGRAM_VERSION = $(shell git describe --tags --always --broken)
   endif
 
-.Phony: all
-all: Makefile make.def $(EXE)
+.PHONY: all
+all: Makefile make.src $(EXE)
 
-# Create gitversion source and object files
-# First define a version string, if this string matches the contents
-# of the gitversion.c file do nothing, else recreate this file
+.PHONY: Watson
+Watson: all
+
+# Create gitversion object file
+#   * define a version string
+#   * do nothing if this matches the contents of the gitversion.c file
+#   * else recreate gitversion.c
+#   * then build gitversion.o
 VERSIONSTRING = const char *gitversion = "$(PROGRAM_VERSION)";
-gitversion.c: FORCE
-	@echo '$(VERSIONSTRING)' | cmp -s -- $@ || echo '$(VERSIONSTRING)' > $@
-gitversion.o: gitversion.c
+makeVersionSrc = $(shell echo '$(VERSIONSTRING)' | cmp -s -- gitversion.c || echo '$(VERSIONSTRING)' > gitversion.c)
+gitversion.o: gitversion.c | $(makeVersionSrc)
 	$(CC) -w $(PPF) -c $?
 
 # Build object files out of C-source files
@@ -67,7 +71,7 @@ $(GSLOBJ): %.o: %.c
 	$(CC) $(OPT) $(WARN) $(PPF) $(INC) $(GSLINC) -c $?
 
 # Link all objects to create the executable
-$(EXE): $(TOTOBJ) $(EXEDIR)
+$(EXE): $(TOTOBJ) | $(EXEDIR)
 	$(CC) $(OPT) $(WARN) $(LIB) $(TOTOBJ) -o $@
 
 # Create executable directory
@@ -75,8 +79,8 @@ $(EXEDIR):
 	mkdir -p $(EXEDIR)
 
 # Create "do nothing" recipe to forcefully build objects
-# similar to .Phony, but also works if target is a file and exists
-.Phony: FORCE
+# similar to .PHONY, but also works if target is a file and exists
+.PHONY: FORCE
 FORCE:
 
 
@@ -86,12 +90,12 @@ print-%:
 	@echo $* = $($*)
 
 # Call ctags with corresponding exclude pattern
-.Phony: tags
+.PHONY: tags
 tags: FORCE
 	ctags --recurse --exclude="test/*" --exclude="stash/*"
 
 # Remove all generated binary files
-.Phony: clean
+.PHONY: clean
 clean:
 	rm -f $(TOTOBJ) gitversion.[oc] $(EXE)
 	rmdir -p --ignore-fail-on-non-empty $(EXEDIR)

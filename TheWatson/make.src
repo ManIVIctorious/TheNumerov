@@ -1,19 +1,7 @@
-# Executable name
-  EXENAME = TheWatson
-
-# Additional libraries, includes and packages
-  CC       = gcc
-  LIB      = -lm
-  INC      = -Iinclude/
-  PACKAGES = gsl
-
-# Preprocessor flags
-# PPF += -Ddebug_normalmode
-# PPF += -Ddebug_coords
-# PPF += -Ddebug_moment_of_inertia
-# PPF += -Ddebug_mu
+# vim: set filetype=make :
 
 # Source Files
+#----------------------------------------------------------------------
   SRC += main.c
 
   SRC += input/SetDefaultSettings.c
