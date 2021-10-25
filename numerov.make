@@ -13,10 +13,16 @@
   INC      = -Iinclude/
   PACKAGES = gsl mkl armadillo
 
-# Preprocessor flags
-  PPF += -D HAVE_GSL_INSTALLED  # gnu scientific library support
-  PPF += -D HAVE_MKL_INSTALLED  # intel math kernel library support
-  PPF += -D HAVE_ARMA_INSTALLED # Armadillo C++ linear algebra library
+# Include preprocessor flags based on used packages
+  ifeq ($(findstring gsl, $(PACKAGES)), gsl)
+    PPF += -D HAVE_GSL_INSTALLED  # gnu scientific library support
+  endif
+  ifeq ($(findstring mkl, $(PACKAGES)), mkl)
+    PPF += -D HAVE_MKL_INSTALLED  # intel math kernel library support
+  endif
+  ifeq ($(findstring armadillo, $(PACKAGES)), armadillo)
+    PPF += -D HAVE_ARMA_INSTALLED # Armadillo C++ linear algebra library
+  endif
 
 # List of source files
   include make.src

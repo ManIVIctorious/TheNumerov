@@ -21,13 +21,17 @@ int MetaEigensolver(settings* prefs, int* nq, double* v, double ekin_to_oue, dou
     // 2    Armadillo ARPACK
     // 4    Not implemented yet
 
+#ifdef HAVE_MKL_INSTALLED
         case 1:
             n_out =        SolverFEAST_MKL(prefs, nq, v, ekin_to_oue, stencil, E, X, q, dq, mu, zeta);
             break;
+#endif
 
+#ifdef HAVE_ARMA_INSTALLED
         case 2:
             n_out = SolverARPACK_Armadillo(prefs, nq, v, ekin_to_oue, stencil, E, X, q, dq, mu, zeta);
             break;
+#endif
 
         default:
             fprintf(stderr,
